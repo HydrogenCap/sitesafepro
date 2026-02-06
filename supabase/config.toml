@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.team-invite]
 verify_jwt = false
+
+[functions.classify-document]
+verify_jwt = false

@@ -84,8 +84,73 @@ export type Database = {
           },
         ]
       }
+      document_acknowledgements: {
+        Row: {
+          acknowledged_at: string
+          company_name: string | null
+          document_id: string
+          full_name: string
+          id: string
+          ip_address: string | null
+          organisation_id: string
+          profile_id: string
+          signature_data: string
+          user_agent: string | null
+        }
+        Insert: {
+          acknowledged_at?: string
+          company_name?: string | null
+          document_id: string
+          full_name: string
+          id?: string
+          ip_address?: string | null
+          organisation_id: string
+          profile_id: string
+          signature_data: string
+          user_agent?: string | null
+        }
+        Update: {
+          acknowledged_at?: string
+          company_name?: string | null
+          document_id?: string
+          full_name?: string
+          id?: string
+          ip_address?: string | null
+          organisation_id?: string
+          profile_id?: string
+          signature_data?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_acknowledgements_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_acknowledgements_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_acknowledgements_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
+          acknowledgement_deadline: string | null
+          ai_category: Database["public"]["Enums"]["document_category"] | null
+          ai_compliance_flags: Json | null
+          ai_confidence: string | null
           approved_at: string | null
           approved_by: string | null
           category: Database["public"]["Enums"]["document_category"]
@@ -99,12 +164,17 @@ export type Database = {
           organisation_id: string
           parent_document_id: string | null
           project_id: string | null
+          requires_acknowledgement: boolean | null
           status: string
           updated_at: string
           uploaded_by: string
           version: number
         }
         Insert: {
+          acknowledgement_deadline?: string | null
+          ai_category?: Database["public"]["Enums"]["document_category"] | null
+          ai_compliance_flags?: Json | null
+          ai_confidence?: string | null
           approved_at?: string | null
           approved_by?: string | null
           category?: Database["public"]["Enums"]["document_category"]
@@ -118,12 +188,17 @@ export type Database = {
           organisation_id: string
           parent_document_id?: string | null
           project_id?: string | null
+          requires_acknowledgement?: boolean | null
           status?: string
           updated_at?: string
           uploaded_by: string
           version?: number
         }
         Update: {
+          acknowledgement_deadline?: string | null
+          ai_category?: Database["public"]["Enums"]["document_category"] | null
+          ai_compliance_flags?: Json | null
+          ai_confidence?: string | null
           approved_at?: string | null
           approved_by?: string | null
           category?: Database["public"]["Enums"]["document_category"]
@@ -137,6 +212,7 @@ export type Database = {
           organisation_id?: string
           parent_document_id?: string | null
           project_id?: string | null
+          requires_acknowledgement?: boolean | null
           status?: string
           updated_at?: string
           uploaded_by?: string
@@ -587,6 +663,10 @@ export type Database = {
         | "certificate"
         | "insurance"
         | "other"
+        | "risk_assessment"
+        | "fire_safety"
+        | "meeting_minutes"
+        | "drawing"
       member_role:
         | "owner"
         | "admin"
@@ -753,6 +833,10 @@ export const Constants = {
         "certificate",
         "insurance",
         "other",
+        "risk_assessment",
+        "fire_safety",
+        "meeting_minutes",
+        "drawing",
       ],
       member_role: [
         "owner",
