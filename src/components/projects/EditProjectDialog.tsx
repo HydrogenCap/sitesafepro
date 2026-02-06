@@ -1,0 +1,229 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useSubscription } from "@/hooks/useSubscription";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ProjectImageUpload } from "./ProjectImageUpload";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
+
+interface Project {
+  id: string;
+  name: string;
+  address: string | null;
+  client_name: string | null;
+  principal_designer: string | null;
+  start_date: string | null;
+  estimated_end_date: string | null;
+  image_url: string | null;
+}
+
+interface EditProjectDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  project: Project;
+  onProjectUpdated: (project: Project) => void;
+}
+
+export const EditProjectDialog = ({
+  open,
+  onOpenChange,
+  project,
+  onProjectUpdated,
+}: EditProjectDialogProps) => {
+  const { organisation } = useSubscription();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(project.image_url);
+  const [formData, setFormData] = useState({
+    name: project.name,
+    address: project.address || "",
+    clientName: project.client_name || "",
+    principalDesigner: project.principal_designer || "",
+    startDate: project.start_date || "",
+    estimatedEndDate: project.estimated_end_date || "",
+  });
+
+  useEffect(() => {
+    if (open) {
+      setFormData({
+        name: project.name,
+        address: project.address || "",
+        clientName: project.client_name || "",
+        principalDesigner: project.principal_designer || "",
+        startDate: project.start_date || "",
+        estimatedEndDate: project.estimated_end_date || "",
+      });
+      setImageUrl(project.image_url);
+    }
+  }, [open, project]);
+
+  const updateField = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.name.trim()) {
+      toast.error("Please enter a project name");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { data, error } = await supabase
+        .from("projects")
+        .update({
+          name: formData.name,
+          address: formData.address || null,
+          client_name: formData.clientName || null,
+          principal_designer: formData.principalDesigner || null,
+          start_date: formData.startDate || null,
+          estimated_end_date: formData.estimatedEndDate || null,
+          image_url: imageUrl,
+        })
+        .eq("id", project.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast.success("Project updated successfully!");
+      onProjectUpdated(data);
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error updating project:", error);
+      toast.error("Failed to update project");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit Project</DialogTitle>
+          <DialogDescription>
+            Update project details and photo
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Project image */}
+          <div className="space-y-2">
+            <Label>Project Photo</Label>
+            <ProjectImageUpload
+              imageUrl={imageUrl}
+              onImageChange={setImageUrl}
+              organisationId={organisation?.id}
+            />
+          </div>
+
+          {/* Project name */}
+          <div className="space-y-2">
+            <Label htmlFor="edit-name">
+              Project Name <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="edit-name"
+              placeholder="e.g. Riverside Apartments Phase 1"
+              value={formData.name}
+              onChange={(e) => updateField("name", e.target.value)}
+              required
+            />
+          </div>
+
+          {/* Site address */}
+          <div className="space-y-2">
+            <Label htmlFor="edit-address">Site Address</Label>
+            <Textarea
+              id="edit-address"
+              placeholder="Enter the construction site address"
+              value={formData.address}
+              onChange={(e) => updateField("address", e.target.value)}
+              className="resize-none"
+              rows={2}
+            />
+          </div>
+
+          {/* Client & Designer */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-clientName">Client Name</Label>
+              <Input
+                id="edit-clientName"
+                placeholder="e.g. ABC Developments Ltd"
+                value={formData.clientName}
+                onChange={(e) => updateField("clientName", e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-principalDesigner">Principal Designer</Label>
+              <Input
+                id="edit-principalDesigner"
+                placeholder="e.g. Smith Architects"
+                value={formData.principalDesigner}
+                onChange={(e) => updateField("principalDesigner", e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Dates */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-startDate">Start Date</Label>
+              <Input
+                id="edit-startDate"
+                type="date"
+                value={formData.startDate}
+                onChange={(e) => updateField("startDate", e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-endDate">Estimated End Date</Label>
+              <Input
+                id="edit-endDate"
+                type="date"
+                value={formData.estimatedEndDate}
+                onChange={(e) => updateField("estimatedEndDate", e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Submit */}
+          <div className="flex justify-end gap-3 pt-4 border-t border-border">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};

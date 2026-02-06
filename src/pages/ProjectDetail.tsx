@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { EditProjectDialog } from "@/components/projects/EditProjectDialog";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -52,6 +53,7 @@ const ProjectDetail = () => {
   const navigate = useNavigate();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -187,7 +189,7 @@ const ProjectDetail = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <Button variant="outline">
+              <Button variant="outline" onClick={() => setEditDialogOpen(true)}>
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Project
               </Button>
@@ -362,6 +364,16 @@ const ProjectDetail = () => {
             </motion.div>
           </TabsContent>
         </Tabs>
+
+        {/* Edit Project Dialog */}
+        {project && (
+          <EditProjectDialog
+            open={editDialogOpen}
+            onOpenChange={setEditDialogOpen}
+            project={project}
+            onProjectUpdated={(updatedProject) => setProject(updatedProject as Project)}
+          />
+        )}
       </div>
     </DashboardLayout>
   );
