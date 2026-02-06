@@ -1,10 +1,11 @@
 import { useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/landing/Logo";
+import { toast } from "sonner";
 import {
   LayoutDashboard,
   FolderOpen,
@@ -19,12 +20,25 @@ import {
   Building2,
   ChevronRight,
   Bell,
+  CreditCard,
+  Loader2,
 } from "lucide-react";
 
 const Dashboard = () => {
-  const { user, signOut, loading: authLoading } = useAuth();
+  const { user, signOut, loading: authLoading, checkSubscription, openCustomerPortal, subscriptionLoading } = useAuth();
   const { organisation, tier, isTrialing, trialDaysRemaining, loading: subLoading } = useSubscription();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Handle checkout success
+  useEffect(() => {
+    const checkoutStatus = searchParams.get("checkout");
+    if (checkoutStatus === "success") {
+      toast.success("Subscription activated! Welcome to SafeSite Pro.");
+      checkSubscription(); // Refresh subscription status
+      setSearchParams({}); // Clear the URL param
+    }
+  }, [searchParams, checkSubscription, setSearchParams]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -58,6 +72,10 @@ const Dashboard = () => {
     { icon: Users, label: "Invite Contractor", description: "Add team members to your org" },
     { icon: QrCode, label: "Generate QR", description: "Create site access QR code" },
   ];
+
+  const handleManageSubscription = async () => {
+    await openCustomerPortal();
+  };
 
   return (
     <div className="min-h-screen bg-muted/30 flex">
@@ -113,9 +131,11 @@ const Dashboard = () => {
                 You're on a 14-day free trial. {trialDaysRemaining} days remaining.
               </span>
             </div>
-            <Button variant="secondary" size="sm">
-              Choose a Plan
-            </Button>
+            <Link to="/#pricing">
+              <Button variant="secondary" size="sm">
+                Choose a Plan
+              </Button>
+            </Link>
           </div>
         )}
 
@@ -156,17 +176,36 @@ const Dashboard = () => {
                   {organisation?.name || "Your Organisation"}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  {tier === "trial" ? "Free Trial" : `${tier.charAt(0).toUpperCase() + tier.slice(1)} Plan`}
+                  {tier === "trial" ? "Free Trial" : `${String(tier).charAt(0).toUpperCase() + String(tier).slice(1)} Plan`}
                   {" · "}
                   {organisation?.slug ? `app.sitesafepro.co.uk/${organisation.slug}` : ""}
                 </p>
               </div>
-              <Link to="/settings">
-                <Button variant="outline" size="sm">
-                  Manage
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              </Link>
+              <div className="flex items-center gap-2">
+                {!isTrialing && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleManageSubscription}
+                    disabled={subscriptionLoading}
+                  >
+                    {subscriptionLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <CreditCard className="h-4 w-4 mr-1" />
+                        Billing
+                      </>
+                    )}
+                  </Button>
+                )}
+                <Link to="/settings">
+                  <Button variant="outline" size="sm">
+                    Manage
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </Link>
+              </div>
             </div>
           </motion.div>
 
