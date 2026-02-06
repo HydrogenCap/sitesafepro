@@ -549,6 +549,14 @@ export type Database = {
     Functions: {
       generate_unique_slug: { Args: { base_name: string }; Returns: string }
       get_user_org_id: { Args: never; Returns: string }
+      is_org_admin: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_org_member: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       activity_type:
