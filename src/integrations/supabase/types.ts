@@ -634,6 +634,210 @@ export type Database = {
           },
         ]
       }
+      toolbox_talk_attendees: {
+        Row: {
+          attendee_company: string | null
+          attendee_name: string
+          attendee_trade: string | null
+          created_at: string
+          id: string
+          organisation_id: string
+          profile_id: string | null
+          signature_data: string | null
+          signed_at: string | null
+          toolbox_talk_id: string
+        }
+        Insert: {
+          attendee_company?: string | null
+          attendee_name: string
+          attendee_trade?: string | null
+          created_at?: string
+          id?: string
+          organisation_id: string
+          profile_id?: string | null
+          signature_data?: string | null
+          signed_at?: string | null
+          toolbox_talk_id: string
+        }
+        Update: {
+          attendee_company?: string | null
+          attendee_name?: string
+          attendee_trade?: string | null
+          created_at?: string
+          id?: string
+          organisation_id?: string
+          profile_id?: string | null
+          signature_data?: string | null
+          signed_at?: string | null
+          toolbox_talk_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "toolbox_talk_attendees_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "toolbox_talk_attendees_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "toolbox_talk_attendees_toolbox_talk_id_fkey"
+            columns: ["toolbox_talk_id"]
+            isOneToOne: false
+            referencedRelation: "toolbox_talks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      toolbox_talk_templates: {
+        Row: {
+          category: Database["public"]["Enums"]["toolbox_talk_category"]
+          content: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          duration_minutes: number | null
+          id: string
+          is_active: boolean | null
+          is_system_template: boolean | null
+          organisation_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["toolbox_talk_category"]
+          content: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_system_template?: boolean | null
+          organisation_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["toolbox_talk_category"]
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_system_template?: boolean | null
+          organisation_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "toolbox_talk_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "toolbox_talk_templates_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      toolbox_talks: {
+        Row: {
+          category: Database["public"]["Enums"]["toolbox_talk_category"]
+          completed_at: string | null
+          content: string
+          created_at: string
+          delivered_at: string
+          delivered_by: string
+          id: string
+          location: string | null
+          notes: string | null
+          organisation_id: string
+          project_id: string | null
+          status: string
+          template_id: string | null
+          title: string
+          weather_conditions: string | null
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["toolbox_talk_category"]
+          completed_at?: string | null
+          content: string
+          created_at?: string
+          delivered_at?: string
+          delivered_by: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          organisation_id: string
+          project_id?: string | null
+          status?: string
+          template_id?: string | null
+          title: string
+          weather_conditions?: string | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["toolbox_talk_category"]
+          completed_at?: string | null
+          content?: string
+          created_at?: string
+          delivered_at?: string
+          delivered_by?: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          organisation_id?: string
+          project_id?: string | null
+          status?: string
+          template_id?: string | null
+          title?: string
+          weather_conditions?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "toolbox_talks_delivered_by_fkey"
+            columns: ["delivered_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "toolbox_talks_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "toolbox_talks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "toolbox_talks_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "toolbox_talk_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -693,6 +897,30 @@ export type Database = {
       project_status: "active" | "completed" | "archived"
       subscription_status: "active" | "past_due" | "cancelled" | "trialing"
       subscription_tier: "starter" | "professional" | "enterprise"
+      toolbox_talk_category:
+        | "working_at_height"
+        | "manual_handling"
+        | "fire_safety"
+        | "electrical_safety"
+        | "excavations"
+        | "confined_spaces"
+        | "ppe"
+        | "housekeeping"
+        | "hand_tools"
+        | "power_tools"
+        | "scaffolding"
+        | "lifting_operations"
+        | "hazardous_substances"
+        | "noise"
+        | "dust"
+        | "asbestos"
+        | "slips_trips_falls"
+        | "vehicle_safety"
+        | "environmental"
+        | "emergency_procedures"
+        | "mental_health"
+        | "general_safety"
+        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -865,6 +1093,31 @@ export const Constants = {
       project_status: ["active", "completed", "archived"],
       subscription_status: ["active", "past_due", "cancelled", "trialing"],
       subscription_tier: ["starter", "professional", "enterprise"],
+      toolbox_talk_category: [
+        "working_at_height",
+        "manual_handling",
+        "fire_safety",
+        "electrical_safety",
+        "excavations",
+        "confined_spaces",
+        "ppe",
+        "housekeeping",
+        "hand_tools",
+        "power_tools",
+        "scaffolding",
+        "lifting_operations",
+        "hazardous_substances",
+        "noise",
+        "dust",
+        "asbestos",
+        "slips_trips_falls",
+        "vehicle_safety",
+        "environmental",
+        "emergency_procedures",
+        "mental_health",
+        "general_safety",
+        "other",
+      ],
     },
   },
 } as const
