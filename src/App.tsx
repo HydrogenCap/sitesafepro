@@ -12,6 +12,8 @@ import Projects from "./pages/Projects";
 import NewProject from "./pages/NewProject";
 import ProjectDetail from "./pages/ProjectDetail";
 import Documents from "./pages/Documents";
+import SiteAccess from "./pages/SiteAccess";
+import CheckIn from "./pages/CheckIn";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +34,8 @@ const App = () => (
             <Route path="/projects/new" element={<NewProject />} />
             <Route path="/projects/:id" element={<ProjectDetail />} />
             <Route path="/documents" element={<Documents />} />
+            <Route path="/site-access" element={<SiteAccess />} />
+            <Route path="/check-in/:code" element={<CheckIn />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
