@@ -10,26 +10,8 @@ interface CreateOrgRequest {
   userId: string;
   companyName: string;
   phone?: string;
-}
-
-// Helper to wait for profile to be created by trigger
-async function waitForProfile(supabase: any, userId: string, maxAttempts = 10): Promise<boolean> {
-  for (let i = 0; i < maxAttempts; i++) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('id', userId)
-      .single();
-    
-    if (profile) {
-      console.log(`Profile found on attempt ${i + 1}`);
-      return true;
-    }
-    
-    console.log(`Profile not found, attempt ${i + 1}/${maxAttempts}, waiting...`);
-    await new Promise(resolve => setTimeout(resolve, 500));
-  }
-  return false;
+  email?: string;
+  fullName?: string;
 }
 
 serve(async (req) => {
@@ -44,7 +26,7 @@ serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    const { userId, companyName, phone }: CreateOrgRequest = await req.json();
+    const { userId, companyName, phone, email, fullName }: CreateOrgRequest = await req.json();
 
     if (!userId || !companyName) {
       return new Response(
@@ -55,15 +37,31 @@ serve(async (req) => {
 
     console.log(`Creating organisation for user ${userId}, company: ${companyName}`);
 
-    // Wait for the profile to be created by the auth trigger
-    const profileExists = await waitForProfile(supabaseAdmin, userId);
-    
-    if (!profileExists) {
-      console.error("Profile was not created in time");
-      return new Response(
-        JSON.stringify({ error: "User profile not ready. Please try again." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // Check if profile exists, if not create it
+    const { data: existingProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .single();
+
+    if (!existingProfile) {
+      console.log(`Profile not found, creating one for user ${userId}`);
+      
+      // Create the profile manually since trigger may have failed
+      const { error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .insert({
+          id: userId,
+          email: email || 'unknown@example.com',
+          full_name: fullName || 'User',
+        });
+
+      if (profileError) {
+        console.error("Error creating profile:", profileError);
+        // Continue anyway - the profile might exist with different constraints
+      } else {
+        console.log(`Profile created for user ${userId}`);
+      }
     }
 
     // Generate unique slug
