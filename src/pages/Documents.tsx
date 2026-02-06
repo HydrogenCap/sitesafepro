@@ -56,18 +56,25 @@ interface Document {
   uploader_name?: string | null;
   version: number;
   parent_document_id: string | null;
+  ai_confidence?: string | null;
+  ai_category?: string | null;
+  requires_acknowledgement?: boolean;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
   rams: "RAMS",
+  risk_assessment: "Risk Assessment",
   method_statement: "Method Statement",
   safety_plan: "Safety Plan",
   coshh: "COSHH",
+  fire_safety: "Fire Safety",
   induction: "Induction",
   permit: "Permit",
   inspection: "Inspection",
   certificate: "Certificate",
   insurance: "Insurance",
+  meeting_minutes: "Minutes",
+  drawing: "Drawing",
   other: "Other",
 };
 
@@ -103,6 +110,9 @@ const Documents = () => {
           project_id,
           version,
           parent_document_id,
+          ai_confidence,
+          ai_category,
+          requires_acknowledgement,
           projects(name)
         `)
         .order("created_at", { ascending: false });
@@ -124,6 +134,9 @@ const Documents = () => {
         project_name: doc.projects?.name || null,
         version: doc.version || 1,
         parent_document_id: doc.parent_document_id || null,
+        ai_confidence: doc.ai_confidence || null,
+        ai_category: doc.ai_category || null,
+        requires_acknowledgement: doc.requires_acknowledgement || false,
       }));
       
       setDocuments(transformedData);
@@ -407,9 +420,23 @@ const Documents = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 hidden md:table-cell">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
-                          {CATEGORY_LABELS[doc.category] || doc.category}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
+                            {CATEGORY_LABELS[doc.category] || doc.category}
+                          </span>
+                          {doc.ai_confidence && (
+                            <span
+                              className={`h-2 w-2 rounded-full ${
+                                doc.ai_confidence === "high"
+                                  ? "bg-success"
+                                  : doc.ai_confidence === "medium"
+                                  ? "bg-accent"
+                                  : "bg-muted-foreground"
+                              }`}
+                              title={`AI classified with ${doc.ai_confidence} confidence`}
+                            />
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 hidden lg:table-cell">
                         <span className="text-sm text-muted-foreground">

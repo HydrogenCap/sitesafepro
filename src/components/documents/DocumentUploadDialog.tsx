@@ -3,11 +3,17 @@ import { useDropzone } from "react-dropzone";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useActivityLog, activityDescriptions } from "@/hooks/useActivityLog";
+import { usePdfTextExtraction } from "@/hooks/usePdfTextExtraction";
+import { useDocumentClassification, ClassificationResult } from "@/hooks/useDocumentClassification";
+import { AIClassificationCard } from "./AIClassificationCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Dialog,
   DialogContent,
@@ -30,7 +36,11 @@ import {
   Loader2,
   CheckCircle,
   Image,
+  Sparkles,
+  CalendarIcon,
 } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface Project {
   id: string;
@@ -56,16 +66,25 @@ interface DocumentUploadDialogProps {
 
 const CATEGORIES = [
   { value: "rams", label: "RAMS" },
+  { value: "risk_assessment", label: "Risk Assessment" },
   { value: "method_statement", label: "Method Statement" },
-  { value: "safety_plan", label: "Safety Plan" },
+  { value: "safety_plan", label: "Safety / Construction Phase Plan" },
   { value: "coshh", label: "COSHH Assessment" },
+  { value: "fire_safety", label: "Fire Risk Assessment" },
   { value: "induction", label: "Induction Material" },
-  { value: "permit", label: "Permit" },
+  { value: "permit", label: "Permit to Work" },
   { value: "inspection", label: "Inspection Report" },
-  { value: "certificate", label: "Certificate" },
+  { value: "certificate", label: "Certificate / Training Record" },
   { value: "insurance", label: "Insurance Document" },
+  { value: "meeting_minutes", label: "Meeting Minutes" },
+  { value: "drawing", label: "Drawing / Plan" },
   { value: "other", label: "Other" },
 ];
+
+const CATEGORY_LABELS: Record<string, string> = CATEGORIES.reduce(
+  (acc, cat) => ({ ...acc, [cat.value]: cat.label }),
+  {}
+);
 
 const ACCEPTED_TYPES = {
   "application/pdf": [".pdf"],
@@ -76,7 +95,21 @@ const ACCEPTED_TYPES = {
   "image/webp": [".webp"],
 };
 
-type DocumentCategory = "rams" | "method_statement" | "safety_plan" | "coshh" | "induction" | "permit" | "inspection" | "certificate" | "insurance" | "other";
+type DocumentCategory =
+  | "rams"
+  | "risk_assessment"
+  | "method_statement"
+  | "safety_plan"
+  | "coshh"
+  | "fire_safety"
+  | "induction"
+  | "permit"
+  | "inspection"
+  | "certificate"
+  | "insurance"
+  | "meeting_minutes"
+  | "drawing"
+  | "other";
 
 export const DocumentUploadDialog = ({
   open,
@@ -88,6 +121,10 @@ export const DocumentUploadDialog = ({
 }: DocumentUploadDialogProps) => {
   const { user } = useAuth();
   const { logActivity } = useActivityLog();
+  const { extractTextFromPdf, extracting } = usePdfTextExtraction();
+  const { classifyDocument, classifying, classificationResult, clearClassification } =
+    useDocumentClassification();
+
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -96,6 +133,9 @@ export const DocumentUploadDialog = ({
   const [projects, setProjects] = useState<Project[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [userOverrodeCategory, setUserOverrodeCategory] = useState(false);
+  const [requiresAcknowledgement, setRequiresAcknowledgement] = useState(false);
+  const [acknowledgementDeadline, setAcknowledgementDeadline] = useState<Date | undefined>();
 
   // Initialize form when parent document changes (versioning)
   useEffect(() => {
@@ -111,8 +151,12 @@ export const DocumentUploadDialog = ({
       setCategory("other");
       setProjectId(initialProjectId || "none");
       setUploadProgress(0);
+      setUserOverrodeCategory(false);
+      setRequiresAcknowledgement(false);
+      setAcknowledgementDeadline(undefined);
+      clearClassification();
     }
-  }, [parentDocument, open, initialProjectId]);
+  }, [parentDocument, open, initialProjectId, clearClassification]);
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -129,17 +173,60 @@ export const DocumentUploadDialog = ({
     }
   }, [open]);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles.length > 0) {
-      const selectedFile = acceptedFiles[0];
-      setFile(selectedFile);
-      // Auto-fill name from filename (without extension)
-      if (!name) {
-        const nameWithoutExt = selectedFile.name.replace(/\.[^/.]+$/, "");
-        setName(nameWithoutExt);
+  // Run AI classification when file is selected
+  const runClassification = useCallback(
+    async (selectedFile: File) => {
+      let textContent: string | null = null;
+
+      // Extract text from PDF
+      if (selectedFile.type === "application/pdf") {
+        const result = await extractTextFromPdf(selectedFile);
+        if (result) {
+          textContent = result.text;
+        }
       }
-    }
-  }, [name]);
+
+      // Classify the document
+      const result = await classifyDocument(
+        selectedFile.name,
+        selectedFile.type,
+        textContent
+      );
+
+      if (result) {
+        // Auto-populate fields if user hasn't manually changed them
+        if (!userOverrodeCategory) {
+          setCategory(result.category as DocumentCategory);
+        }
+        if (!name || name === selectedFile.name.replace(/\.[^/.]+$/, "")) {
+          setName(result.suggestedTitle || selectedFile.name.replace(/\.[^/.]+$/, ""));
+        }
+        if (!description && result.suggestedDescription) {
+          setDescription(result.suggestedDescription);
+        }
+      }
+    },
+    [extractTextFromPdf, classifyDocument, name, userOverrodeCategory]
+  );
+
+  const onDrop = useCallback(
+    async (acceptedFiles: File[]) => {
+      if (acceptedFiles.length > 0) {
+        const selectedFile = acceptedFiles[0];
+        setFile(selectedFile);
+
+        // Auto-fill name from filename (as fallback)
+        if (!name) {
+          const nameWithoutExt = selectedFile.name.replace(/\.[^/.]+$/, "");
+          setName(nameWithoutExt);
+        }
+
+        // Run AI classification
+        runClassification(selectedFile);
+      }
+    },
+    [name, runClassification]
+  );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -147,6 +234,11 @@ export const DocumentUploadDialog = ({
     maxSize: 52428800, // 50MB
     multiple: false,
   });
+
+  const handleCategoryChange = (newCategory: string) => {
+    setCategory(newCategory as DocumentCategory);
+    setUserOverrodeCategory(true);
+  };
 
   const handleUpload = async () => {
     if (!file || !name.trim() || !user || !organisationId) {
@@ -181,56 +273,60 @@ export const DocumentUploadDialog = ({
       const newVersion = parentDocument ? parentDocument.version + 1 : 1;
       const parentDocId = parentDocument ? parentDocument.id : null;
 
-      // Create database record using raw insert to bypass type checking
-      const { error: dbError } = await supabase
-        .from("documents")
-        .insert({
-          organisation_id: organisationId,
-          project_id: projectId !== "none" ? projectId : null,
-          uploaded_by: user.id,
-          name: name.trim(),
-          description: description.trim() || null,
-          category: category,
-          file_path: filePath,
-          file_size: file.size,
-          mime_type: file.type,
-          version: newVersion,
-          parent_document_id: parentDocId,
-        } as any);
+      // Create database record
+      const { error: dbError } = await supabase.from("documents").insert({
+        organisation_id: organisationId,
+        project_id: projectId !== "none" ? projectId : null,
+        uploaded_by: user.id,
+        name: name.trim(),
+        description: description.trim() || null,
+        category: category,
+        file_path: filePath,
+        file_size: file.size,
+        mime_type: file.type,
+        version: newVersion,
+        parent_document_id: parentDocId,
+        ai_category: classificationResult?.category || null,
+        ai_confidence: classificationResult?.confidence || null,
+        ai_compliance_flags: classificationResult?.complianceFlags || null,
+        requires_acknowledgement: requiresAcknowledgement,
+        acknowledgement_deadline: acknowledgementDeadline?.toISOString() || null,
+      } as any);
 
       if (dbError) throw dbError;
 
       // Update organisation storage usage
       const { data: orgData } = await supabase
-        .from('organisations')
-        .select('storage_used_bytes')
-        .eq('id', organisationId)
+        .from("organisations")
+        .select("storage_used_bytes")
+        .eq("id", organisationId)
         .single();
-      
+
       if (orgData) {
         await supabase
-          .from('organisations')
-          .update({ 
-            storage_used_bytes: (orgData.storage_used_bytes || 0) + file.size 
+          .from("organisations")
+          .update({
+            storage_used_bytes: (orgData.storage_used_bytes || 0) + file.size,
           })
-          .eq('id', organisationId);
+          .eq("id", organisationId);
       }
 
       // Log activity
       logActivity({
-        activityType: 'document_uploaded',
-        entityType: 'document',
+        activityType: "document_uploaded",
+        entityType: "document",
         entityName: name.trim(),
         description: activityDescriptions.document_uploaded(name.trim()),
         projectId: projectId !== "none" ? projectId : undefined,
       });
 
       setUploadProgress(100);
-      toast.success(parentDocument 
-        ? `Version ${parentDocument.version + 1} uploaded successfully!`
-        : "Document uploaded successfully!"
+      toast.success(
+        parentDocument
+          ? `Version ${parentDocument.version + 1} uploaded successfully!`
+          : "Document uploaded successfully!"
       );
-      
+
       setTimeout(() => {
         onUploadComplete();
       }, 500);
@@ -258,21 +354,21 @@ export const DocumentUploadDialog = ({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
+  const isAnalysing = extracting || classifying;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {parentDocument 
+            {parentDocument
               ? `Upload New Version (v${parentDocument.version + 1})`
-              : "Upload Document"
-            }
+              : "Upload Document"}
           </DialogTitle>
           <DialogDescription>
             {parentDocument
               ? `Uploading a new version of "${parentDocument.name}"`
-              : "Upload a safety document, RAMS, or certificate."
-            }
+              : "Upload a safety document, RAMS, or certificate."}
           </DialogDescription>
         </DialogHeader>
 
@@ -297,24 +393,52 @@ export const DocumentUploadDialog = ({
               </p>
             </div>
           ) : (
-            <div className="bg-muted/50 rounded-xl p-4 flex items-center gap-4">
-              <div className="h-14 w-14 rounded-lg bg-background flex items-center justify-center">
-                {getFileIcon()}
+            <div className="space-y-4">
+              {/* File preview card */}
+              <div className="bg-muted/50 rounded-xl p-4 flex items-center gap-4">
+                <div className="h-14 w-14 rounded-lg bg-background flex items-center justify-center">
+                  {getFileIcon()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground truncate">{file.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatFileSize(file.size)}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setFile(null);
+                    clearClassification();
+                  }}
+                  disabled={uploading}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-foreground truncate">{file.name}</p>
-                <p className="text-sm text-muted-foreground">
-                  {formatFileSize(file.size)}
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setFile(null)}
-                disabled={uploading}
-              >
-                <X className="h-4 w-4" />
-              </Button>
+
+              {/* AI Classification status / results */}
+              {isAnalysing && (
+                <div className="flex items-center gap-3 p-4 bg-primary/5 rounded-lg border border-primary/20">
+                  <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                  <div>
+                    <p className="text-sm font-medium text-primary">
+                      {extracting ? "Extracting text from document..." : "AI is analysing your document..."}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      This helps suggest the right category and details
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {!isAnalysing && classificationResult && (
+                <AIClassificationCard
+                  result={classificationResult}
+                  categoryLabels={CATEGORY_LABELS}
+                />
+              )}
             </div>
           )}
 
@@ -348,7 +472,11 @@ export const DocumentUploadDialog = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Category</Label>
-                <Select value={category} onValueChange={(v) => setCategory(v as DocumentCategory)} disabled={uploading}>
+                <Select
+                  value={category}
+                  onValueChange={handleCategoryChange}
+                  disabled={uploading}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -379,6 +507,56 @@ export const DocumentUploadDialog = ({
                 </Select>
               </div>
             </div>
+
+            {/* Requires Acknowledgement toggle */}
+            <div className="space-y-4 pt-2">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="requires-ack">Require contractor acknowledgement</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Team members will need to sign to confirm they've read this document
+                  </p>
+                </div>
+                <Switch
+                  id="requires-ack"
+                  checked={requiresAcknowledgement}
+                  onCheckedChange={setRequiresAcknowledgement}
+                  disabled={uploading}
+                />
+              </div>
+
+              {requiresAcknowledgement && (
+                <div className="space-y-2">
+                  <Label>Acknowledgement Deadline (Optional)</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !acknowledgementDeadline && "text-muted-foreground"
+                        )}
+                        disabled={uploading}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {acknowledgementDeadline
+                          ? format(acknowledgementDeadline, "PPP")
+                          : "Pick a deadline"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={acknowledgementDeadline}
+                        onSelect={setAcknowledgementDeadline}
+                        disabled={(date) => date < new Date()}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Upload progress */}
@@ -402,7 +580,7 @@ export const DocumentUploadDialog = ({
             </Button>
             <Button
               onClick={handleUpload}
-              disabled={!file || !name.trim() || uploading}
+              disabled={!file || !name.trim() || uploading || isAnalysing}
             >
               {uploading ? (
                 uploadProgress === 100 ? (
