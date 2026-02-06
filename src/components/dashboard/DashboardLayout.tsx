@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard,
   FolderOpen,
+  FileText,
   QrCode,
   Users,
-  ClipboardList,
-  Calendar,
+  Activity,
   Settings,
   LogOut,
   AlertTriangle,
@@ -27,10 +27,10 @@ interface DashboardLayoutProps {
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   { icon: FolderOpen, label: "Projects", href: "/projects" },
+  { icon: FileText, label: "Documents", href: "/documents" },
   { icon: QrCode, label: "Site Access", href: "/site-access" },
-  { icon: Users, label: "Contractors", href: "/contractors" },
-  { icon: ClipboardList, label: "Permits", href: "/permits", tier: "professional" },
-  { icon: Calendar, label: "Compliance", href: "/compliance", tier: "professional" },
+  { icon: Users, label: "Team", href: "/team" },
+  { icon: Activity, label: "Activity", href: "/activity" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
 
@@ -82,11 +82,6 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             >
               <item.icon className="h-5 w-5" />
               {item.label}
-              {item.tier === "professional" && tier === "starter" && (
-                <span className="ml-auto text-xs bg-accent/10 text-accent px-2 py-0.5 rounded-full">
-                  Pro
-                </span>
-              )}
             </Link>
           ))}
         </nav>
