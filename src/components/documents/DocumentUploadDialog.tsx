@@ -37,12 +37,21 @@ interface Project {
   name: string;
 }
 
+interface ParentDocument {
+  id: string;
+  name: string;
+  version: number;
+  category: string;
+  project_id: string | null;
+}
+
 interface DocumentUploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   organisationId: string;
   projectId?: string;
   onUploadComplete: () => void;
+  parentDocument?: ParentDocument | null;
 }
 
 const CATEGORIES = [
@@ -75,6 +84,7 @@ export const DocumentUploadDialog = ({
   organisationId,
   projectId: initialProjectId,
   onUploadComplete,
+  parentDocument,
 }: DocumentUploadDialogProps) => {
   const { user } = useAuth();
   const { logActivity } = useActivityLog();
@@ -86,6 +96,23 @@ export const DocumentUploadDialog = ({
   const [projects, setProjects] = useState<Project[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  // Initialize form when parent document changes (versioning)
+  useEffect(() => {
+    if (parentDocument && open) {
+      setName(parentDocument.name);
+      setCategory(parentDocument.category as DocumentCategory);
+      setProjectId(parentDocument.project_id || "none");
+    } else if (!open) {
+      // Reset when dialog closes
+      setFile(null);
+      setName("");
+      setDescription("");
+      setCategory("other");
+      setProjectId(initialProjectId || "none");
+      setUploadProgress(0);
+    }
+  }, [parentDocument, open, initialProjectId]);
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -121,15 +148,6 @@ export const DocumentUploadDialog = ({
     multiple: false,
   });
 
-  const resetForm = () => {
-    setFile(null);
-    setName("");
-    setDescription("");
-    setCategory("other");
-    setProjectId(initialProjectId || "none");
-    setUploadProgress(0);
-  };
-
   const handleUpload = async () => {
     if (!file || !name.trim() || !user || !organisationId) {
       toast.error("Please fill in all required fields");
@@ -159,6 +177,10 @@ export const DocumentUploadDialog = ({
 
       setUploadProgress(70);
 
+      // Determine version number and parent document ID
+      const newVersion = parentDocument ? parentDocument.version + 1 : 1;
+      const parentDocId = parentDocument ? parentDocument.id : null;
+
       // Create database record using raw insert to bypass type checking
       const { error: dbError } = await supabase
         .from("documents")
@@ -172,6 +194,8 @@ export const DocumentUploadDialog = ({
           file_path: filePath,
           file_size: file.size,
           mime_type: file.type,
+          version: newVersion,
+          parent_document_id: parentDocId,
         } as any);
 
       if (dbError) throw dbError;
@@ -202,10 +226,12 @@ export const DocumentUploadDialog = ({
       });
 
       setUploadProgress(100);
-      toast.success("Document uploaded successfully!");
+      toast.success(parentDocument 
+        ? `Version ${parentDocument.version + 1} uploaded successfully!`
+        : "Document uploaded successfully!"
+      );
       
       setTimeout(() => {
-        resetForm();
         onUploadComplete();
       }, 500);
     } catch (error) {
@@ -233,15 +259,20 @@ export const DocumentUploadDialog = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) resetForm();
-      onOpenChange(isOpen);
-    }}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Upload Document</DialogTitle>
+          <DialogTitle>
+            {parentDocument 
+              ? `Upload New Version (v${parentDocument.version + 1})`
+              : "Upload Document"
+            }
+          </DialogTitle>
           <DialogDescription>
-            Upload a safety document, RAMS, or certificate.
+            {parentDocument
+              ? `Uploading a new version of "${parentDocument.name}"`
+              : "Upload a safety document, RAMS, or certificate."
+            }
           </DialogDescription>
         </DialogHeader>
 
