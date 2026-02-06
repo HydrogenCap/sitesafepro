@@ -11,6 +11,7 @@ import {
   QrCode,
   Users,
   Activity,
+  BarChart3,
   Settings,
   LogOut,
   AlertTriangle,
@@ -31,6 +32,7 @@ const navItems = [
   { icon: QrCode, label: "Site Access", href: "/site-access" },
   { icon: Users, label: "Team", href: "/team" },
   { icon: Activity, label: "Activity", href: "/activity" },
+  { icon: BarChart3, label: "Analytics", href: "/analytics" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
 
