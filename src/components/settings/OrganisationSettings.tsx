@@ -41,9 +41,9 @@ export default function OrganisationSettings() {
         .select("organisation_id, role")
         .eq("profile_id", user?.id)
         .eq("status", "active")
-        .single();
+        .maybeSingle();
 
-      if (memberError) throw memberError;
+      if (memberError || !memberData) return;
 
       setIsOwner(memberData.role === "owner");
 

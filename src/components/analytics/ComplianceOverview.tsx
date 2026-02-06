@@ -55,7 +55,7 @@ export default function ComplianceOverview() {
         .select("organisation_id")
         .eq("profile_id", user?.id)
         .eq("status", "active")
-        .single();
+        .maybeSingle();
 
       if (!memberData) return;
 

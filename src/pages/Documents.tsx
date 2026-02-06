@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useActivityLog, activityDescriptions } from "@/hooks/useActivityLog";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,6 +72,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 const Documents = () => {
   const { user } = useAuth();
   const { organisation, loading: subLoading } = useSubscription();
+  const { logActivity } = useActivityLog();
   const navigate = useNavigate();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
@@ -224,6 +226,24 @@ const Documents = () => {
         .eq("id", doc.id);
 
       if (dbError) throw dbError;
+
+      // Update organisation storage usage
+      if (organisation) {
+        const newBytes = Math.max(0, (organisation.storage_used_bytes || 0) - doc.file_size);
+        await supabase
+          .from('organisations')
+          .update({ storage_used_bytes: newBytes })
+          .eq('id', organisation.id);
+      }
+
+      // Log activity
+      logActivity({
+        activityType: 'document_deleted',
+        entityType: 'document',
+        entityName: doc.name,
+        description: activityDescriptions.document_deleted(doc.name),
+        projectId: doc.project_id || undefined,
+      });
 
       toast.success("Document deleted");
       fetchDocuments();

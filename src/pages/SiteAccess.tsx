@@ -124,7 +124,7 @@ export default function SiteAccess() {
         .select("organisation_id")
         .eq("profile_id", user?.id)
         .eq("status", "active")
-        .single();
+        .maybeSingle();
 
       if (!orgData) {
         toast.error("Could not find your organisation");

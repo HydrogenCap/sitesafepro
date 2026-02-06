@@ -66,7 +66,7 @@ export default function DocumentsChart({ dateRange }: DocumentsChartProps) {
         .select("organisation_id")
         .eq("profile_id", user?.id)
         .eq("status", "active")
-        .single();
+        .maybeSingle();
 
       if (!memberData) return;
 
