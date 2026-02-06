@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle2, Shield, Users, ClipboardCheck } from "lucide-react";
 
@@ -124,12 +125,14 @@ export const HeroSection = () => {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8"
           >
-            <Button variant="hero" size="xl" className="w-full sm:w-auto group">
-              Start Free Trial
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            <Button variant="hero" size="xl" className="w-full sm:w-auto group" asChild>
+              <Link to="/auth">
+                Start Free Trial
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
             </Button>
-            <Button variant="heroOutline" size="xl" className="w-full sm:w-auto">
-              See Pricing
+            <Button variant="heroOutline" size="xl" className="w-full sm:w-auto" asChild>
+              <a href="#pricing">See Pricing</a>
             </Button>
           </motion.div>
 
