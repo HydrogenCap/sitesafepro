@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { DocumentUploadDialog } from "@/components/documents/DocumentUploadDialog";
+import { DocumentGeneratorDialog } from "@/components/documents/DocumentGeneratorDialog";
 import { toast } from "sonner";
 import {
   Plus,
@@ -30,6 +31,7 @@ import {
   Upload,
   Users,
   AlertCircle,
+  Sparkles,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -120,6 +122,7 @@ const Documents = () => {
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [pendingCount, setPendingCount] = useState(0);
+  const [generatorDialogOpen, setGeneratorDialogOpen] = useState(false);
 
   // Fetch user role
   useEffect(() => {
@@ -443,19 +446,30 @@ const Documents = () => {
               {documents.length} document{documents.length !== 1 ? "s" : ""} uploaded
             </p>
           </div>
-          <Button onClick={() => setUploadDialogOpen(true)}>
-            {isContractor ? (
-              <>
-                <Upload className="h-4 w-4 mr-2" />
-                Submit RAMS for Review
-              </>
-            ) : (
-              <>
-                <Plus className="h-4 w-4 mr-2" />
-                Upload Document
-              </>
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Button
+                variant="outline"
+                onClick={() => setGeneratorDialogOpen(true)}
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Generate Document
+              </Button>
             )}
-          </Button>
+            <Button onClick={() => setUploadDialogOpen(true)}>
+              {isContractor ? (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Submit RAMS for Review
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Upload Document
+                </>
+              )}
+            </Button>
+          </div>
         </div>
 
         {/* Tabs - show different tabs for contractors vs admins */}
@@ -818,6 +832,12 @@ const Documents = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Document Generator Dialog */}
+      <DocumentGeneratorDialog
+        open={generatorDialogOpen}
+        onOpenChange={setGeneratorDialogOpen}
+      />
     </DashboardLayout>
   );
 };
