@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -29,7 +29,6 @@ interface AccessCodeInfo {
 
 export default function CheckIn() {
   const { code } = useParams<{ code: string }>();
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [accessCodeInfo, setAccessCodeInfo] = useState<AccessCodeInfo | null>(null);
@@ -58,29 +57,32 @@ export default function CheckIn() {
     }
 
     try {
-      const { data: accessCode, error: queryError } = await supabase
-        .from("site_access_codes")
-        .select(`
-          id,
-          name,
-          is_active,
-          project:projects(id, name, address, organisation_id),
-          organisation:organisations(id, name, logo_url)
-        `)
-        .eq("code", code)
-        .single();
+      // Use edge function to get access code info (bypasses RLS for public access)
+      const { data, error: fetchError } = await supabase.functions.invoke("site-access", {
+        body: null,
+        method: "GET",
+      });
 
-      if (queryError || !accessCode) {
-        setError("Invalid access code. Please check the QR code and try again.");
+      // Edge function doesn't support GET with body, so we need to use query params via URL
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/site-access?action=get-code-info&code=${encodeURIComponent(code)}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok || result.error) {
+        setError(result.error || "Invalid access code. Please check the QR code and try again.");
         return;
       }
 
-      if (!accessCode.is_active) {
-        setError("This access code is no longer active. Please contact site management.");
-        return;
-      }
-
-      setAccessCodeInfo(accessCode as unknown as AccessCodeInfo);
+      setAccessCodeInfo(result.accessCode as AccessCodeInfo);
     } catch (err) {
       console.error("Error fetching access code:", err);
       setError("Failed to load access code information");
@@ -97,35 +99,44 @@ export default function CheckIn() {
       return;
     }
 
-    if (!accessCodeInfo) return;
+    if (!code) return;
 
     setSubmitting(true);
     try {
-      const { data, error } = await supabase
-        .from("site_visits")
-        .insert({
-          site_access_code_id: accessCodeInfo.id,
-          project_id: accessCodeInfo.project.id,
-          organisation_id: accessCodeInfo.organisation.id,
-          visitor_name: visitorName.trim(),
-          visitor_company: visitorCompany.trim() || null,
-          visitor_email: visitorEmail.trim() || null,
-          visitor_phone: visitorPhone.trim() || null,
-          purpose: purpose.trim() || null,
-          emergency_contact_name: emergencyContactName.trim() || null,
-          emergency_contact_phone: emergencyContactPhone.trim() || null,
-          has_signed_induction: hasSignedInduction,
-        })
-        .select()
-        .single();
+      // Use edge function for check-in (bypasses RLS)
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/site-access?action=check-in`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            code,
+            visitor_name: visitorName.trim(),
+            visitor_company: visitorCompany.trim() || null,
+            visitor_email: visitorEmail.trim() || null,
+            visitor_phone: visitorPhone.trim() || null,
+            purpose: purpose.trim() || null,
+            emergency_contact_name: emergencyContactName.trim() || null,
+            emergency_contact_phone: emergencyContactPhone.trim() || null,
+            has_signed_induction: hasSignedInduction,
+          }),
+        }
+      );
 
-      if (error) throw error;
+      const result = await response.json();
+
+      if (!response.ok || result.error) {
+        throw new Error(result.error || "Failed to check in");
+      }
 
       setMode("success");
       toast.success("Successfully checked in!");
     } catch (err: any) {
       console.error("Check-in error:", err);
-      toast.error("Failed to check in. Please try again.");
+      toast.error(err.message || "Failed to check in. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -137,37 +148,41 @@ export default function CheckIn() {
       return;
     }
 
-    if (!accessCodeInfo) return;
+    if (!code) return;
 
     setSubmitting(true);
     try {
-      // Find active visit by email
-      const { data: visits, error: findError } = await supabase
-        .from("site_visits")
-        .select("id")
-        .eq("site_access_code_id", accessCodeInfo.id)
-        .eq("visitor_email", visitorEmail.trim())
-        .is("checked_out_at", null);
+      // Use edge function for check-out (bypasses RLS)
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/site-access?action=check-out`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            code,
+            visitor_email: visitorEmail.trim(),
+          }),
+        }
+      );
 
-      if (findError) throw findError;
+      const result = await response.json();
 
-      if (!visits || visits.length === 0) {
-        toast.error("No active check-in found with this email");
-        return;
+      if (!response.ok || result.error) {
+        if (result.error === "No active visit found") {
+          toast.error("No active check-in found with this email");
+          return;
+        }
+        throw new Error(result.error || "Failed to check out");
       }
-
-      const { error: updateError } = await supabase
-        .from("site_visits")
-        .update({ checked_out_at: new Date().toISOString() })
-        .eq("id", visits[0].id);
-
-      if (updateError) throw updateError;
 
       toast.success("Successfully checked out!");
       setMode("success");
     } catch (err: any) {
       console.error("Check-out error:", err);
-      toast.error("Failed to check out. Please try again.");
+      toast.error(err.message || "Failed to check out. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -207,7 +222,7 @@ export default function CheckIn() {
                 <CheckCircle className="h-10 w-10 text-green-600" />
               </div>
               <h2 className="text-xl font-semibold mb-2">
-                {mode === "success" ? "You're all set!" : "Checked Out"}
+                You're all set!
               </h2>
               <p className="text-muted-foreground mb-6">
                 Thank you for visiting {accessCodeInfo?.project.name}
