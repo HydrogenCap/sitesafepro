@@ -35,6 +35,7 @@ interface Project {
   start_date: string | null;
   estimated_end_date: string | null;
   created_at: string;
+  image_url: string | null;
 }
 
 const Projects = () => {
@@ -226,10 +227,24 @@ const Projects = () => {
                 transition={{ delay: index * 0.05 }}
               >
                 <Link to={`/projects/${project.id}`}>
-                  <div className="bg-card rounded-xl p-6 border border-border hover:border-primary/30 hover:shadow-md transition-all group">
+                  <div className="bg-card rounded-xl overflow-hidden border border-border hover:border-primary/30 hover:shadow-md transition-all group">
+                    {project.image_url ? (
+                      <div className="h-32 w-full overflow-hidden">
+                        <img
+                          src={project.image_url}
+                          alt={project.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                    ) : (
+                      <div className="h-32 w-full bg-gradient-to-br from-secondary to-muted flex items-center justify-center">
+                        <Building2 className="h-12 w-12 text-muted-foreground/50" />
+                      </div>
+                    )}
+                    <div className="p-6">
                     <div className="flex items-start justify-between mb-4">
-                      <div className="h-12 w-12 rounded-xl bg-secondary flex items-center justify-center group-hover:bg-primary transition-colors">
-                        <Building2 className="h-6 w-6 text-primary group-hover:text-primary-foreground transition-colors" />
+                      <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center group-hover:bg-primary transition-colors">
+                        <Building2 className="h-5 w-5 text-primary group-hover:text-primary-foreground transition-colors" />
                       </div>
                       <div className="flex items-center gap-2">
                         <span
@@ -292,6 +307,7 @@ const Projects = () => {
                           <span className="truncate max-w-[100px]">{project.client_name}</span>
                         </div>
                       )}
+                    </div>
                     </div>
                   </div>
                 </Link>
