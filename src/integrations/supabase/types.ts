@@ -14,6 +14,102 @@ export type Database = {
   }
   public: {
     Tables: {
+      documents: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          category: Database["public"]["Enums"]["document_category"]
+          created_at: string
+          description: string | null
+          file_path: string
+          file_size: number
+          id: string
+          mime_type: string
+          name: string
+          organisation_id: string
+          parent_document_id: string | null
+          project_id: string | null
+          status: string
+          updated_at: string
+          uploaded_by: string
+          version: number
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          category?: Database["public"]["Enums"]["document_category"]
+          created_at?: string
+          description?: string | null
+          file_path: string
+          file_size: number
+          id?: string
+          mime_type: string
+          name: string
+          organisation_id: string
+          parent_document_id?: string | null
+          project_id?: string | null
+          status?: string
+          updated_at?: string
+          uploaded_by: string
+          version?: number
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          category?: Database["public"]["Enums"]["document_category"]
+          created_at?: string
+          description?: string | null
+          file_path?: string
+          file_size?: number
+          id?: string
+          mime_type?: string
+          name?: string
+          organisation_id?: string
+          parent_document_id?: string | null
+          project_id?: string | null
+          status?: string
+          updated_at?: string
+          uploaded_by?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_parent_document_id_fkey"
+            columns: ["parent_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organisation_members: {
         Row: {
           accepted_at: string | null
@@ -244,6 +340,17 @@ export type Database = {
       get_user_org_id: { Args: never; Returns: string }
     }
     Enums: {
+      document_category:
+        | "rams"
+        | "method_statement"
+        | "safety_plan"
+        | "coshh"
+        | "induction"
+        | "permit"
+        | "inspection"
+        | "certificate"
+        | "insurance"
+        | "other"
       member_role:
         | "owner"
         | "admin"
@@ -381,6 +488,18 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      document_category: [
+        "rams",
+        "method_statement",
+        "safety_plan",
+        "coshh",
+        "induction",
+        "permit",
+        "inspection",
+        "certificate",
+        "insurance",
+        "other",
+      ],
       member_role: [
         "owner",
         "admin",
