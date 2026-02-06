@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Check, Sparkles } from "lucide-react";
@@ -190,8 +191,9 @@ export const PricingSection = () => {
                 variant={tier.popular ? "pricingAccent" : "pricing"}
                 size="lg"
                 className="w-full mb-8"
+                asChild
               >
-                Start Free Trial
+                <Link to="/auth">Start Free Trial</Link>
               </Button>
 
               {/* Features */}

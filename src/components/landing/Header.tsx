@@ -38,11 +38,11 @@ export const Header = () => {
 
           {/* Desktop CTAs */}
           <div className="hidden md:flex items-center gap-3">
-            <Button variant="ghost" size="sm">
-              Login
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/auth">Login</Link>
             </Button>
-            <Button variant="default" size="sm">
-              Start Free Trial
+            <Button variant="default" size="sm" asChild>
+              <Link to="/auth">Start Free Trial</Link>
             </Button>
           </div>
 
@@ -81,11 +81,11 @@ export const Header = () => {
                   </a>
                 ))}
                 <div className="flex flex-col gap-2 mt-4 px-4">
-                  <Button variant="outline" className="w-full">
-                    Login
+                  <Button variant="outline" className="w-full" asChild>
+                    <Link to="/auth">Login</Link>
                   </Button>
-                  <Button variant="default" className="w-full">
-                    Start Free Trial
+                  <Button variant="default" className="w-full" asChild>
+                    <Link to="/auth">Start Free Trial</Link>
                   </Button>
                 </div>
               </nav>
