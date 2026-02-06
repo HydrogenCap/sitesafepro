@@ -158,50 +158,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) throw error;
 
-      // If signup successful and we have a user, create org and membership
+      // If signup successful and we have a user, create org via edge function
       if (data.user) {
-        // Generate slug from company name
-        const { data: slugData } = await supabase.rpc('generate_unique_slug', {
-          base_name: companyName
+        const { error: orgError } = await supabase.functions.invoke("create-organisation", {
+          body: {
+            userId: data.user.id,
+            companyName,
+            phone,
+          },
         });
 
-        // Create organisation with trial status
-        const { data: orgData, error: orgError } = await supabase
-          .from('organisations')
-          .insert({
-            name: companyName,
-            slug: slugData || companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-            owner_id: data.user.id,
-            phone: phone || null,
-            subscription_status: 'trialing',
-            subscription_tier: 'enterprise', // Full access during trial
-            trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days
-          })
-          .select()
-          .single();
-
         if (orgError) throw orgError;
-
-        // Create organisation membership as owner
-        const { error: memberError } = await supabase
-          .from('organisation_members')
-          .insert({
-            organisation_id: orgData.id,
-            profile_id: data.user.id,
-            role: 'owner',
-            status: 'active',
-            accepted_at: new Date().toISOString(),
-          });
-
-        if (memberError) throw memberError;
-
-        // Update profile with phone if provided
-        if (phone) {
-          await supabase
-            .from('profiles')
-            .update({ phone })
-            .eq('id', data.user.id);
-        }
       }
 
       return { error: null };
