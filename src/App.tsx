@@ -22,6 +22,8 @@ import Settings from "./pages/Settings";
 import Activity from "./pages/Activity";
 import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +39,8 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
             <Route path="/check-in/:code" element={<CheckIn />} />
             <Route path="/accept-invite" element={<AcceptInvite />} />
             
