@@ -37,7 +37,7 @@ serve(async (req) => {
 
     console.log(`Creating organisation for user ${userId}, company: ${companyName}`);
 
-    // Check if profile exists, if not create it
+    // Check if profile exists
     const { data: existingProfile } = await supabaseAdmin
       .from('profiles')
       .select('id')
@@ -47,7 +47,7 @@ serve(async (req) => {
     if (!existingProfile) {
       console.log(`Profile not found, creating one for user ${userId}`);
       
-      // Create the profile manually since trigger may have failed
+      // Create the profile - FK constraint removed so this should work
       const { error: profileError } = await supabaseAdmin
         .from('profiles')
         .insert({
@@ -58,10 +58,12 @@ serve(async (req) => {
 
       if (profileError) {
         console.error("Error creating profile:", profileError);
-        // Continue anyway - the profile might exist with different constraints
-      } else {
-        console.log(`Profile created for user ${userId}`);
+        return new Response(
+          JSON.stringify({ error: `Failed to create profile: ${profileError.message}` }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
+      console.log(`Profile created for user ${userId}`);
     }
 
     // Generate unique slug
