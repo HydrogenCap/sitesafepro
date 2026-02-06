@@ -15,12 +15,12 @@ interface Question {
 }
 
 interface GenerateQuestionsRequest {
-  templateType: "induction_register" | "rams_register" | "permit_to_work";
+  templateType: "induction_register" | "rams_register" | "permit_to_work" | "f10_notification";
   projectName?: string;
 }
 
 interface GenerateDocumentRequest {
-  templateType: "induction_register" | "rams_register" | "permit_to_work";
+  templateType: "induction_register" | "rams_register" | "permit_to_work" | "f10_notification";
   answers: Record<string, string>;
   projectName?: string;
   organisationName?: string;
@@ -64,6 +64,27 @@ Generate 10-15 questions to gather site-specific information needed to create cu
 - Emergency procedures and rescue arrangements
 - Isolation points and utilities
 - Permit validity periods and shift handover procedures
+
+Format each question with: id, question text, type (text/textarea/select/date/number), options if select, required boolean, and placeholder text.`,
+
+  f10_notification: `You are generating questions for a UK HSE F10 Construction Project Notification (CDM 2015).
+This is the official HSE notification required for notifiable construction projects under the Construction (Design and Management) Regulations 2015.
+
+A project is notifiable if:
+- Construction work will last more than 30 working days AND have more than 20 workers working simultaneously at any point
+- OR exceeds 500 person days of construction work
+
+Generate 15-20 questions to gather all information required for an F10 notification. Include:
+- Project address and local authority
+- Client details (name, address, contact)
+- CDM Coordinator/Principal Designer details (for projects starting before April 2015) or Principal Designer details
+- Principal Contractor details
+- Project start date and planned duration
+- Maximum number of workers on site at any one time
+- Planned number of contractors on site
+- Name of HSE notifier
+- Whether the project involves demolition
+- Brief description of the construction work
 
 Format each question with: id, question text, type (text/textarea/select/date/number), options if select, required boolean, and placeholder text.`,
 };
@@ -117,6 +138,29 @@ Each permit should include:
 - Checklist items for pre-work, during work, and completion
 
 Make it compliant with UK health & safety regulations.
+Output as structured sections that can be formatted into a document.`,
+
+  f10_notification: `You are creating a UK HSE F10 Construction Project Notification form (CDM 2015).
+
+Using the provided answers, generate an official F10 notification form that includes all required fields:
+
+1. HSE area office (based on site location)
+2. Whether notification is an initial notification or additional information
+3. Exact address of construction site including postcode
+4. Name and address of local authority
+5. Brief description of the project
+6. Client details: Name, full postal address, telephone number
+7. Principal Designer details: Name, full postal address, telephone number
+8. Principal Contractor details: Name, full postal address, telephone number
+9. Project start date
+10. Planned duration of construction work (in weeks)
+11. Estimated maximum number of workers on site at any one time
+12. Planned number of contractors on site
+13. Name of person making the notification and their position
+14. Declaration date and signature line
+
+Format this as an official HSE F10 form structure.
+Include a note about submission requirements (online at HSE website or by post).
 Output as structured sections that can be formatted into a document.`,
 };
 
@@ -462,43 +506,180 @@ function getDefaultQuestions(templateType: string): Question[] {
     ];
   }
 
-  // permit_to_work defaults
+  if (templateType === "permit_to_work") {
+    return [
+      ...commonQuestions,
+      {
+        id: "permit_issuer",
+        question: "Who is authorised to issue permits?",
+        type: "text",
+        required: true,
+        placeholder: "Name and role",
+      },
+      {
+        id: "permit_types",
+        question: "Which permit types are required on this site?",
+        type: "textarea",
+        required: true,
+        placeholder: "e.g. Hot Work, Confined Space, Excavation, Working at Height",
+      },
+      {
+        id: "isolation_points",
+        question: "Describe the main isolation points on site",
+        type: "textarea",
+        required: false,
+        placeholder: "e.g. Main electrical isolator location, gas shutoff valve",
+      },
+      {
+        id: "rescue_equipment",
+        question: "What rescue equipment is available on site?",
+        type: "textarea",
+        required: true,
+        placeholder: "e.g. Rescue harness, tripod, first aid kit locations",
+      },
+      {
+        id: "shift_pattern",
+        question: "What are the site working hours/shift patterns?",
+        type: "text",
+        required: true,
+        placeholder: "e.g. Mon-Fri 07:30-17:00",
+      },
+    ];
+  }
+
+  // f10_notification defaults
   return [
-    ...commonQuestions,
     {
-      id: "permit_issuer",
-      question: "Who is authorised to issue permits?",
+      id: "site_address",
+      question: "What is the full site address including postcode?",
+      type: "textarea",
+      required: true,
+      placeholder: "Full postal address of construction site",
+    },
+    {
+      id: "local_authority",
+      question: "Which local authority area is the site in?",
       type: "text",
       required: true,
-      placeholder: "Name and role",
+      placeholder: "e.g. Manchester City Council",
     },
     {
-      id: "permit_types",
-      question: "Which permit types are required on this site?",
+      id: "project_description",
+      question: "Brief description of the construction work",
       type: "textarea",
       required: true,
-      placeholder: "e.g. Hot Work, Confined Space, Excavation, Working at Height",
+      placeholder: "Describe the nature of the construction project",
     },
     {
-      id: "isolation_points",
-      question: "Describe the main isolation points on site",
-      type: "textarea",
-      required: false,
-      placeholder: "e.g. Main electrical isolator location, gas shutoff valve",
-    },
-    {
-      id: "rescue_equipment",
-      question: "What rescue equipment is available on site?",
-      type: "textarea",
-      required: true,
-      placeholder: "e.g. Rescue harness, tripod, first aid kit locations",
-    },
-    {
-      id: "shift_pattern",
-      question: "What are the site working hours/shift patterns?",
+      id: "client_name",
+      question: "Client name and organisation",
       type: "text",
       required: true,
-      placeholder: "e.g. Mon-Fri 07:30-17:00",
+      placeholder: "Full name or company name",
+    },
+    {
+      id: "client_address",
+      question: "Client's full postal address",
+      type: "textarea",
+      required: true,
+      placeholder: "Full address including postcode",
+    },
+    {
+      id: "client_phone",
+      question: "Client telephone number",
+      type: "text",
+      required: true,
+      placeholder: "e.g. 0161 123 4567",
+    },
+    {
+      id: "principal_designer_name",
+      question: "Principal Designer name and organisation",
+      type: "text",
+      required: true,
+      placeholder: "Full name and company",
+    },
+    {
+      id: "principal_designer_address",
+      question: "Principal Designer's full postal address",
+      type: "textarea",
+      required: true,
+      placeholder: "Full address including postcode",
+    },
+    {
+      id: "principal_designer_phone",
+      question: "Principal Designer telephone number",
+      type: "text",
+      required: true,
+      placeholder: "e.g. 0161 123 4567",
+    },
+    {
+      id: "principal_contractor_name",
+      question: "Principal Contractor name and organisation",
+      type: "text",
+      required: true,
+      placeholder: "Full name and company",
+    },
+    {
+      id: "principal_contractor_address",
+      question: "Principal Contractor's full postal address",
+      type: "textarea",
+      required: true,
+      placeholder: "Full address including postcode",
+    },
+    {
+      id: "principal_contractor_phone",
+      question: "Principal Contractor telephone number",
+      type: "text",
+      required: true,
+      placeholder: "e.g. 0161 123 4567",
+    },
+    {
+      id: "start_date",
+      question: "Project start date",
+      type: "date",
+      required: true,
+    },
+    {
+      id: "duration_weeks",
+      question: "Planned duration of construction work (in weeks)",
+      type: "number",
+      required: true,
+      placeholder: "e.g. 52",
+    },
+    {
+      id: "max_workers",
+      question: "Maximum number of workers on site at any one time",
+      type: "number",
+      required: true,
+      placeholder: "e.g. 25",
+    },
+    {
+      id: "num_contractors",
+      question: "Planned number of contractors on site",
+      type: "number",
+      required: true,
+      placeholder: "e.g. 8",
+    },
+    {
+      id: "notifier_name",
+      question: "Name of person making this notification",
+      type: "text",
+      required: true,
+      placeholder: "Your full name",
+    },
+    {
+      id: "notifier_position",
+      question: "Position/role of person making notification",
+      type: "text",
+      required: true,
+      placeholder: "e.g. Health & Safety Manager",
+    },
+    {
+      id: "involves_demolition",
+      question: "Does the project involve demolition work?",
+      type: "select",
+      options: ["Yes", "No"],
+      required: true,
     },
   ];
 }

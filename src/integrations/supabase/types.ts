@@ -950,6 +950,7 @@ export type Database = {
           created_by: string | null
           estimated_end_date: string | null
           id: string
+          image_url: string | null
           name: string
           organisation_id: string
           principal_designer: string | null
@@ -964,6 +965,7 @@ export type Database = {
           created_by?: string | null
           estimated_end_date?: string | null
           id?: string
+          image_url?: string | null
           name: string
           organisation_id: string
           principal_designer?: string | null
@@ -978,6 +980,7 @@ export type Database = {
           created_by?: string | null
           estimated_end_date?: string | null
           id?: string
+          image_url?: string | null
           name?: string
           organisation_id?: string
           principal_designer?: string | null

@@ -43,6 +43,7 @@ interface Project {
   start_date: string | null;
   estimated_end_date: string | null;
   created_at: string;
+  image_url: string | null;
 }
 
 const ProjectDetail = () => {
@@ -152,9 +153,17 @@ const ProjectDetail = () => {
 
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
             <div className="flex items-start gap-4">
-              <div className="h-16 w-16 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Building2 className="h-8 w-8 text-primary" />
-              </div>
+              {project.image_url ? (
+                <img
+                  src={project.image_url}
+                  alt={project.name}
+                  className="h-16 w-16 rounded-xl object-cover"
+                />
+              ) : (
+                <div className="h-16 w-16 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Building2 className="h-8 w-8 text-primary" />
+                </div>
+              )}
               <div>
                 <div className="flex items-center gap-3 mb-1">
                   <h1 className="text-2xl font-bold text-foreground">

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { ProjectImageUpload } from "@/components/projects/ProjectImageUpload";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -19,6 +20,7 @@ import {
   Calendar,
   Users,
   HardHat,
+  ImageIcon,
 } from "lucide-react";
 
 const NewProject = () => {
@@ -28,6 +30,7 @@ const NewProject = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeProjectCount, setActiveProjectCount] = useState(0);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -91,6 +94,7 @@ const NewProject = () => {
         start_date: formData.startDate || null,
         estimated_end_date: formData.estimatedEndDate || null,
         created_by: user?.id,
+        image_url: imageUrl,
       });
 
       if (error) throw error;
@@ -155,6 +159,19 @@ const NewProject = () => {
           onSubmit={handleSubmit}
           className="bg-card rounded-xl p-6 shadow-sm border border-border space-y-6"
         >
+          {/* Project image */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <ImageIcon className="h-4 w-4" />
+              Project Photo
+            </Label>
+            <ProjectImageUpload
+              imageUrl={imageUrl}
+              onImageChange={setImageUrl}
+              organisationId={organisation?.id}
+            />
+          </div>
+
           {/* Project name */}
           <div className="space-y-2">
             <Label htmlFor="name" className="flex items-center gap-2">

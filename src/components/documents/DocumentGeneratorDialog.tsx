@@ -54,7 +54,7 @@ interface DocumentGeneratorDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type TemplateType = "induction_register" | "rams_register" | "permit_to_work";
+type TemplateType = "induction_register" | "rams_register" | "permit_to_work" | "f10_notification";
 type Step = "select_template" | "select_project" | "questions" | "generating" | "complete";
 
 const TEMPLATES = [
@@ -75,6 +75,12 @@ const TEMPLATES = [
     name: "Permit to Work Forms",
     description: "Hot work, confined space, excavation permits and more",
     icon: ShieldCheck,
+  },
+  {
+    id: "f10_notification" as TemplateType,
+    name: "F10 Notification",
+    description: "HSE notification for construction projects (CDM 2015)",
+    icon: FileText,
   },
 ];
 
