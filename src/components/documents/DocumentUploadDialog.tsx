@@ -134,6 +134,7 @@ export const DocumentUploadDialog = ({
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [userOverrodeCategory, setUserOverrodeCategory] = useState(false);
+  const [userOverrodeName, setUserOverrodeName] = useState(false);
   const [requiresAcknowledgement, setRequiresAcknowledgement] = useState(false);
   const [acknowledgementDeadline, setAcknowledgementDeadline] = useState<Date | undefined>();
 
@@ -143,6 +144,7 @@ export const DocumentUploadDialog = ({
       setName(parentDocument.name);
       setCategory(parentDocument.category as DocumentCategory);
       setProjectId(parentDocument.project_id || "none");
+      setUserOverrodeName(true); // Keep parent document name
     } else if (!open) {
       // Reset when dialog closes
       setFile(null);
@@ -152,6 +154,7 @@ export const DocumentUploadDialog = ({
       setProjectId(initialProjectId || "none");
       setUploadProgress(0);
       setUserOverrodeCategory(false);
+      setUserOverrodeName(false);
       setRequiresAcknowledgement(false);
       setAcknowledgementDeadline(undefined);
       clearClassification();
@@ -194,19 +197,21 @@ export const DocumentUploadDialog = ({
       );
 
       if (result) {
-        // Auto-populate fields if user hasn't manually changed them
+        // Auto-populate category if user hasn't manually changed it
         if (!userOverrodeCategory) {
           setCategory(result.category as DocumentCategory);
         }
-        if (!name || name === selectedFile.name.replace(/\.[^/.]+$/, "")) {
-          setName(result.suggestedTitle || selectedFile.name.replace(/\.[^/.]+$/, ""));
+        // Auto-populate name with AI suggestion if user hasn't manually edited
+        if (!userOverrodeName && result.suggestedTitle) {
+          setName(result.suggestedTitle);
         }
+        // Auto-populate description if empty and AI provided one
         if (!description && result.suggestedDescription) {
           setDescription(result.suggestedDescription);
         }
       }
     },
-    [extractTextFromPdf, classifyDocument, name, userOverrodeCategory]
+    [extractTextFromPdf, classifyDocument, description, userOverrodeCategory, userOverrodeName]
   );
 
   const onDrop = useCallback(
@@ -215,17 +220,16 @@ export const DocumentUploadDialog = ({
         const selectedFile = acceptedFiles[0];
         setFile(selectedFile);
 
-        // Auto-fill name from filename (as fallback)
-        if (!name) {
-          const nameWithoutExt = selectedFile.name.replace(/\.[^/.]+$/, "");
-          setName(nameWithoutExt);
-        }
+        // Set filename as initial placeholder while AI analyzes
+        const nameWithoutExt = selectedFile.name.replace(/\.[^/.]+$/, "");
+        setName(nameWithoutExt);
+        setUserOverrodeName(false); // Reset so AI can override
 
-        // Run AI classification
+        // Run AI classification (will auto-rename if successful)
         runClassification(selectedFile);
       }
     },
-    [name, runClassification]
+    [runClassification]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -238,6 +242,11 @@ export const DocumentUploadDialog = ({
   const handleCategoryChange = (newCategory: string) => {
     setCategory(newCategory as DocumentCategory);
     setUserOverrodeCategory(true);
+  };
+
+  const handleNameChange = (newName: string) => {
+    setName(newName);
+    setUserOverrodeName(true); // User manually edited, don't override with AI
   };
 
   const handleUpload = async () => {
@@ -447,12 +456,15 @@ export const DocumentUploadDialog = ({
             <div className="space-y-2">
               <Label htmlFor="name">
                 Document Name <span className="text-destructive">*</span>
+                {classificationResult?.aiPowered && !userOverrodeName && (
+                  <span className="text-xs text-primary ml-2">(AI suggested)</span>
+                )}
               </Label>
               <Input
                 id="name"
                 placeholder="e.g. Site Safety Plan - Phase 1"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => handleNameChange(e.target.value)}
                 disabled={uploading}
               />
             </div>
