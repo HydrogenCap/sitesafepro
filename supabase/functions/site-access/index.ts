@@ -57,8 +57,76 @@ Deno.serve(async (req) => {
         );
       }
 
+      // Fetch induction template for this project
+      const { data: induction } = await supabase
+        .from('site_induction_templates')
+        .select(`
+          id,
+          name,
+          description,
+          video_url,
+          items:site_induction_items(id, question, description, is_required, sort_order)
+        `)
+        .eq('project_id', accessCode.project.id)
+        .eq('is_active', true)
+        .order('sort_order', { foreignTable: 'site_induction_items' })
+        .maybeSingle();
+
       return new Response(
-        JSON.stringify({ accessCode }),
+        JSON.stringify({ accessCode, induction }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Public action: Complete induction
+    if (action === 'complete-induction' && req.method === 'POST') {
+      const body = await req.json();
+      const { 
+        template_id,
+        project_id,
+        organisation_id,
+        visitor_name,
+        visitor_email,
+        visitor_company,
+        visitor_phone,
+        signature_data,
+      } = body;
+
+      if (!template_id || !visitor_name || !signature_data) {
+        return new Response(
+          JSON.stringify({ error: 'Template ID, visitor name, and signature are required' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const { data: completion, error: completionError } = await supabase
+        .from('site_induction_completions')
+        .insert({
+          template_id,
+          project_id,
+          organisation_id,
+          visitor_name,
+          visitor_email,
+          visitor_company,
+          visitor_phone,
+          signature_data,
+          ip_address: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip'),
+          user_agent: req.headers.get('user-agent'),
+        })
+        .select()
+        .single();
+
+      if (completionError) {
+        console.error('Error creating induction completion:', completionError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to save induction completion' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('Induction completed:', visitor_name);
+      return new Response(
+        JSON.stringify({ success: true, completion }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
