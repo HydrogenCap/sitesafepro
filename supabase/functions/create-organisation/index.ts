@@ -12,6 +12,26 @@ interface CreateOrgRequest {
   phone?: string;
 }
 
+// Helper to wait for profile to be created by trigger
+async function waitForProfile(supabase: any, userId: string, maxAttempts = 10): Promise<boolean> {
+  for (let i = 0; i < maxAttempts; i++) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .single();
+    
+    if (profile) {
+      console.log(`Profile found on attempt ${i + 1}`);
+      return true;
+    }
+    
+    console.log(`Profile not found, attempt ${i + 1}/${maxAttempts}, waiting...`);
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+  return false;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -30,6 +50,19 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Missing userId or companyName" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`Creating organisation for user ${userId}, company: ${companyName}`);
+
+    // Wait for the profile to be created by the auth trigger
+    const profileExists = await waitForProfile(supabaseAdmin, userId);
+    
+    if (!profileExists) {
+      console.error("Profile was not created in time");
+      return new Response(
+        JSON.stringify({ error: "User profile not ready. Please try again." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -63,6 +96,8 @@ serve(async (req) => {
       );
     }
 
+    console.log(`Organisation created: ${orgData.id}`);
+
     // Create organisation membership as owner
     const { error: memberError } = await supabaseAdmin
       .from('organisation_members')
@@ -89,6 +124,8 @@ serve(async (req) => {
         .update({ phone })
         .eq('id', userId);
     }
+
+    console.log(`Organisation setup complete for user ${userId}`);
 
     return new Response(
       JSON.stringify({ success: true, organisation: orgData }),
