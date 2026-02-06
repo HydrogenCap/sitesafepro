@@ -272,6 +272,337 @@ export type Database = {
           },
         ]
       }
+      incident_witnesses: {
+        Row: {
+          created_at: string
+          id: string
+          incident_id: string
+          organisation_id: string
+          statement_date: string | null
+          witness_company: string | null
+          witness_contact: string | null
+          witness_name: string
+          witness_statement: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          incident_id: string
+          organisation_id: string
+          statement_date?: string | null
+          witness_company?: string | null
+          witness_contact?: string | null
+          witness_name: string
+          witness_statement?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          incident_id?: string
+          organisation_id?: string
+          statement_date?: string | null
+          witness_company?: string | null
+          witness_contact?: string | null
+          witness_name?: string
+          witness_statement?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incident_witnesses_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incident_witnesses_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incidents: {
+        Row: {
+          body_part_affected: string | null
+          closed_at: string | null
+          closed_by: string | null
+          corrective_actions: string | null
+          created_at: string
+          description: string
+          id: string
+          immediate_actions: string | null
+          incident_date: string
+          incident_number: string
+          incident_time: string | null
+          injured_person_company: string | null
+          injured_person_name: string | null
+          injured_person_occupation: string | null
+          injury_description: string | null
+          investigated_by: string | null
+          investigation_completed_at: string | null
+          investigation_notes: string | null
+          is_riddor_reportable: boolean | null
+          location: string | null
+          organisation_id: string
+          photos: string[] | null
+          project_id: string | null
+          reported_by: string | null
+          riddor_reference: string | null
+          riddor_reported_at: string | null
+          root_cause: string | null
+          severity: Database["public"]["Enums"]["incident_severity"]
+          status: Database["public"]["Enums"]["incident_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body_part_affected?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
+          corrective_actions?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          immediate_actions?: string | null
+          incident_date: string
+          incident_number: string
+          incident_time?: string | null
+          injured_person_company?: string | null
+          injured_person_name?: string | null
+          injured_person_occupation?: string | null
+          injury_description?: string | null
+          investigated_by?: string | null
+          investigation_completed_at?: string | null
+          investigation_notes?: string | null
+          is_riddor_reportable?: boolean | null
+          location?: string | null
+          organisation_id: string
+          photos?: string[] | null
+          project_id?: string | null
+          reported_by?: string | null
+          riddor_reference?: string | null
+          riddor_reported_at?: string | null
+          root_cause?: string | null
+          severity?: Database["public"]["Enums"]["incident_severity"]
+          status?: Database["public"]["Enums"]["incident_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body_part_affected?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
+          corrective_actions?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          immediate_actions?: string | null
+          incident_date?: string
+          incident_number?: string
+          incident_time?: string | null
+          injured_person_company?: string | null
+          injured_person_name?: string | null
+          injured_person_occupation?: string | null
+          injury_description?: string | null
+          investigated_by?: string | null
+          investigation_completed_at?: string | null
+          investigation_notes?: string | null
+          is_riddor_reportable?: boolean | null
+          location?: string | null
+          organisation_id?: string
+          photos?: string[] | null
+          project_id?: string | null
+          reported_by?: string | null
+          riddor_reference?: string | null
+          riddor_reported_at?: string | null
+          root_cause?: string | null
+          severity?: Database["public"]["Enums"]["incident_severity"]
+          status?: Database["public"]["Enums"]["incident_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incidents_closed_by_fkey"
+            columns: ["closed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidents_investigated_by_fkey"
+            columns: ["investigated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidents_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidents_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidents_reported_by_fkey"
+            columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inspection_items: {
+        Row: {
+          created_at: string
+          id: string
+          inspection_id: string
+          item_number: number
+          notes: string | null
+          organisation_id: string
+          photo_url: string | null
+          question: string
+          result: Database["public"]["Enums"]["inspection_result"] | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inspection_id: string
+          item_number: number
+          notes?: string | null
+          organisation_id: string
+          photo_url?: string | null
+          question: string
+          result?: Database["public"]["Enums"]["inspection_result"] | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inspection_id?: string
+          item_number?: number
+          notes?: string | null
+          organisation_id?: string
+          photo_url?: string | null
+          question?: string
+          result?: Database["public"]["Enums"]["inspection_result"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_items_inspection_id_fkey"
+            columns: ["inspection_id"]
+            isOneToOne: false
+            referencedRelation: "inspections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_items_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inspections: {
+        Row: {
+          completed_at: string | null
+          corrective_actions: string | null
+          created_at: string
+          description: string | null
+          id: string
+          inspection_date: string
+          inspection_number: string
+          inspection_type: Database["public"]["Enums"]["inspection_type"]
+          inspector_id: string | null
+          location: string | null
+          next_inspection_date: string | null
+          notes: string | null
+          organisation_id: string
+          overall_result:
+            | Database["public"]["Enums"]["inspection_result"]
+            | null
+          photos: string[] | null
+          project_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          corrective_actions?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          inspection_date?: string
+          inspection_number: string
+          inspection_type?: Database["public"]["Enums"]["inspection_type"]
+          inspector_id?: string | null
+          location?: string | null
+          next_inspection_date?: string | null
+          notes?: string | null
+          organisation_id: string
+          overall_result?:
+            | Database["public"]["Enums"]["inspection_result"]
+            | null
+          photos?: string[] | null
+          project_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          corrective_actions?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          inspection_date?: string
+          inspection_number?: string
+          inspection_type?: Database["public"]["Enums"]["inspection_type"]
+          inspector_id?: string | null
+          location?: string | null
+          next_inspection_date?: string | null
+          notes?: string | null
+          organisation_id?: string
+          overall_result?:
+            | Database["public"]["Enums"]["inspection_result"]
+            | null
+          photos?: string[] | null
+          project_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspections_inspector_id_fkey"
+            columns: ["inspector_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspections_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspections_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organisation_members: {
         Row: {
           accepted_at: string | null
@@ -397,6 +728,184 @@ export type Database = {
           {
             foreignKeyName: "organisations_owner_id_fkey"
             columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      permit_signatures: {
+        Row: {
+          id: string
+          ip_address: string | null
+          organisation_id: string
+          permit_id: string
+          signature_data: string
+          signature_type: string
+          signed_at: string
+          signer_name: string
+          signer_role: string
+          user_agent: string | null
+        }
+        Insert: {
+          id?: string
+          ip_address?: string | null
+          organisation_id: string
+          permit_id: string
+          signature_data: string
+          signature_type: string
+          signed_at?: string
+          signer_name: string
+          signer_role: string
+          user_agent?: string | null
+        }
+        Update: {
+          id?: string
+          ip_address?: string | null
+          organisation_id?: string
+          permit_id?: string
+          signature_data?: string
+          signature_type?: string
+          signed_at?: string
+          signer_name?: string
+          signer_role?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permit_signatures_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permit_signatures_permit_id_fkey"
+            columns: ["permit_id"]
+            isOneToOne: false
+            referencedRelation: "permits_to_work"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      permits_to_work: {
+        Row: {
+          approved_by: string | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          completed_at: string | null
+          completed_by: string | null
+          control_measures: string | null
+          created_at: string
+          description: string | null
+          hazards_identified: string | null
+          id: string
+          location: string | null
+          organisation_id: string
+          permit_number: string
+          permit_type: Database["public"]["Enums"]["permit_type"]
+          ppe_required: string[] | null
+          project_id: string | null
+          requested_by: string | null
+          status: Database["public"]["Enums"]["permit_status"]
+          title: string
+          updated_at: string
+          valid_from: string | null
+          valid_until: string | null
+          work_to_be_done: string
+        }
+        Insert: {
+          approved_by?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          control_measures?: string | null
+          created_at?: string
+          description?: string | null
+          hazards_identified?: string | null
+          id?: string
+          location?: string | null
+          organisation_id: string
+          permit_number: string
+          permit_type?: Database["public"]["Enums"]["permit_type"]
+          ppe_required?: string[] | null
+          project_id?: string | null
+          requested_by?: string | null
+          status?: Database["public"]["Enums"]["permit_status"]
+          title: string
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+          work_to_be_done: string
+        }
+        Update: {
+          approved_by?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          control_measures?: string | null
+          created_at?: string
+          description?: string | null
+          hazards_identified?: string | null
+          id?: string
+          location?: string | null
+          organisation_id?: string
+          permit_number?: string
+          permit_type?: Database["public"]["Enums"]["permit_type"]
+          ppe_required?: string[] | null
+          project_id?: string | null
+          requested_by?: string | null
+          status?: Database["public"]["Enums"]["permit_status"]
+          title?: string
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+          work_to_be_done?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permits_to_work_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permits_to_work_cancelled_by_fkey"
+            columns: ["cancelled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permits_to_work_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permits_to_work_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permits_to_work_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permits_to_work_requested_by_fkey"
+            columns: ["requested_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1073,6 +1582,28 @@ export type Database = {
         | "fire_safety"
         | "meeting_minutes"
         | "drawing"
+      incident_severity:
+        | "near_miss"
+        | "minor_injury"
+        | "major_injury"
+        | "dangerous_occurrence"
+        | "fatality"
+      incident_status:
+        | "reported"
+        | "under_investigation"
+        | "action_required"
+        | "closed"
+        | "riddor_reportable"
+      inspection_result: "pass" | "fail" | "requires_action" | "not_applicable"
+      inspection_type:
+        | "scaffold"
+        | "excavation"
+        | "lifting_equipment"
+        | "electrical"
+        | "fire_safety"
+        | "housekeeping"
+        | "ppe_compliance"
+        | "general_site"
       member_role:
         | "owner"
         | "admin"
@@ -1080,6 +1611,24 @@ export type Database = {
         | "contractor"
         | "client_viewer"
       member_status: "invited" | "active" | "deactivated"
+      permit_status:
+        | "draft"
+        | "pending_approval"
+        | "approved"
+        | "active"
+        | "completed"
+        | "cancelled"
+        | "expired"
+      permit_type:
+        | "hot_work"
+        | "confined_space"
+        | "excavation"
+        | "electrical_isolation"
+        | "working_at_height"
+        | "roof_work"
+        | "demolition"
+        | "lifting_operations"
+        | "general"
       project_status: "active" | "completed" | "archived"
       subscription_status: "active" | "past_due" | "cancelled" | "trialing"
       subscription_tier: "starter" | "professional" | "enterprise"
@@ -1268,6 +1817,31 @@ export const Constants = {
         "meeting_minutes",
         "drawing",
       ],
+      incident_severity: [
+        "near_miss",
+        "minor_injury",
+        "major_injury",
+        "dangerous_occurrence",
+        "fatality",
+      ],
+      incident_status: [
+        "reported",
+        "under_investigation",
+        "action_required",
+        "closed",
+        "riddor_reportable",
+      ],
+      inspection_result: ["pass", "fail", "requires_action", "not_applicable"],
+      inspection_type: [
+        "scaffold",
+        "excavation",
+        "lifting_equipment",
+        "electrical",
+        "fire_safety",
+        "housekeeping",
+        "ppe_compliance",
+        "general_site",
+      ],
       member_role: [
         "owner",
         "admin",
@@ -1276,6 +1850,26 @@ export const Constants = {
         "client_viewer",
       ],
       member_status: ["invited", "active", "deactivated"],
+      permit_status: [
+        "draft",
+        "pending_approval",
+        "approved",
+        "active",
+        "completed",
+        "cancelled",
+        "expired",
+      ],
+      permit_type: [
+        "hot_work",
+        "confined_space",
+        "excavation",
+        "electrical_isolation",
+        "working_at_height",
+        "roof_work",
+        "demolition",
+        "lifting_operations",
+        "general",
+      ],
       project_status: ["active", "completed", "archived"],
       subscription_status: ["active", "past_due", "cancelled", "trialing"],
       subscription_tier: ["starter", "professional", "enterprise"],
