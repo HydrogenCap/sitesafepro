@@ -6,7 +6,7 @@ export const STRIPE_PRODUCTS = {
     productId: "prod_TvhlSRnZEPA9fh",
     priceId: "price_1SxqLuAZFDMuITvQ0R713pKz",
     name: "Starter",
-    price: 29,
+    price: 49,
     currency: "GBP",
     interval: "month",
     features: [
@@ -23,7 +23,7 @@ export const STRIPE_PRODUCTS = {
     productId: "prod_Tvhlx1rQqSEXrr",
     priceId: "price_1SxqMBAZFDMuITvQmi1VUVhu",
     name: "Professional",
-    price: 79,
+    price: 99,
     currency: "GBP",
     interval: "month",
     features: [

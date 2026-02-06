@@ -21,8 +21,8 @@ const tiers: Array<{
     key: "starter",
     name: "Starter",
     description: "Perfect for single-site contractors",
-    monthlyPrice: 29,
-    yearlyPrice: 278,
+    monthlyPrice: 49,
+    yearlyPrice: 470,
     features: [
       "1 active project",
       "Up to 10 contractor accounts",
@@ -39,8 +39,8 @@ const tiers: Array<{
     key: "professional",
     name: "Professional",
     description: "For growing contractors with multiple sites",
-    monthlyPrice: 79,
-    yearlyPrice: 758,
+    monthlyPrice: 99,
+    yearlyPrice: 950,
     features: [
       "Up to 5 active projects",
       "Unlimited contractor accounts",
