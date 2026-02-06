@@ -331,6 +331,147 @@ export type Database = {
           },
         ]
       }
+      site_access_codes: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          name: string
+          organisation_id: string
+          project_id: string
+        }
+        Insert: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          organisation_id: string
+          project_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          organisation_id?: string
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_access_codes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_access_codes_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_access_codes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_visits: {
+        Row: {
+          checked_in_at: string
+          checked_out_at: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          has_signed_induction: boolean | null
+          id: string
+          notes: string | null
+          organisation_id: string
+          profile_id: string | null
+          project_id: string
+          purpose: string | null
+          site_access_code_id: string
+          visitor_company: string | null
+          visitor_email: string | null
+          visitor_name: string
+          visitor_phone: string | null
+        }
+        Insert: {
+          checked_in_at?: string
+          checked_out_at?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          has_signed_induction?: boolean | null
+          id?: string
+          notes?: string | null
+          organisation_id: string
+          profile_id?: string | null
+          project_id: string
+          purpose?: string | null
+          site_access_code_id: string
+          visitor_company?: string | null
+          visitor_email?: string | null
+          visitor_name: string
+          visitor_phone?: string | null
+        }
+        Update: {
+          checked_in_at?: string
+          checked_out_at?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          has_signed_induction?: boolean | null
+          id?: string
+          notes?: string | null
+          organisation_id?: string
+          profile_id?: string | null
+          project_id?: string
+          purpose?: string | null
+          site_access_code_id?: string
+          visitor_company?: string | null
+          visitor_email?: string | null
+          visitor_name?: string
+          visitor_phone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_visits_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_visits_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_visits_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_visits_site_access_code_id_fkey"
+            columns: ["site_access_code_id"]
+            isOneToOne: false
+            referencedRelation: "site_access_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
