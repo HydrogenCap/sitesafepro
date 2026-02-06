@@ -16,6 +16,7 @@ import SiteAccess from "./pages/SiteAccess";
 import CheckIn from "./pages/CheckIn";
 import Team from "./pages/Team";
 import AcceptInvite from "./pages/AcceptInvite";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/check-in/:code" element={<CheckIn />} />
             <Route path="/team" element={<Team />} />
             <Route path="/accept-invite" element={<AcceptInvite />} />
+            <Route path="/settings" element={<Settings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
