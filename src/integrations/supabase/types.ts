@@ -14,6 +14,76 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          activity_type: Database["public"]["Enums"]["activity_type"]
+          actor_id: string | null
+          created_at: string
+          description: string
+          entity_id: string | null
+          entity_name: string | null
+          entity_type: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          organisation_id: string
+          project_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          activity_type: Database["public"]["Enums"]["activity_type"]
+          actor_id?: string | null
+          created_at?: string
+          description: string
+          entity_id?: string | null
+          entity_name?: string | null
+          entity_type: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          organisation_id: string
+          project_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          activity_type?: Database["public"]["Enums"]["activity_type"]
+          actor_id?: string | null
+          created_at?: string
+          description?: string
+          entity_id?: string | null
+          entity_name?: string | null
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          organisation_id?: string
+          project_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_logs_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_logs_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_logs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           approved_at: string | null
@@ -481,6 +551,23 @@ export type Database = {
       get_user_org_id: { Args: never; Returns: string }
     }
     Enums: {
+      activity_type:
+        | "project_created"
+        | "project_updated"
+        | "project_archived"
+        | "document_uploaded"
+        | "document_approved"
+        | "document_rejected"
+        | "document_deleted"
+        | "member_invited"
+        | "member_joined"
+        | "member_role_changed"
+        | "member_deactivated"
+        | "site_access_created"
+        | "site_visit_checkin"
+        | "site_visit_checkout"
+        | "settings_updated"
+        | "subscription_changed"
       document_category:
         | "rams"
         | "method_statement"
@@ -629,6 +716,24 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      activity_type: [
+        "project_created",
+        "project_updated",
+        "project_archived",
+        "document_uploaded",
+        "document_approved",
+        "document_rejected",
+        "document_deleted",
+        "member_invited",
+        "member_joined",
+        "member_role_changed",
+        "member_deactivated",
+        "site_access_created",
+        "site_visit_checkin",
+        "site_visit_checkout",
+        "settings_updated",
+        "subscription_changed",
+      ],
       document_category: [
         "rams",
         "method_statement",
