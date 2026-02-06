@@ -7,6 +7,8 @@ import { useActivityLog, activityDescriptions } from "@/hooks/useActivityLog";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { DocumentUploadDialog } from "@/components/documents/DocumentUploadDialog";
 import { toast } from "sonner";
@@ -25,6 +27,9 @@ import {
   XCircle,
   File,
   Image,
+  Upload,
+  Users,
+  AlertCircle,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -40,6 +45,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Document {
   id: string;
@@ -54,11 +73,14 @@ interface Document {
   project_id: string | null;
   project_name?: string | null;
   uploader_name?: string | null;
+  uploaded_by: string;
   version: number;
   parent_document_id: string | null;
   ai_confidence?: string | null;
   ai_category?: string | null;
   requires_acknowledgement?: boolean;
+  acknowledgement_count?: number;
+  total_contractors?: number;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -78,6 +100,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   other: "Other",
 };
 
+type ViewTab = "all" | "my-uploads" | "shared" | "pending-review";
+
 const Documents = () => {
   const { user } = useAuth();
   const { organisation, loading: subLoading } = useSubscription();
@@ -90,6 +114,32 @@ const Documents = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [versionParentDoc, setVersionParentDoc] = useState<Document | null>(null);
+  const [activeTab, setActiveTab] = useState<ViewTab>("all");
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [pendingCount, setPendingCount] = useState(0);
+
+  // Fetch user role
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from("organisation_members")
+        .select("role")
+        .eq("profile_id", user.id)
+        .eq("status", "active")
+        .single();
+      if (data) {
+        setUserRole(data.role);
+      }
+    };
+    fetchUserRole();
+  }, [user]);
+
+  const isAdmin = userRole === "owner" || userRole === "admin" || userRole === "site_manager";
+  const isContractor = userRole === "contractor";
 
   const fetchDocuments = useCallback(async () => {
     if (!user) return;
@@ -113,7 +163,9 @@ const Documents = () => {
           ai_confidence,
           ai_category,
           requires_acknowledgement,
-          projects(name)
+          uploaded_by,
+          projects(name),
+          profiles!documents_uploaded_by_fkey(full_name)
         `)
         .order("created_at", { ascending: false });
 
@@ -132,6 +184,8 @@ const Documents = () => {
         created_at: doc.created_at,
         project_id: doc.project_id,
         project_name: doc.projects?.name || null,
+        uploader_name: doc.profiles?.full_name || null,
+        uploaded_by: doc.uploaded_by,
         version: doc.version || 1,
         parent_document_id: doc.parent_document_id || null,
         ai_confidence: doc.ai_confidence || null,
@@ -140,6 +194,10 @@ const Documents = () => {
       }));
       
       setDocuments(transformedData);
+
+      // Count pending documents for review badge
+      const pending = transformedData.filter(d => d.status === "pending").length;
+      setPendingCount(pending);
     } catch (error) {
       console.error("Error fetching documents:", error);
       toast.error("Failed to load documents");
@@ -152,13 +210,25 @@ const Documents = () => {
     fetchDocuments();
   }, [fetchDocuments]);
 
+  // Filter documents based on active tab and filters
   const filteredDocuments = documents.filter((doc) => {
     const matchesSearch =
       doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       doc.description?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === "all" || doc.category === categoryFilter;
     const matchesStatus = statusFilter === "all" || doc.status === statusFilter;
-    return matchesSearch && matchesCategory && matchesStatus;
+
+    // Tab filtering
+    let matchesTab = true;
+    if (activeTab === "my-uploads") {
+      matchesTab = doc.uploaded_by === user?.id;
+    } else if (activeTab === "shared") {
+      matchesTab = doc.uploaded_by !== user?.id && doc.requires_acknowledgement === true;
+    } else if (activeTab === "pending-review") {
+      matchesTab = doc.status === "pending";
+    }
+
+    return matchesSearch && matchesCategory && matchesStatus && matchesTab;
   });
 
   const formatFileSize = (bytes: number) => {
@@ -215,12 +285,12 @@ const Documents = () => {
       if (error) throw error;
 
       const url = URL.createObjectURL(data);
-      const a = document.createElement("a");
+      const a = window.document.createElement("a");
       a.href = url;
       a.download = doc.name;
-      document.body.appendChild(a);
+      window.document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
+      window.document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error downloading document:", error);
@@ -273,6 +343,72 @@ const Documents = () => {
     }
   };
 
+  const handleApprove = async (doc: Document) => {
+    try {
+      const { error } = await supabase
+        .from("documents")
+        .update({
+          status: "approved",
+          approved_by: user?.id,
+          approved_at: new Date().toISOString(),
+        })
+        .eq("id", doc.id);
+
+      if (error) throw error;
+
+      logActivity({
+        activityType: "document_approved",
+        entityType: "document",
+        entityId: doc.id,
+        entityName: doc.name,
+        description: activityDescriptions.document_approved(doc.name),
+        projectId: doc.project_id || undefined,
+      });
+
+      toast.success("Document approved");
+      fetchDocuments();
+    } catch (error) {
+      console.error("Error approving document:", error);
+      toast.error("Failed to approve document");
+    }
+  };
+
+  const handleReject = async () => {
+    if (!selectedDoc || !rejectionReason.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from("documents")
+        .update({
+          status: "rejected",
+          rejected_by: user?.id,
+          rejected_at: new Date().toISOString(),
+          rejection_reason: rejectionReason.trim(),
+        })
+        .eq("id", selectedDoc.id);
+
+      if (error) throw error;
+
+      logActivity({
+        activityType: "document_rejected",
+        entityType: "document",
+        entityId: selectedDoc.id,
+        entityName: selectedDoc.name,
+        description: activityDescriptions.document_rejected(selectedDoc.name),
+        projectId: selectedDoc.project_id || undefined,
+      });
+
+      toast.success("Document rejected");
+      setRejectDialogOpen(false);
+      setSelectedDoc(null);
+      setRejectionReason("");
+      fetchDocuments();
+    } catch (error) {
+      console.error("Error rejecting document:", error);
+      toast.error("Failed to reject document");
+    }
+  };
+
   const handleUploadComplete = () => {
     setUploadDialogOpen(false);
     setVersionParentDoc(null);
@@ -284,20 +420,8 @@ const Documents = () => {
     setUploadDialogOpen(true);
   };
 
-  const handlePreview = async (doc: Document) => {
-    try {
-      const { data, error } = await supabase.storage
-        .from("documents")
-        .createSignedUrl(doc.file_path, 3600); // 1 hour expiry
-
-      if (error) throw error;
-      if (data?.signedUrl) {
-        window.open(data.signedUrl, "_blank");
-      }
-    } catch (error) {
-      console.error("Error previewing document:", error);
-      toast.error("Failed to preview document");
-    }
+  const handlePreview = (doc: Document) => {
+    navigate(`/documents/${doc.id}`);
   };
 
   if (subLoading || loading) {
@@ -312,7 +436,7 @@ const Documents = () => {
     <DashboardLayout>
       <div className="p-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Documents</h1>
             <p className="text-sm text-muted-foreground">
@@ -320,9 +444,54 @@ const Documents = () => {
             </p>
           </div>
           <Button onClick={() => setUploadDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Upload Document
+            {isContractor ? (
+              <>
+                <Upload className="h-4 w-4 mr-2" />
+                Submit RAMS for Review
+              </>
+            ) : (
+              <>
+                <Plus className="h-4 w-4 mr-2" />
+                Upload Document
+              </>
+            )}
           </Button>
+        </div>
+
+        {/* Tabs - show different tabs for contractors vs admins */}
+        <div className="mb-6">
+          {isContractor ? (
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as ViewTab)}>
+              <TabsList>
+                <TabsTrigger value="my-uploads" className="gap-2">
+                  <FileText className="h-4 w-4" />
+                  My Uploads
+                </TabsTrigger>
+                <TabsTrigger value="shared" className="gap-2">
+                  <Users className="h-4 w-4" />
+                  Shared with Me
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          ) : isAdmin ? (
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as ViewTab)}>
+              <TabsList>
+                <TabsTrigger value="all" className="gap-2">
+                  <FolderOpen className="h-4 w-4" />
+                  All Documents
+                </TabsTrigger>
+                <TabsTrigger value="pending-review" className="gap-2 relative">
+                  <AlertCircle className="h-4 w-4" />
+                  Pending Review
+                  {pendingCount > 0 && (
+                    <Badge className="ml-2 h-5 min-w-5 px-1.5 bg-accent text-accent-foreground">
+                      {pendingCount}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          ) : null}
         </div>
 
         {/* Filters */}
@@ -350,17 +519,19 @@ const Documents = () => {
               ))}
             </SelectContent>
           </Select>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-[150px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
-            </SelectContent>
-          </Select>
+          {activeTab !== "pending-review" && (
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-[150px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         {/* Documents list */}
@@ -377,7 +548,7 @@ const Documents = () => {
                       Category
                     </th>
                     <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3 hidden lg:table-cell">
-                      Project
+                      {activeTab === "pending-review" ? "Uploaded By" : "Project"}
                     </th>
                     <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-6 py-3 hidden sm:table-cell">
                       Status
@@ -400,7 +571,8 @@ const Documents = () => {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: index * 0.02 }}
-                      className="hover:bg-muted/30 transition-colors"
+                      className="hover:bg-muted/30 transition-colors cursor-pointer"
+                      onClick={() => handlePreview(doc)}
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -419,31 +591,39 @@ const Documents = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 hidden md:table-cell">
+                      <td className="px-6 py-4 hidden md:table-cell" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-1.5">
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
                             {CATEGORY_LABELS[doc.category] || doc.category}
                           </span>
                           {doc.ai_confidence && (
-                            <span
-                              className={`h-2 w-2 rounded-full ${
-                                doc.ai_confidence === "high"
-                                  ? "bg-success"
-                                  : doc.ai_confidence === "medium"
-                                  ? "bg-accent"
-                                  : "bg-muted-foreground"
-                              }`}
-                              title={`AI classified with ${doc.ai_confidence} confidence`}
-                            />
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <span
+                                  className={`h-2 w-2 rounded-full ${
+                                    doc.ai_confidence === "high"
+                                      ? "bg-success"
+                                      : doc.ai_confidence === "medium"
+                                      ? "bg-accent"
+                                      : "bg-muted-foreground"
+                                  }`}
+                                />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                AI classified with {doc.ai_confidence} confidence
+                              </TooltipContent>
+                            </Tooltip>
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 hidden lg:table-cell">
+                      <td className="px-6 py-4 hidden lg:table-cell" onClick={(e) => e.stopPropagation()}>
                         <span className="text-sm text-muted-foreground">
-                          {doc.project_name || "—"}
+                          {activeTab === "pending-review"
+                            ? doc.uploader_name || "Unknown"
+                            : doc.project_name || "—"}
                         </span>
                       </td>
-                      <td className="px-6 py-4 hidden sm:table-cell">
+                      <td className="px-6 py-4 hidden sm:table-cell" onClick={(e) => e.stopPropagation()}>
                         <span
                           className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
                             doc.status
@@ -453,46 +633,102 @@ const Documents = () => {
                           {doc.status.charAt(0).toUpperCase() + doc.status.slice(1)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 hidden lg:table-cell">
+                      <td className="px-6 py-4 hidden lg:table-cell" onClick={(e) => e.stopPropagation()}>
                         <span className="text-sm text-muted-foreground">
                           {formatFileSize(doc.file_size)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 hidden md:table-cell">
+                      <td className="px-6 py-4 hidden md:table-cell" onClick={(e) => e.stopPropagation()}>
                         <span className="text-sm text-muted-foreground">
                           {formatDate(doc.created_at)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleDownload(doc)}>
-                              <Download className="h-4 w-4 mr-2" />
-                              Download
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handlePreview(doc)}>
-                              <Eye className="h-4 w-4 mr-2" />
-                              Preview
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleUploadNewVersion(doc)}>
-                              <Plus className="h-4 w-4 mr-2" />
-                              Upload New Version
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => handleDelete(doc)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                      <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-2">
+                          {/* Quick approve/reject for pending review */}
+                          {activeTab === "pending-review" && isAdmin && doc.status === "pending" && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-success hover:text-success hover:bg-success/10"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleApprove(doc);
+                                }}
+                              >
+                                <CheckCircle className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedDoc(doc);
+                                  setRejectDialogOpen(true);
+                                }}
+                              >
+                                <XCircle className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleDownload(doc)}>
+                                <Download className="h-4 w-4 mr-2" />
+                                Download
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handlePreview(doc)}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleUploadNewVersion(doc)}>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Upload New Version
+                              </DropdownMenuItem>
+                              {isAdmin && doc.status === "pending" && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-success"
+                                    onClick={() => handleApprove(doc)}
+                                  >
+                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                    Approve
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-destructive"
+                                    onClick={() => {
+                                      setSelectedDoc(doc);
+                                      setRejectDialogOpen(true);
+                                    }}
+                                  >
+                                    <XCircle className="h-4 w-4 mr-2" />
+                                    Reject
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                              {isAdmin && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-destructive"
+                                    onClick={() => handleDelete(doc)}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </td>
                     </motion.tr>
                   ))}
@@ -510,25 +746,38 @@ const Documents = () => {
               <FolderOpen className="h-8 w-8 text-muted-foreground" />
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-2">
-              {searchQuery || categoryFilter !== "all" || statusFilter !== "all"
+              {activeTab === "pending-review"
+                ? "No documents pending review"
+                : activeTab === "my-uploads"
+                ? "No uploads yet"
+                : activeTab === "shared"
+                ? "No documents shared with you"
+                : searchQuery || categoryFilter !== "all" || statusFilter !== "all"
                 ? "No documents found"
                 : "No documents yet"}
             </h3>
             <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              {searchQuery || categoryFilter !== "all" || statusFilter !== "all"
+              {activeTab === "pending-review"
+                ? "All documents have been reviewed"
+                : activeTab === "my-uploads"
+                ? "Upload RAMS and safety documents for review"
+                : activeTab === "shared"
+                ? "Documents requiring your acknowledgement will appear here"
+                : searchQuery || categoryFilter !== "all" || statusFilter !== "all"
                 ? "Try adjusting your filters"
                 : "Upload RAMS, method statements, and other safety documents to get started."}
             </p>
-            {!searchQuery && categoryFilter === "all" && statusFilter === "all" && (
+            {activeTab !== "pending-review" && activeTab !== "shared" && (
               <Button onClick={() => setUploadDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Upload Your First Document
+                {isContractor ? "Submit RAMS for Review" : "Upload Your First Document"}
               </Button>
             )}
           </motion.div>
         )}
       </div>
 
+      {/* Upload Dialog */}
       <DocumentUploadDialog
         open={uploadDialogOpen}
         onOpenChange={(open) => {
@@ -539,6 +788,36 @@ const Documents = () => {
         onUploadComplete={handleUploadComplete}
         parentDocument={versionParentDoc}
       />
+
+      {/* Reject Dialog */}
+      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Document</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for rejecting "{selectedDoc?.name}". This will be visible to the uploader.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            placeholder="Enter rejection reason..."
+            value={rejectionReason}
+            onChange={(e) => setRejectionReason(e.target.value)}
+            rows={4}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleReject}
+              disabled={!rejectionReason.trim()}
+            >
+              Reject Document
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };

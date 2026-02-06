@@ -164,6 +164,9 @@ export type Database = {
           organisation_id: string
           parent_document_id: string | null
           project_id: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
           requires_acknowledgement: boolean | null
           status: string
           updated_at: string
@@ -188,6 +191,9 @@ export type Database = {
           organisation_id: string
           parent_document_id?: string | null
           project_id?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
           requires_acknowledgement?: boolean | null
           status?: string
           updated_at?: string
@@ -212,6 +218,9 @@ export type Database = {
           organisation_id?: string
           parent_document_id?: string | null
           project_id?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
           requires_acknowledgement?: boolean | null
           status?: string
           updated_at?: string
@@ -245,6 +254,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_rejected_by_fkey"
+            columns: ["rejected_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {

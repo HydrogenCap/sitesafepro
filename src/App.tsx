@@ -14,6 +14,7 @@ import Projects from "./pages/Projects";
 import NewProject from "./pages/NewProject";
 import ProjectDetail from "./pages/ProjectDetail";
 import Documents from "./pages/Documents";
+import DocumentView from "./pages/DocumentView";
 import SiteAccess from "./pages/SiteAccess";
 import CheckIn from "./pages/CheckIn";
 import Team from "./pages/Team";
@@ -51,6 +52,7 @@ const App = () => (
             <Route path="/projects/new" element={<ProtectedRoute><NewProject /></ProtectedRoute>} />
             <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
             <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
+            <Route path="/documents/:id" element={<ProtectedRoute><DocumentView /></ProtectedRoute>} />
             <Route path="/site-access" element={<ProtectedRoute><SiteAccess /></ProtectedRoute>} />
             <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
