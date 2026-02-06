@@ -122,13 +122,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [session, checkSubscription]);
 
-  // Periodic subscription check every 60 seconds when logged in
+  // Periodic subscription check every 5 minutes when logged in (fallback for webhooks)
   useEffect(() => {
     if (!session) return;
 
     const interval = setInterval(() => {
       checkSubscription();
-    }, 60000);
+    }, 300000); // 5 minutes
 
     return () => clearInterval(interval);
   }, [session, checkSubscription]);

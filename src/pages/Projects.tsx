@@ -38,18 +38,12 @@ interface Project {
 }
 
 const Projects = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const { projectLimit, loading: subLoading } = useSubscription();
   const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/auth");
-    }
-  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -106,7 +100,53 @@ const Projects = () => {
     });
   };
 
-  if (authLoading || subLoading || loading) {
+  const handleArchive = async (e: React.MouseEvent, projectId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    try {
+      const { error } = await supabase
+        .from("projects")
+        .update({ status: "archived" })
+        .eq("id", projectId);
+
+      if (error) throw error;
+      
+      setProjects(projects.map(p => 
+        p.id === projectId ? { ...p, status: "archived" as const } : p
+      ));
+      toast.success("Project archived");
+    } catch (error) {
+      console.error("Error archiving project:", error);
+      toast.error("Failed to archive project");
+    }
+  };
+
+  const handleDelete = async (e: React.MouseEvent, projectId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!confirm("Are you sure you want to delete this project? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("projects")
+        .delete()
+        .eq("id", projectId);
+
+      if (error) throw error;
+      
+      setProjects(projects.filter(p => p.id !== projectId));
+      toast.success("Project deleted");
+    } catch (error) {
+      console.error("Error deleting project:", error);
+      toast.error("Failed to delete project");
+    }
+  };
+
+  if (subLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -209,9 +249,20 @@ const Projects = () => {
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>Edit Project</DropdownMenuItem>
-                            <DropdownMenuItem>Archive</DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive">
+                            <DropdownMenuItem onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              navigate(`/projects/${project.id}`);
+                            }}>
+                              Edit Project
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => handleArchive(e, project.id)}>
+                              Archive
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="text-destructive"
+                              onClick={(e) => handleDelete(e, project.id)}
+                            >
                               Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>

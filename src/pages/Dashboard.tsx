@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 
 const Dashboard = () => {
-  const { user, loading: authLoading, checkSubscription, openCustomerPortal, subscriptionLoading } = useAuth();
+  const { user, checkSubscription, openCustomerPortal, subscriptionLoading } = useAuth();
   const { organisation, tier, isTrialing, loading: subLoading } = useSubscription();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -28,19 +28,13 @@ const Dashboard = () => {
   useEffect(() => {
     const checkoutStatus = searchParams.get("checkout");
     if (checkoutStatus === "success") {
-      toast.success("Subscription activated! Welcome to SafeSite Pro.");
+      toast.success("Subscription activated! Welcome to SiteSafe Pro.");
       checkSubscription();
       setSearchParams({});
     }
   }, [searchParams, checkSubscription, setSearchParams]);
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/auth");
-    }
-  }, [user, authLoading, navigate]);
-
-  if (authLoading || subLoading) {
+  if (subLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
