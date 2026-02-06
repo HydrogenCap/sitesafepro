@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.site-access]
 verify_jwt = false
+
+[functions.team-invite]
+verify_jwt = false
