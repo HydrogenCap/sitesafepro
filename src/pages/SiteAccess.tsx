@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useActivityLog, activityDescriptions } from "@/hooks/useActivityLog";
 import { toast } from "sonner";
 import { QrCode, Plus, Copy, ExternalLink, Users, Clock, CheckCircle, XCircle, Trash2 } from "lucide-react";
 import { format } from "date-fns";
@@ -44,6 +45,7 @@ interface SiteVisit {
 
 export default function SiteAccess() {
   const { user } = useAuth();
+  const { logActivity } = useActivityLog();
   const [accessCodes, setAccessCodes] = useState<AccessCode[]>([]);
   const [visits, setVisits] = useState<SiteVisit[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -150,6 +152,17 @@ export default function SiteAccess() {
         .single();
 
       if (error) throw error;
+
+      // Log activity
+      const selectedProject = projects.find(p => p.id === selectedProjectId);
+      logActivity({
+        activityType: 'site_access_created',
+        entityType: 'site_access_code',
+        entityId: data.id,
+        entityName: newCodeName,
+        description: activityDescriptions.site_access_created(newCodeName),
+        projectId: selectedProjectId,
+      });
 
       setAccessCodes([data as AccessCode, ...accessCodes]);
       setCreateDialogOpen(false);

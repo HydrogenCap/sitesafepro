@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useActivityLog, activityDescriptions } from "@/hooks/useActivityLog";
 import {
   Dialog,
   DialogContent,
@@ -43,6 +44,7 @@ export default function InviteMemberDialog({
   onInviteSent,
 }: InviteMemberDialogProps) {
   const { toast } = useToast();
+  const { logActivity } = useActivityLog();
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState<MemberRole>("contractor");
@@ -74,6 +76,14 @@ export default function InviteMemberDialog({
       });
 
       if (error) throw error;
+
+      // Log activity
+      logActivity({
+        activityType: 'member_invited',
+        entityType: 'team_member',
+        entityName: fullName,
+        description: activityDescriptions.member_invited(email),
+      });
 
       toast({
         title: "Invitation sent!",

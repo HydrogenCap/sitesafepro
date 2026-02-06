@@ -54,6 +54,8 @@ interface Document {
   project_id: string | null;
   project_name?: string | null;
   uploader_name?: string | null;
+  version: number;
+  parent_document_id: string | null;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -80,6 +82,7 @@ const Documents = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [versionParentDoc, setVersionParentDoc] = useState<Document | null>(null);
 
   const fetchDocuments = useCallback(async () => {
     if (!user) return;
@@ -98,6 +101,8 @@ const Documents = () => {
           status,
           created_at,
           project_id,
+          version,
+          parent_document_id,
           projects(name)
         `)
         .order("created_at", { ascending: false });
@@ -117,6 +122,8 @@ const Documents = () => {
         created_at: doc.created_at,
         project_id: doc.project_id,
         project_name: doc.projects?.name || null,
+        version: doc.version || 1,
+        parent_document_id: doc.parent_document_id || null,
       }));
       
       setDocuments(transformedData);
@@ -255,7 +262,13 @@ const Documents = () => {
 
   const handleUploadComplete = () => {
     setUploadDialogOpen(false);
+    setVersionParentDoc(null);
     fetchDocuments();
+  };
+
+  const handleUploadNewVersion = (doc: Document) => {
+    setVersionParentDoc(doc);
+    setUploadDialogOpen(true);
   };
 
   const handlePreview = async (doc: Document) => {
@@ -439,6 +452,10 @@ const Documents = () => {
                               <Eye className="h-4 w-4 mr-2" />
                               Preview
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleUploadNewVersion(doc)}>
+                              <Plus className="h-4 w-4 mr-2" />
+                              Upload New Version
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-destructive"
@@ -487,9 +504,13 @@ const Documents = () => {
 
       <DocumentUploadDialog
         open={uploadDialogOpen}
-        onOpenChange={setUploadDialogOpen}
+        onOpenChange={(open) => {
+          setUploadDialogOpen(open);
+          if (!open) setVersionParentDoc(null);
+        }}
         organisationId={organisation?.id || ""}
         onUploadComplete={handleUploadComplete}
+        parentDocument={versionParentDoc}
       />
     </DashboardLayout>
   );

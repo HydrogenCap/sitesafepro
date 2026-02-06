@@ -102,6 +102,7 @@ Deno.serve(async (req) => {
         .select(`
           id,
           profile_id,
+          organisation_id,
           status,
           profile:profiles!organisation_members_profile_id_fkey (
             id,
@@ -117,6 +118,7 @@ Deno.serve(async (req) => {
         throw new Error("Invalid or expired invitation");
       }
 
+      const placeholderProfileId = member.profile_id;
       const email = (member.profile as any)?.email;
       const fullName = (member.profile as any)?.full_name;
 
@@ -124,7 +126,7 @@ Deno.serve(async (req) => {
         throw new Error("No email associated with this invitation");
       }
 
-      // Create the user account in auth.users
+      // Create the user account in auth.users first
       const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email,
         password,
@@ -139,18 +141,9 @@ Deno.serve(async (req) => {
         throw new Error(authError.message);
       }
 
-      // Update the profile to link to the new auth user
-      const { error: profileError } = await supabaseAdmin
-        .from("profiles")
-        .update({ id: authUser.user.id })
-        .eq("id", member.profile_id);
-
-      if (profileError) {
-        console.error("Error updating profile:", profileError);
-        // Profile might have trigger that creates it, try to continue
-      }
-
-      // Update the organisation member record
+      // The handle_new_user trigger will create/update the profile with the auth user ID
+      // due to ON CONFLICT (email) DO UPDATE. Now update the organisation member to point
+      // to the new auth user ID (which is now the profile ID)
       const { error: updateError } = await supabaseAdmin
         .from("organisation_members")
         .update({
@@ -164,6 +157,15 @@ Deno.serve(async (req) => {
       if (updateError) {
         console.error("Error updating member:", updateError);
         throw new Error("Failed to activate membership");
+      }
+
+      // Delete the placeholder profile if it's different from the new auth user
+      // (the trigger should have merged them, but clean up just in case)
+      if (placeholderProfileId !== authUser.user.id) {
+        await supabaseAdmin
+          .from("profiles")
+          .delete()
+          .eq("id", placeholderProfileId);
       }
 
       console.log(`User ${email} accepted invitation successfully`);
@@ -212,29 +214,34 @@ Deno.serve(async (req) => {
         throw new Error("Only owners and admins can invite members");
       }
 
-      // Check if user already exists in auth
-      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-      const existingUser = existingUsers?.users.find(u => u.email === email);
+      // Check if user already exists by querying profiles table (scales better than listUsers)
+      const { data: existingProfile } = await supabaseAdmin
+        .from("profiles")
+        .select("id")
+        .eq("email", email)
+        .maybeSingle();
 
       // Generate invite token
       const inviteToken = crypto.randomUUID();
 
       let profileId: string;
+      let isExistingUser = false;
 
-      if (existingUser) {
-        // User exists - check if already a member
+      if (existingProfile) {
+        // User/profile exists - check if already a member
         const { data: existingMember } = await supabaseAdmin
           .from("organisation_members")
           .select("id")
-          .eq("profile_id", existingUser.id)
+          .eq("profile_id", existingProfile.id)
           .eq("organisation_id", organisationId)
-          .single();
+          .maybeSingle();
 
         if (existingMember) {
           throw new Error("This user is already a member of your organisation");
         }
 
-        profileId = existingUser.id;
+        profileId = existingProfile.id;
+        isExistingUser = true;
       } else {
         // Create a placeholder profile for the invited user
         const { data: newProfile, error: profileError } = await supabaseAdmin
