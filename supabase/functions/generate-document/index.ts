@@ -352,6 +352,8 @@ Do not include any markdown formatting.`;
       const data = await response.json();
       const content = data.choices?.[0]?.message?.content || "{}";
       
+      console.log("AI response content length:", content.length);
+      
       // Parse the JSON response
       let documentData;
       try {
@@ -366,11 +368,10 @@ Do not include any markdown formatting.`;
         }
         documentData = JSON.parse(cleanContent.trim());
       } catch (parseError) {
-        console.error("Failed to parse document:", parseError, content);
-        return new Response(JSON.stringify({ error: "Failed to generate document structure" }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        console.error("Failed to parse AI document response, using fallback:", parseError);
+        console.error("Raw content:", content.substring(0, 500));
+        // Use fallback document template
+        documentData = getDefaultDocument(templateType, projectName || "Construction Site", organisationName || "");
       }
 
       return new Response(JSON.stringify({ document: documentData }), {
@@ -682,4 +683,178 @@ function getDefaultQuestions(templateType: string): Question[] {
       required: true,
     },
   ];
+}
+
+interface DocumentData {
+  title: string;
+  reference: string;
+  date: string;
+  sections: Array<{
+    heading: string;
+    content: string;
+    type: "text" | "table" | "checklist";
+  }>;
+}
+
+function getDefaultDocument(templateType: string, projectName: string, organisationName: string): DocumentData {
+  const today = new Date().toLocaleDateString("en-GB");
+  const refPrefix = templateType === "induction_register" ? "IND" : 
+                    templateType === "rams_register" ? "RAMS" : 
+                    templateType === "permit_to_work" ? "PTW" : "DOC";
+  const reference = `${refPrefix}-${Date.now().toString(36).toUpperCase()}`;
+
+  if (templateType === "induction_register") {
+    return {
+      title: "Site Induction Register",
+      reference,
+      date: today,
+      sections: [
+        {
+          heading: "Site Information",
+          content: `Site Name: ${projectName}\nOrganisation: ${organisationName}\n\nThis register records all personnel who have received a site safety induction before commencing work.`,
+          type: "text",
+        },
+        {
+          heading: "Site Rules",
+          content: `• All visitors must report to site office on arrival\n• PPE must be worn at all times in construction areas\n• No unauthorised access beyond reception\n• Follow all posted safety signage\n• Report all accidents and near misses immediately\n• No alcohol or drugs on site\n• Mobile phones only in designated areas`,
+          type: "text",
+        },
+        {
+          heading: "Emergency Procedures",
+          content: `• On hearing the alarm, stop work immediately\n• Proceed calmly to the muster point\n• Do not use lifts\n• Do not re-enter until all-clear given\n• Report any missing persons to the site manager`,
+          type: "text",
+        },
+        {
+          heading: "PPE Requirements",
+          content: JSON.stringify({
+            items: [
+              "Hard hat (EN 397)",
+              "High visibility vest (EN 471)",
+              "Safety boots with steel toe cap (EN 345)",
+              "Safety glasses where required",
+              "Gloves appropriate to task",
+              "Hearing protection in noisy areas"
+            ]
+          }),
+          type: "checklist",
+        },
+        {
+          heading: "Induction Sign-In Log",
+          content: JSON.stringify({
+            columns: ["Date", "Name", "Company", "Trade", "Time In", "Time Out", "Inducted By", "Signature"],
+            rows: [["", "", "", "", "", "", "", ""]]
+          }),
+          type: "table",
+        },
+        {
+          heading: "Declaration",
+          content: "I confirm that I have received and understood the site safety induction. I agree to comply with all site rules and safety requirements.",
+          type: "text",
+        },
+      ],
+    };
+  }
+
+  if (templateType === "rams_register") {
+    return {
+      title: "RAMS Register",
+      reference,
+      date: today,
+      sections: [
+        {
+          heading: "Project Information",
+          content: `Project: ${projectName}\nOrganisation: ${organisationName}\n\nThis register tracks all Risk Assessments and Method Statements submitted by subcontractors.`,
+          type: "text",
+        },
+        {
+          heading: "Submission Requirements",
+          content: `• RAMS must be submitted at least 48 hours before work commences\n• All RAMS must be specific to the works being undertaken\n• Generic RAMS will not be accepted\n• RAMS must reference site-specific hazards\n• Updates required for any change in scope or method`,
+          type: "text",
+        },
+        {
+          heading: "Review Criteria",
+          content: JSON.stringify({
+            items: [
+              "Scope of work clearly defined",
+              "All hazards identified",
+              "Control measures adequate",
+              "Emergency procedures included",
+              "Competency requirements stated",
+              "PPE requirements specified",
+              "Signed and dated"
+            ]
+          }),
+          type: "checklist",
+        },
+        {
+          heading: "RAMS Tracking Log",
+          content: JSON.stringify({
+            columns: ["Ref", "Subcontractor", "Work Package", "Submitted", "Reviewed By", "Status", "Expiry", "Notes"],
+            rows: [["", "", "", "", "", "", "", ""]]
+          }),
+          type: "table",
+        },
+      ],
+    };
+  }
+
+  if (templateType === "permit_to_work") {
+    return {
+      title: "Permit to Work Forms",
+      reference,
+      date: today,
+      sections: [
+        {
+          heading: "General Information",
+          content: `Site: ${projectName}\nOrganisation: ${organisationName}\n\nThese permit forms authorise high-risk work activities on site.`,
+          type: "text",
+        },
+        {
+          heading: "Permit Types Available",
+          content: JSON.stringify({
+            items: [
+              "Hot Work Permit",
+              "Confined Space Entry Permit",
+              "Excavation Permit",
+              "Working at Height Permit",
+              "Electrical Isolation Permit"
+            ]
+          }),
+          type: "checklist",
+        },
+        {
+          heading: "Permit Issue Procedure",
+          content: `1. Requestor completes permit application\n2. Site supervisor reviews hazards and controls\n3. Permit issuer authorises work\n4. Work completed within validity period\n5. Permit closed out by acceptor\n6. Permit returned to issuer`,
+          type: "text",
+        },
+        {
+          heading: "Permit Register",
+          content: JSON.stringify({
+            columns: ["Permit No", "Type", "Location", "Issued By", "Accepted By", "Valid From", "Valid Until", "Status"],
+            rows: [["", "", "", "", "", "", "", ""]]
+          }),
+          type: "table",
+        },
+        {
+          heading: "Emergency Contacts",
+          content: `• Site Manager: [To be completed]\n• Health & Safety: [To be completed]\n• Emergency Services: 999\n• HSE: 0300 003 1647`,
+          type: "text",
+        },
+      ],
+    };
+  }
+
+  // Default fallback
+  return {
+    title: "Site Document",
+    reference,
+    date: today,
+    sections: [
+      {
+        heading: "Document Information",
+        content: `Site: ${projectName}\nOrganisation: ${organisationName}\n\nThis document was generated for the construction site.`,
+        type: "text",
+      },
+    ],
+  };
 }
