@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { EditProjectDialog } from "@/components/projects/EditProjectDialog";
+import { ProjectComplianceChecklist } from "@/components/projects/ProjectComplianceChecklist";
+import { GeneratedDocumentsList } from "@/components/projects/GeneratedDocumentsList";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -20,6 +22,8 @@ import {
   Edit,
   MoreVertical,
   Plus,
+  Rocket,
+  CheckCircle,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -33,6 +37,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 
 interface Project {
   id: string;
@@ -45,6 +50,14 @@ interface Project {
   estimated_end_date: string | null;
   created_at: string;
   image_url: string | null;
+  is_live: boolean;
+}
+
+interface GeneratedDocument {
+  id: string;
+  document_type: string;
+  signed_at: string | null;
+  signature_data: string | null;
 }
 
 const ProjectDetail = () => {
@@ -54,6 +67,7 @@ const ProjectDetail = () => {
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [generatedDocs, setGeneratedDocs] = useState<GeneratedDocument[]>([]);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -79,6 +93,39 @@ const ProjectDetail = () => {
 
     fetchProject();
   }, [id, navigate]);
+
+  // Fetch generated documents
+  useEffect(() => {
+    const fetchGeneratedDocs = async () => {
+      if (!id) return;
+      const { data } = await supabase
+        .from("project_generated_documents")
+        .select("*")
+        .eq("project_id", id);
+      setGeneratedDocs(data || []);
+    };
+    fetchGeneratedDocs();
+  }, [id]);
+
+  const handleGoLive = () => {
+    // Refresh generated docs and project
+    if (id) {
+      supabase
+        .from("project_generated_documents")
+        .select("*")
+        .eq("project_id", id)
+        .then(({ data }) => setGeneratedDocs(data || []));
+      
+      supabase
+        .from("projects")
+        .select("*")
+        .eq("id", id)
+        .single()
+        .then(({ data }) => {
+          if (data) setProject(data as Project);
+        });
+    }
+  };
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "Not set";
@@ -178,6 +225,12 @@ const ProjectDetail = () => {
                   >
                     {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
                   </span>
+                  {project.is_live && (
+                    <Badge className="bg-success text-success-foreground">
+                      <Rocket className="h-3 w-3 mr-1" />
+                      Live
+                    </Badge>
+                  )}
                 </div>
                 {project.address && (
                   <p className="text-sm text-muted-foreground flex items-center gap-1">
@@ -251,6 +304,29 @@ const ProjectDetail = () => {
             </div>
           </div>
         </motion.div>
+
+        {/* Compliance Checklist - only show if not live */}
+        {!project.is_live && (
+          <div className="mb-8">
+            <ProjectComplianceChecklist
+              projectId={project.id}
+              projectName={project.name}
+              onGoLive={handleGoLive}
+            />
+          </div>
+        )}
+
+        {/* Generated Documents - only show if live */}
+        {project.is_live && (
+          <div className="mb-8">
+            <GeneratedDocumentsList
+              projectId={project.id}
+              projectName={project.name}
+              documents={generatedDocs}
+              onDocumentsGenerated={handleGoLive}
+            />
+          </div>
+        )}
 
         {/* Quick actions */}
         <div className="mb-8">

@@ -942,6 +942,155 @@ export type Database = {
         }
         Relationships: []
       }
+      project_compliance_requirements: {
+        Row: {
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          document_id: string | null
+          id: string
+          not_required_reason: string | null
+          organisation_id: string
+          project_id: string
+          requirement_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          document_id?: string | null
+          id?: string
+          not_required_reason?: string | null
+          organisation_id: string
+          project_id: string
+          requirement_type: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          document_id?: string | null
+          id?: string
+          not_required_reason?: string | null
+          organisation_id?: string
+          project_id?: string
+          requirement_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_compliance_requirements_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_compliance_requirements_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_compliance_requirements_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_compliance_requirements_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_generated_documents: {
+        Row: {
+          created_at: string
+          document_id: string | null
+          document_type: string
+          generated_at: string
+          generated_by: string | null
+          id: string
+          organisation_id: string
+          project_id: string
+          signature_data: string | null
+          signed_at: string | null
+          signed_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          document_id?: string | null
+          document_type: string
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          organisation_id: string
+          project_id: string
+          signature_data?: string | null
+          signed_at?: string | null
+          signed_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          document_id?: string | null
+          document_type?: string
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          organisation_id?: string
+          project_id?: string
+          signature_data?: string | null
+          signed_at?: string | null
+          signed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_generated_documents_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_generated_documents_generated_by_fkey"
+            columns: ["generated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_generated_documents_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_generated_documents_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_generated_documents_signed_by_fkey"
+            columns: ["signed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           address: string | null
@@ -951,6 +1100,7 @@ export type Database = {
           estimated_end_date: string | null
           id: string
           image_url: string | null
+          is_live: boolean | null
           name: string
           organisation_id: string
           principal_designer: string | null
@@ -966,6 +1116,7 @@ export type Database = {
           estimated_end_date?: string | null
           id?: string
           image_url?: string | null
+          is_live?: boolean | null
           name: string
           organisation_id: string
           principal_designer?: string | null
@@ -981,6 +1132,7 @@ export type Database = {
           estimated_end_date?: string | null
           id?: string
           image_url?: string | null
+          is_live?: boolean | null
           name?: string
           organisation_id?: string
           principal_designer?: string | null
