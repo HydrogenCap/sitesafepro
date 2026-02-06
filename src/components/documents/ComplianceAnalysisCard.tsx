@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { usePdfTextExtraction } from "@/hooks/usePdfTextExtraction";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -8,6 +10,8 @@ import {
   AlertTriangle,
   XCircle,
   Shield,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 
 interface ComplianceCheckItem {
@@ -27,49 +31,89 @@ interface ComplianceAnalysisCardProps {
 
 export const ComplianceAnalysisCard = ({ documentId }: ComplianceAnalysisCardProps) => {
   const [loading, setLoading] = useState(true);
+  const [analysing, setAnalysing] = useState(false);
   const [result, setResult] = useState<ComplianceResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const { extractTextFromPdf } = usePdfTextExtraction();
+
+  const runAnalysis = async () => {
+    setAnalysing(true);
+    setError(null);
+
+    try {
+      // Get document details
+      const { data: doc, error: docError } = await supabase
+        .from("documents")
+        .select("file_path, name, mime_type")
+        .eq("id", documentId)
+        .single();
+
+      if (docError || !doc) {
+        throw new Error("Failed to fetch document details");
+      }
+
+      // Download the file to extract text
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from("documents")
+        .download(doc.file_path);
+
+      if (downloadError || !fileData) {
+        throw new Error("Failed to download document");
+      }
+
+      // Extract text from PDF
+      let textContent = "";
+      if (doc.mime_type === "application/pdf") {
+        const file = new File([fileData], doc.name, { type: doc.mime_type });
+        const extracted = await extractTextFromPdf(file);
+        if (extracted) {
+          textContent = extracted.text;
+        }
+      } else {
+        // For non-PDF files, try to read as text
+        textContent = await fileData.text();
+      }
+
+      if (!textContent || textContent.length < 50) {
+        throw new Error("Could not extract enough text from document for analysis");
+      }
+
+      // Call the classify-document edge function with deepAnalysis=true
+      const { data: analysisData, error: analysisError } = await supabase.functions.invoke(
+        "classify-document",
+        {
+          body: {
+            filename: doc.name,
+            mimeType: doc.mime_type,
+            textContent: textContent,
+            deepAnalysis: true,
+          },
+        }
+      );
+
+      if (analysisError) {
+        throw new Error("AI analysis failed");
+      }
+
+      if (analysisData?.complianceScore !== undefined && analysisData?.complianceChecklist) {
+        setResult({
+          complianceScore: analysisData.complianceScore,
+          complianceChecklist: analysisData.complianceChecklist,
+        });
+      } else {
+        // If no deep analysis data returned, show a message
+        setError("AI analysis did not return detailed compliance data. Try again.");
+      }
+    } catch (err) {
+      console.error("Error running compliance analysis:", err);
+      setError(err instanceof Error ? err.message : "Analysis failed");
+    } finally {
+      setLoading(false);
+      setAnalysing(false);
+    }
+  };
 
   useEffect(() => {
-    const runAnalysis = async () => {
-      try {
-        // Get document details
-        const { data: doc } = await supabase
-          .from("documents")
-          .select("file_path, name, mime_type")
-          .eq("id", documentId)
-          .single();
-
-        if (!doc) return;
-
-        // For now, we'll show a placeholder as deep analysis would need
-        // to re-extract text and call the edge function with deepAnalysis=true
-        // In production, this would be cached or run on upload for Enterprise users
-        
-        // Simulated result for demo purposes - in production this would call:
-        // const { data } = await supabase.functions.invoke("classify-document", {
-        //   body: { filename: doc.name, mimeType: doc.mime_type, textContent, deepAnalysis: true }
-        // });
-
-        setResult({
-          complianceScore: 72,
-          complianceChecklist: [
-            { item: "Scope of works", status: "pass", note: null },
-            { item: "Hazard identification", status: "pass", note: "6 hazards identified" },
-            { item: "Risk rating methodology", status: "fail", note: "No likelihood/severity matrix found" },
-            { item: "Control measures", status: "pass", note: null },
-            { item: "PPE requirements", status: "warning", note: "Generic PPE listed, not task-specific" },
-            { item: "Emergency procedures", status: "fail", note: "No emergency contact referenced" },
-            { item: "Review date", status: "fail", note: "No review/expiry date specified" },
-            { item: "Responsible persons", status: "pass", note: "Site supervisor named" },
-          ],
-        });
-      } catch (error) {
-        console.error("Error running compliance analysis:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     runAnalysis();
   }, [documentId]);
 
@@ -98,7 +142,7 @@ export const ComplianceAnalysisCard = ({ documentId }: ComplianceAnalysisCardPro
     }
   };
 
-  if (loading) {
+  if (loading || analysing) {
     return (
       <Card className="bg-card border-border">
         <CardHeader className="pb-3">
@@ -108,6 +152,15 @@ export const ComplianceAnalysisCard = ({ documentId }: ComplianceAnalysisCardPro
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="flex items-center gap-3">
+            <Loader2 className="h-5 w-5 text-primary animate-spin" />
+            <div>
+              <p className="text-sm font-medium">Analysing document...</p>
+              <p className="text-xs text-muted-foreground">
+                AI is checking RAMS compliance requirements
+              </p>
+            </div>
+          </div>
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-3/4" />
@@ -116,17 +169,81 @@ export const ComplianceAnalysisCard = ({ documentId }: ComplianceAnalysisCardPro
     );
   }
 
+  if (error) {
+    return (
+      <Card className="bg-card border-border">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Shield className="h-4 w-4 text-primary" />
+            AI Compliance Analysis
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-lg">
+            <p className="text-sm text-destructive">{error}</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={runAnalysis}
+            disabled={analysing}
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Retry Analysis
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!result) {
-    return null;
+    return (
+      <Card className="bg-card border-border">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Shield className="h-4 w-4 text-primary" />
+            AI Compliance Analysis
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-3">
+            Run AI analysis to check RAMS compliance
+          </p>
+          <Button onClick={runAnalysis} disabled={analysing}>
+            {analysing ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Analysing...
+              </>
+            ) : (
+              <>
+                <Shield className="h-4 w-4 mr-2" />
+                Run Analysis
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
     <Card className="bg-card border-border">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Shield className="h-4 w-4 text-primary" />
-          AI Compliance Analysis
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Shield className="h-4 w-4 text-primary" />
+            AI Compliance Analysis
+          </CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={runAnalysis}
+            disabled={analysing}
+          >
+            <RefreshCw className={`h-4 w-4 ${analysing ? "animate-spin" : ""}`} />
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Score gauge */}
