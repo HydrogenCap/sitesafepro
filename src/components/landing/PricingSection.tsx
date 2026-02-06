@@ -1,15 +1,28 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Check, Sparkles } from "lucide-react";
+import { Check, Sparkles, Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { STRIPE_PRODUCTS, SubscriptionTier } from "@/config/stripe";
+import { toast } from "sonner";
 
-const tiers = [
+const tiers: Array<{
+  key: SubscriptionTier;
+  name: string;
+  description: string;
+  monthlyPrice: number;
+  yearlyPrice: number;
+  features: string[];
+  popular: boolean;
+}> = [
   {
+    key: "starter",
     name: "Starter",
     description: "Perfect for single-site contractors",
-    monthlyPrice: 49,
-    yearlyPrice: 470,
+    monthlyPrice: 29,
+    yearlyPrice: 278,
     features: [
       "1 active project",
       "Up to 10 contractor accounts",
@@ -23,10 +36,11 @@ const tiers = [
     popular: false,
   },
   {
+    key: "professional",
     name: "Professional",
     description: "For growing contractors with multiple sites",
-    monthlyPrice: 99,
-    yearlyPrice: 950,
+    monthlyPrice: 79,
+    yearlyPrice: 758,
     features: [
       "Up to 5 active projects",
       "Unlimited contractor accounts",
@@ -44,6 +58,7 @@ const tiers = [
     popular: true,
   },
   {
+    key: "enterprise",
     name: "Enterprise",
     description: "For large contractors and developers",
     monthlyPrice: 199,
@@ -67,6 +82,38 @@ const tiers = [
 
 export const PricingSection = () => {
   const [isYearly, setIsYearly] = useState(false);
+  const [loadingTier, setLoadingTier] = useState<SubscriptionTier | null>(null);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubscribe = async (tierKey: SubscriptionTier) => {
+    // If not logged in, redirect to auth
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+
+    setLoadingTier(tierKey);
+    try {
+      const priceId = STRIPE_PRODUCTS[tierKey].priceId;
+      
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: { priceId },
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      } else {
+        throw new Error("No checkout URL returned");
+      }
+    } catch (error) {
+      console.error("Checkout error:", error);
+      toast.error("Failed to start checkout. Please try again.");
+    } finally {
+      setLoadingTier(null);
+    }
+  };
 
   return (
     <section id="pricing" className="py-24 bg-background">
@@ -138,7 +185,7 @@ export const PricingSection = () => {
         <div className="grid md:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
           {tiers.map((tier, index) => (
             <motion.div
-              key={tier.name}
+              key={tier.key}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -187,14 +234,33 @@ export const PricingSection = () => {
               </div>
 
               {/* CTA */}
-              <Button
-                variant={tier.popular ? "pricingAccent" : "pricing"}
-                size="lg"
-                className="w-full mb-8"
-                asChild
-              >
-                <Link to="/auth">Start Free Trial</Link>
-              </Button>
+              {user ? (
+                <Button
+                  variant={tier.popular ? "pricingAccent" : "pricing"}
+                  size="lg"
+                  className="w-full mb-8"
+                  onClick={() => handleSubscribe(tier.key)}
+                  disabled={loadingTier !== null}
+                >
+                  {loadingTier === tier.key ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    "Subscribe Now"
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  variant={tier.popular ? "pricingAccent" : "pricing"}
+                  size="lg"
+                  className="w-full mb-8"
+                  asChild
+                >
+                  <Link to="/auth">Start Free Trial</Link>
+                </Button>
+              )}
 
               {/* Features */}
               <ul className="space-y-3">
