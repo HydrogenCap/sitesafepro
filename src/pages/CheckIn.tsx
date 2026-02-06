@@ -58,12 +58,6 @@ export default function CheckIn() {
     }
 
     try {
-      const { data, error } = await supabase.functions.invoke("site-access", {
-        body: null,
-        method: "GET",
-      });
-
-      // Fallback: query directly if edge function not available
       const { data: accessCode, error: queryError } = await supabase
         .from("site_access_codes")
         .select(`

@@ -69,7 +69,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const Documents = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const { organisation, loading: subLoading } = useSubscription();
   const navigate = useNavigate();
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -125,12 +125,6 @@ const Documents = () => {
       setLoading(false);
     }
   }, [user]);
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/auth");
-    }
-  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     fetchDocuments();
@@ -244,7 +238,23 @@ const Documents = () => {
     fetchDocuments();
   };
 
-  if (authLoading || subLoading || loading) {
+  const handlePreview = async (doc: Document) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from("documents")
+        .createSignedUrl(doc.file_path, 3600); // 1 hour expiry
+
+      if (error) throw error;
+      if (data?.signedUrl) {
+        window.open(data.signedUrl, "_blank");
+      }
+    } catch (error) {
+      console.error("Error previewing document:", error);
+      toast.error("Failed to preview document");
+    }
+  };
+
+  if (subLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -405,7 +415,7 @@ const Documents = () => {
                               <Download className="h-4 w-4 mr-2" />
                               Download
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handlePreview(doc)}>
                               <Eye className="h-4 w-4 mr-2" />
                               Preview
                             </DropdownMenuItem>

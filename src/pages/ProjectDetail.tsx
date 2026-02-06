@@ -47,16 +47,10 @@ interface Project {
 
 const ProjectDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/auth");
-    }
-  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -105,7 +99,7 @@ const ProjectDetail = () => {
     }
   };
 
-  if (authLoading || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -114,6 +108,25 @@ const ProjectDetail = () => {
   }
 
   if (!project) return null;
+
+  const handleQuickAction = (action: string) => {
+    switch (action) {
+      case "Upload Document":
+        navigate(`/documents?project=${project.id}`);
+        break;
+      case "Generate QR":
+        navigate("/site-access");
+        break;
+      case "Add Contractor":
+        navigate("/team");
+        break;
+      case "New Permit":
+        toast.info("Permits module coming soon", {
+          description: "This feature is available in the Professional tier.",
+        });
+        break;
+    }
+  };
 
   const quickActions = [
     { icon: FileText, label: "Upload Document", description: "Add RAMS or safety docs" },
@@ -238,6 +251,7 @@ const ProjectDetail = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
+                onClick={() => handleQuickAction(action.label)}
                 className="bg-card p-4 rounded-xl border border-border hover:border-primary/30 hover:shadow-md transition-all text-left group"
               >
                 <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center mb-3 group-hover:bg-primary transition-colors">

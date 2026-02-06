@@ -152,17 +152,17 @@ export default function SubscriptionSettings() {
   const getStorageLimit = (tier: SubscriptionTier | null) => {
     const limits: Record<SubscriptionTier, number> = {
       starter: 5 * 1024 * 1024 * 1024, // 5GB
-      professional: 50 * 1024 * 1024 * 1024, // 50GB
-      enterprise: 500 * 1024 * 1024 * 1024, // 500GB
+      professional: 25 * 1024 * 1024 * 1024, // 25GB
+      enterprise: 100 * 1024 * 1024 * 1024, // 100GB
     };
     return limits[tier || "starter"];
   };
 
   const getMemberLimit = (tier: SubscriptionTier | null) => {
     const limits: Record<SubscriptionTier, number> = {
-      starter: 5,
-      professional: 25,
-      enterprise: 999,
+      starter: 10,
+      professional: 999, // Unlimited
+      enterprise: 999, // Unlimited
     };
     return limits[tier || "starter"];
   };
