@@ -39,7 +39,7 @@ export default function ActivityChart({ dateRange }: ActivityChartProps) {
         .select("organisation_id")
         .eq("profile_id", user?.id)
         .eq("status", "active")
-        .single();
+        .maybeSingle();
 
       if (!memberData) return;
 

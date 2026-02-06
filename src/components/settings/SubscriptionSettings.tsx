@@ -56,9 +56,12 @@ export default function SubscriptionSettings() {
         .select("organisation_id")
         .eq("profile_id", user?.id)
         .eq("status", "active")
-        .single();
+        .maybeSingle();
 
-      if (memberError) throw memberError;
+      if (memberError || !memberData) {
+        setLoading(false);
+        return;
+      }
 
       // Get organisation billing details
       const { data: orgData, error: orgError } = await supabase

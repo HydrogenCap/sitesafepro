@@ -77,7 +77,7 @@ export const useSubscription = (): UseSubscriptionReturn => {
           .select('organisation_id')
           .eq('profile_id', user.id)
           .eq('status', 'active')
-          .single();
+          .maybeSingle();
 
         if (memberError || !memberData) {
           setOrganisation(null);

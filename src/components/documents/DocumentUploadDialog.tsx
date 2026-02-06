@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useActivityLog, activityDescriptions } from "@/hooks/useActivityLog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -76,6 +77,7 @@ export const DocumentUploadDialog = ({
   onUploadComplete,
 }: DocumentUploadDialogProps) => {
   const { user } = useAuth();
+  const { logActivity } = useActivityLog();
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -173,6 +175,31 @@ export const DocumentUploadDialog = ({
         } as any);
 
       if (dbError) throw dbError;
+
+      // Update organisation storage usage
+      const { data: orgData } = await supabase
+        .from('organisations')
+        .select('storage_used_bytes')
+        .eq('id', organisationId)
+        .single();
+      
+      if (orgData) {
+        await supabase
+          .from('organisations')
+          .update({ 
+            storage_used_bytes: (orgData.storage_used_bytes || 0) + file.size 
+          })
+          .eq('id', organisationId);
+      }
+
+      // Log activity
+      logActivity({
+        activityType: 'document_uploaded',
+        entityType: 'document',
+        entityName: name.trim(),
+        description: activityDescriptions.document_uploaded(name.trim()),
+        projectId: projectId !== "none" ? projectId : undefined,
+      });
 
       setUploadProgress(100);
       toast.success("Document uploaded successfully!");

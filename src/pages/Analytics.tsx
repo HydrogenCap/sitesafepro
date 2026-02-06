@@ -85,7 +85,7 @@ export default function Analytics() {
         .select("organisation_id")
         .eq("profile_id", user?.id)
         .eq("status", "active")
-        .single();
+        .maybeSingle();
 
       if (!memberData) return;
       const orgId = memberData.organisation_id;

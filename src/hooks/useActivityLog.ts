@@ -55,7 +55,7 @@ export function useActivityLog() {
           .select("organisation_id")
           .eq("profile_id", user.id)
           .eq("status", "active")
-          .single();
+          .maybeSingle();
 
         if (memberError || !memberData) {
           console.warn("Cannot log activity: User not in organisation");

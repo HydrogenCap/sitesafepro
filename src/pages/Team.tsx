@@ -102,9 +102,9 @@ export default function Team() {
         .select("organisation_id, role")
         .eq("profile_id", user?.id)
         .eq("status", "active")
-        .single();
+        .maybeSingle();
 
-      if (memberError) throw memberError;
+      if (memberError || !memberData) return;
       
       setOrganisationId(memberData.organisation_id);
       setCurrentUserRole(memberData.role as MemberRole);

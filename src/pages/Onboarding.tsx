@@ -81,7 +81,7 @@ const Onboarding = () => {
         .select("organisation_id")
         .eq("profile_id", user.id)
         .eq("status", "active")
-        .single();
+        .maybeSingle();
 
       if (memberData) {
         setOrganisationId(memberData.organisation_id);

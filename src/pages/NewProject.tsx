@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useActivityLog, activityDescriptions } from "@/hooks/useActivityLog";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,7 @@ import {
 const NewProject = () => {
   const { user, loading: authLoading } = useAuth();
   const { organisation, projectLimit, loading: subLoading } = useSubscription();
+  const { logActivity } = useActivityLog();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeProjectCount, setActiveProjectCount] = useState(0);
@@ -92,6 +94,14 @@ const NewProject = () => {
       });
 
       if (error) throw error;
+
+      // Log activity
+      logActivity({
+        activityType: 'project_created',
+        entityType: 'project',
+        entityName: formData.name,
+        description: activityDescriptions.project_created(formData.name),
+      });
 
       toast.success("Project created successfully!");
       navigate("/projects");
