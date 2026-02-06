@@ -19,6 +19,7 @@ import {
   Menu,
   X,
   MessageSquare,
+  ClipboardCheck,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -31,6 +32,7 @@ const navItems = [
   { icon: FolderOpen, label: "Projects", href: "/projects" },
   { icon: FileText, label: "Documents", href: "/documents" },
   { icon: QrCode, label: "Site Access", href: "/site-access" },
+  { icon: ClipboardCheck, label: "Inductions", href: "/inductions" },
   { icon: MessageSquare, label: "Toolbox Talks", href: "/toolbox-talks" },
   { icon: Users, label: "Team", href: "/team" },
   { icon: Activity, label: "Activity", href: "/activity" },

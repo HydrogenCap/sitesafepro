@@ -25,6 +25,7 @@ import Analytics from "./pages/Analytics";
 import ToolboxTalks from "./pages/ToolboxTalks";
 import DeliverTalk from "./pages/DeliverTalk";
 import TalkDetail from "./pages/TalkDetail";
+import Inductions from "./pages/Inductions";
 import NotFound from "./pages/NotFound";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
@@ -64,6 +65,7 @@ const App = () => (
             <Route path="/toolbox-talks" element={<ProtectedRoute><ToolboxTalks /></ProtectedRoute>} />
             <Route path="/toolbox-talks/deliver/:templateId" element={<ProtectedRoute><DeliverTalk /></ProtectedRoute>} />
             <Route path="/toolbox-talks/:id" element={<ProtectedRoute><TalkDetail /></ProtectedRoute>} />
+            <Route path="/inductions" element={<ProtectedRoute><Inductions /></ProtectedRoute>} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

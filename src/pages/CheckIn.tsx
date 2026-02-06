@@ -6,9 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "@/integrations/supabase/client";
+import { InductionFlow } from "@/components/checkin/InductionFlow";
 import { toast } from "sonner";
-import { Building2, CheckCircle, LogOut, AlertTriangle, Loader2 } from "lucide-react";
+import { Building2, CheckCircle, LogOut, AlertTriangle, Loader2, ClipboardCheck } from "lucide-react";
 
 interface AccessCodeInfo {
   id: string;
@@ -27,13 +27,29 @@ interface AccessCodeInfo {
   };
 }
 
+interface InductionItem {
+  id: string;
+  question: string;
+  description: string | null;
+  is_required: boolean;
+}
+
+interface InductionTemplate {
+  id: string;
+  name: string;
+  description: string | null;
+  video_url: string | null;
+  items: InductionItem[];
+}
+
 export default function CheckIn() {
   const { code } = useParams<{ code: string }>();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [accessCodeInfo, setAccessCodeInfo] = useState<AccessCodeInfo | null>(null);
+  const [inductionTemplate, setInductionTemplate] = useState<InductionTemplate | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [mode, setMode] = useState<"check-in" | "check-out" | "success">("check-in");
+  const [mode, setMode] = useState<"check-in" | "check-out" | "induction" | "success">("check-in");
 
   // Form state
   const [visitorName, setVisitorName] = useState("");
@@ -44,6 +60,7 @@ export default function CheckIn() {
   const [emergencyContactName, setEmergencyContactName] = useState("");
   const [emergencyContactPhone, setEmergencyContactPhone] = useState("");
   const [hasSignedInduction, setHasSignedInduction] = useState(false);
+  const [inductionCompletionId, setInductionCompletionId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAccessCodeInfo();
@@ -57,13 +74,6 @@ export default function CheckIn() {
     }
 
     try {
-      // Use edge function to get access code info (bypasses RLS for public access)
-      const { data, error: fetchError } = await supabase.functions.invoke("site-access", {
-        body: null,
-        method: "GET",
-      });
-
-      // Edge function doesn't support GET with body, so we need to use query params via URL
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/site-access?action=get-code-info&code=${encodeURIComponent(code)}`,
         {
@@ -83,12 +93,32 @@ export default function CheckIn() {
       }
 
       setAccessCodeInfo(result.accessCode as AccessCodeInfo);
+      
+      // Set induction template if exists
+      if (result.induction && result.induction.items?.length > 0) {
+        setInductionTemplate(result.induction as InductionTemplate);
+      }
     } catch (err) {
       console.error("Error fetching access code:", err);
       setError("Failed to load access code information");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleInductionRequired = () => {
+    if (!visitorName.trim()) {
+      toast.error("Please enter your name first");
+      return;
+    }
+    setMode("induction");
+  };
+
+  const handleInductionComplete = (signatureData: string, completionId: string) => {
+    setHasSignedInduction(true);
+    setInductionCompletionId(completionId);
+    setMode("check-in");
+    toast.success("Induction completed successfully!");
   };
 
   const handleCheckIn = async (e: React.FormEvent) => {
@@ -99,11 +129,16 @@ export default function CheckIn() {
       return;
     }
 
+    // If induction is required and not completed, show induction flow
+    if (inductionTemplate && !hasSignedInduction) {
+      handleInductionRequired();
+      return;
+    }
+
     if (!code) return;
 
     setSubmitting(true);
     try {
-      // Use edge function for check-in (bypasses RLS)
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/site-access?action=check-in`,
         {
@@ -122,6 +157,7 @@ export default function CheckIn() {
             emergency_contact_name: emergencyContactName.trim() || null,
             emergency_contact_phone: emergencyContactPhone.trim() || null,
             has_signed_induction: hasSignedInduction,
+            induction_completion_id: inductionCompletionId,
           }),
         }
       );
@@ -152,7 +188,6 @@ export default function CheckIn() {
 
     setSubmitting(true);
     try {
-      // Use edge function for check-out (bypasses RLS)
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/site-access?action=check-out`,
         {
@@ -218,8 +253,8 @@ export default function CheckIn() {
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
             <div className="text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="h-10 w-10 text-green-600" />
+              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="h-10 w-10 text-green-600 dark:text-green-400" />
               </div>
               <h2 className="text-xl font-semibold mb-2">
                 You're all set!
@@ -237,6 +272,48 @@ export default function CheckIn() {
             </div>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  // Induction Mode
+  if (mode === "induction" && inductionTemplate && accessCodeInfo) {
+    return (
+      <div className="min-h-screen bg-muted py-8 px-4">
+        <div className="max-w-2xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-6">
+            {accessCodeInfo.organisation.logo_url ? (
+              <img
+                src={accessCodeInfo.organisation.logo_url}
+                alt={accessCodeInfo.organisation.name}
+                className="h-12 mx-auto mb-4"
+              />
+            ) : (
+              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <Building2 className="h-6 w-6 text-primary" />
+              </div>
+            )}
+            <h1 className="text-xl font-bold">{accessCodeInfo.organisation.name}</h1>
+            <p className="text-muted-foreground">{accessCodeInfo.project.name}</p>
+          </div>
+
+          <InductionFlow
+            template={inductionTemplate}
+            visitorInfo={{
+              visitor_name: visitorName,
+              visitor_email: visitorEmail,
+              visitor_company: visitorCompany,
+              visitor_phone: visitorPhone,
+            }}
+            onComplete={handleInductionComplete}
+            onCancel={() => setMode("check-in")}
+            apiUrl={import.meta.env.VITE_SUPABASE_URL}
+            apiKey={import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}
+            projectId={accessCodeInfo.project.id}
+            organisationId={accessCodeInfo.project.organisation_id}
+          />
+        </div>
       </div>
     );
   }
@@ -371,23 +448,63 @@ export default function CheckIn() {
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3 p-4 bg-muted rounded-lg">
-                  <Checkbox
-                    id="induction"
-                    checked={hasSignedInduction}
-                    onCheckedChange={(checked) => setHasSignedInduction(checked as boolean)}
-                  />
-                  <div className="space-y-1">
-                    <Label htmlFor="induction" className="font-medium cursor-pointer">
-                      Site Induction
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      I confirm that I have completed the site safety induction
-                    </p>
+                {/* Induction Section */}
+                {inductionTemplate ? (
+                  <div className="border rounded-lg p-4 bg-muted/50">
+                    <div className="flex items-start gap-3">
+                      <div className={`p-2 rounded-lg ${hasSignedInduction ? "bg-green-100 dark:bg-green-900/30" : "bg-accent/10"}`}>
+                        <ClipboardCheck className={`h-5 w-5 ${hasSignedInduction ? "text-green-600 dark:text-green-400" : "text-accent"}`} />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium">Site Induction Required</h4>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          {hasSignedInduction 
+                            ? "You have completed the site induction" 
+                            : "You must complete the site induction before checking in"}
+                        </p>
+                        {!hasSignedInduction && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleInductionRequired}
+                            disabled={!visitorName.trim()}
+                          >
+                            Complete Induction
+                          </Button>
+                        )}
+                        {hasSignedInduction && (
+                          <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                            <CheckCircle className="h-4 w-4" />
+                            Induction completed
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex items-start gap-3 p-4 bg-muted rounded-lg">
+                    <Checkbox
+                      id="induction"
+                      checked={hasSignedInduction}
+                      onCheckedChange={(checked) => setHasSignedInduction(checked as boolean)}
+                    />
+                    <div className="space-y-1">
+                      <Label htmlFor="induction" className="font-medium cursor-pointer">
+                        Site Induction
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        I confirm that I have completed the site safety induction
+                      </p>
+                    </div>
+                  </div>
+                )}
 
-                <Button type="submit" className="w-full" disabled={submitting}>
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={submitting || (inductionTemplate && !hasSignedInduction)}
+                >
                   {submitting ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
