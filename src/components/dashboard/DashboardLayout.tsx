@@ -20,6 +20,7 @@ import {
   X,
   MessageSquare,
   ClipboardCheck,
+  FileBarChart,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -37,6 +38,7 @@ const navItems = [
   { icon: Users, label: "Team", href: "/team" },
   { icon: Activity, label: "Activity", href: "/activity" },
   { icon: BarChart3, label: "Analytics", href: "/analytics" },
+  { icon: FileBarChart, label: "Reports", href: "/reports" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
 
