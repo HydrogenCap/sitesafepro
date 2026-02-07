@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Loader2, Camera, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useNotifications } from "@/hooks/useNotifications";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ interface PendingPhoto {
 const NewAction = () => {
   const { user } = useAuth();
   const { organisation } = useSubscription();
+  const { notifyActionAssigned } = useNotifications();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const preselectedProjectId = searchParams.get("project");
@@ -220,6 +222,19 @@ const NewAction = () => {
           old_status: null,
           new_status: "open",
         });
+
+        // Send notification to assignee (if assigned to a team member)
+        if (assignedTo && action) {
+          const projectName = projects.find((p) => p.id === projectId)?.name || "Project";
+          notifyActionAssigned(
+            assignedTo,
+            action.id,
+            title,
+            projectName,
+            priority,
+            dueDate
+          ).catch((err) => console.error("Failed to send action notification:", err));
+        }
       }
 
       toast.success("Action raised successfully");

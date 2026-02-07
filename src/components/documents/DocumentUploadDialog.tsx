@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useActivityLog, activityDescriptions } from "@/hooks/useActivityLog";
 import { usePdfTextExtraction } from "@/hooks/usePdfTextExtraction";
 import { useDocumentClassification, ClassificationResult } from "@/hooks/useDocumentClassification";
+import { useNotifications } from "@/hooks/useNotifications";
 import { AIClassificationCard } from "./AIClassificationCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -124,6 +125,7 @@ export const DocumentUploadDialog = ({
   const { extractTextFromPdf, extracting } = usePdfTextExtraction();
   const { classifyDocument, classifying, classificationResult, clearClassification } =
     useDocumentClassification();
+  const { notifyDocumentAcknowledgement } = useNotifications();
 
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState("");
@@ -283,7 +285,7 @@ export const DocumentUploadDialog = ({
       const parentDocId = parentDocument ? parentDocument.id : null;
 
       // Create database record
-      const { error: dbError } = await supabase.from("documents").insert({
+      const { data: docData, error: dbError } = await supabase.from("documents").insert({
         organisation_id: organisationId,
         project_id: projectId !== "none" ? projectId : null,
         uploaded_by: user.id,
@@ -300,7 +302,7 @@ export const DocumentUploadDialog = ({
         ai_compliance_flags: classificationResult?.complianceFlags || null,
         requires_acknowledgement: requiresAcknowledgement,
         acknowledgement_deadline: acknowledgementDeadline?.toISOString() || null,
-      } as any);
+      } as any).select().single();
 
       if (dbError) throw dbError;
 
@@ -328,6 +330,33 @@ export const DocumentUploadDialog = ({
         description: activityDescriptions.document_uploaded(name.trim()),
         projectId: projectId !== "none" ? projectId : undefined,
       });
+
+      // Send notifications if document requires acknowledgement
+      if (requiresAcknowledgement && docData) {
+        // Get all active team members (excluding uploader)
+        const { data: members } = await supabase
+          .from("organisation_members")
+          .select("profile_id")
+          .eq("organisation_id", organisationId)
+          .eq("status", "active")
+          .neq("profile_id", user.id);
+
+        if (members && members.length > 0) {
+          const recipientIds = members.map((m) => m.profile_id);
+          const projectName = projects.find((p) => p.id === projectId)?.name || "General";
+          const deadlineStr = acknowledgementDeadline
+            ? format(acknowledgementDeadline, "dd MMM yyyy")
+            : undefined;
+
+          notifyDocumentAcknowledgement(
+            recipientIds,
+            docData.id,
+            name.trim(),
+            projectName,
+            deadlineStr
+          ).catch((err) => console.error("Failed to send document notifications:", err));
+        }
+      }
 
       setUploadProgress(100);
       toast.success(
