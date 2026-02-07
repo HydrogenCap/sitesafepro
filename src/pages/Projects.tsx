@@ -1,13 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
-import { supabase } from "@/integrations/supabase/client";
+import { useProjects, useDeleteProject, useArchiveProject } from "@/hooks/useProjects";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { toast } from "sonner";
 import {
   Plus,
   Search,
@@ -18,7 +16,6 @@ import {
   MoreVertical,
   Building2,
   AlertCircle,
-  ClipboardList,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -27,49 +24,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-interface Project {
-  id: string;
-  name: string;
-  address: string | null;
-  client_name: string | null;
-  status: "setup" | "active" | "completed" | "archived";
-  start_date: string | null;
-  estimated_end_date: string | null;
-  created_at: string;
-  image_url: string | null;
-  is_live: boolean | null;
-}
-
 const Projects = () => {
-  const { user } = useAuth();
   const { projectLimit, loading: subLoading } = useSubscription();
+  const { data: projects = [], isLoading } = useProjects();
+  const deleteProject = useDeleteProject();
+  const archiveProject = useArchiveProject();
   const navigate = useNavigate();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    const fetchProjects = async () => {
-      if (!user) return;
-
-      try {
-        const { data, error } = await supabase
-          .from("projects")
-          .select("*")
-          .order("created_at", { ascending: false });
-
-        if (error) throw error;
-        setProjects(data || []);
-      } catch (error) {
-        console.error("Error fetching projects:", error);
-        toast.error("Failed to load projects");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProjects();
-  }, [user]);
 
   const filteredProjects = projects.filter(
     (project) =>
@@ -105,29 +66,13 @@ const Projects = () => {
     });
   };
 
-  const handleArchive = async (e: React.MouseEvent, projectId: string) => {
+  const handleArchive = (e: React.MouseEvent, projectId: string) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    try {
-      const { error } = await supabase
-        .from("projects")
-        .update({ status: "archived" })
-        .eq("id", projectId);
-
-      if (error) throw error;
-      
-      setProjects(projects.map(p => 
-        p.id === projectId ? { ...p, status: "archived" as const } : p
-      ));
-      toast.success("Project archived");
-    } catch (error) {
-      console.error("Error archiving project:", error);
-      toast.error("Failed to archive project");
-    }
+    archiveProject.mutate(projectId);
   };
 
-  const handleDelete = async (e: React.MouseEvent, projectId: string) => {
+  const handleDelete = (e: React.MouseEvent, projectId: string) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -135,23 +80,10 @@ const Projects = () => {
       return;
     }
 
-    try {
-      const { error } = await supabase
-        .from("projects")
-        .delete()
-        .eq("id", projectId);
-
-      if (error) throw error;
-      
-      setProjects(projects.filter(p => p.id !== projectId));
-      toast.success("Project deleted");
-    } catch (error) {
-      console.error("Error deleting project:", error);
-      toast.error("Failed to delete project");
-    }
+    deleteProject.mutate(projectId);
   };
 
-  if (subLoading || loading) {
+  if (subLoading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
