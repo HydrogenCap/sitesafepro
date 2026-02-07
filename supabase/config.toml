@@ -38,3 +38,6 @@ verify_jwt = false
 
 [functions.check-permit-expiry]
 verify_jwt = false
+
+[functions.contractor-document-request]
+verify_jwt = false
