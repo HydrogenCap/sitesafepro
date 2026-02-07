@@ -1,14 +1,63 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import type { COSHHSubstance, COSHHFormData } from '@/types/coshh';
+import { COMMON_SUBSTANCES } from '@/components/coshh/CommonSubstances';
+
+// Default substances to seed for new projects (indices from COMMON_SUBSTANCES)
+const DEFAULT_SUBSTANCE_INDICES = [1, 2, 5, 10]; // Cement, Emulsion Paint, Expanding Foam, Silica Dust
 
 export const useCOSHH = (projectId: string) => {
   const { user } = useAuth();
   const [substances, setSubstances] = useState<COSHHSubstance[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const seedingRef = useRef(false);
+
+  const seedDefaultSubstances = useCallback(async () => {
+    if (!user || !projectId || seedingRef.current) return;
+    
+    seedingRef.current = true;
+    
+    try {
+      // Get organisation_id
+      const { data: memberData } = await supabase
+        .from('organisation_members')
+        .select('organisation_id')
+        .eq('profile_id', user.id)
+        .eq('status', 'active')
+        .single();
+
+      if (!memberData) return;
+
+      const substancesToSeed = DEFAULT_SUBSTANCE_INDICES.map(idx => {
+        const substance = COMMON_SUBSTANCES[idx];
+        return {
+          project_id: projectId,
+          organisation_id: memberData.organisation_id,
+          added_by: user.id,
+          product_name: substance.data.product_name!,
+          substance_type: substance.data.substance_type!,
+          hazard_pictograms: substance.data.hazard_pictograms || [],
+          hazard_statements: substance.data.hazard_statements || [],
+          precautionary_statements: substance.data.precautionary_statements || [],
+          route_of_exposure: substance.data.route_of_exposure || [],
+          health_effects: substance.data.health_effects || null,
+          control_measures: substance.data.control_measures || [],
+          ppe_required: substance.data.ppe_required || [],
+          health_surveillance_required: substance.data.health_surveillance_required || false,
+          health_surveillance_details: substance.data.health_surveillance_details || null,
+          first_aid_measures: substance.data.first_aid_measures || null,
+          workplace_exposure_limit: substance.data.workplace_exposure_limit || null,
+        };
+      });
+
+      await supabase.from('coshh_substances').insert(substancesToSeed);
+    } catch (err) {
+      console.error('Error seeding default substances:', err);
+    }
+  }, [user, projectId]);
 
   const fetchSubstances = useCallback(async () => {
     if (!projectId) return;
@@ -24,14 +73,27 @@ export const useCOSHH = (projectId: string) => {
         .order('product_name', { ascending: true });
 
       if (fetchError) throw fetchError;
-      setSubstances((data || []) as COSHHSubstance[]);
+      
+      // If no substances exist, seed defaults
+      if ((!data || data.length === 0) && user) {
+        await seedDefaultSubstances();
+        // Re-fetch after seeding
+        const { data: seededData } = await supabase
+          .from('coshh_substances')
+          .select('*')
+          .eq('project_id', projectId)
+          .order('product_name', { ascending: true });
+        setSubstances((seededData || []) as COSHHSubstance[]);
+      } else {
+        setSubstances((data || []) as COSHHSubstance[]);
+      }
     } catch (err) {
       console.error('Error fetching COSHH substances:', err);
       setError('Failed to load COSHH register');
     } finally {
       setLoading(false);
     }
-  }, [projectId]);
+  }, [projectId, user, seedDefaultSubstances]);
 
   useEffect(() => {
     fetchSubstances();
