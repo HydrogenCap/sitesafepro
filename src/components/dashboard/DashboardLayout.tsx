@@ -33,6 +33,7 @@ import {
   CalendarClock,
   ChevronDown,
   HardHat,
+  HelpCircle,
   LucideIcon,
 } from "lucide-react";
 
@@ -180,8 +181,19 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           ))}
         </nav>
 
-        {/* Settings - always visible */}
+        {/* Settings & Help - always visible */}
         <div className="p-3 border-t border-border space-y-1">
+          <Link
+            to="/help"
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              isActive("/help")
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            <HelpCircle className="h-4 w-4" />
+            Help & Support
+          </Link>
           <Link
             to="/settings"
             className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
@@ -238,6 +250,18 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         </nav>
 
         <div className="p-3 border-t border-border space-y-1 sticky bottom-0 bg-card">
+          <Link
+            to="/help"
+            onClick={() => setMobileMenuOpen(false)}
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              isActive("/help")
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            <HelpCircle className="h-4 w-4" />
+            Help & Support
+          </Link>
           <Link
             to="/settings"
             onClick={() => setMobileMenuOpen(false)}
