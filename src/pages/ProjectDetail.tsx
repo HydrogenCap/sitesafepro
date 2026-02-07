@@ -26,6 +26,7 @@ import {
   Rocket,
   CheckCircle,
   AlertTriangle,
+  BookOpen,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -170,6 +171,9 @@ const ProjectDetail = () => {
       case "Upload Document":
         navigate(`/documents?project=${project.id}`);
         break;
+      case "Site Diary":
+        navigate(`/projects/${project.id}/diary`);
+        break;
       case "Generate QR":
         navigate("/site-access");
         break;
@@ -185,9 +189,9 @@ const ProjectDetail = () => {
   };
 
   const quickActions = [
+    { icon: BookOpen, label: "Site Diary", description: "Daily log entries" },
     { icon: FileText, label: "Upload Document", description: "Add RAMS or safety docs" },
     { icon: QrCode, label: "Generate QR", description: "Create site access code" },
-    { icon: Users, label: "Add Contractor", description: "Invite to this project" },
     { icon: ClipboardList, label: "New Permit", description: "Create permit to work" },
   ];
 
