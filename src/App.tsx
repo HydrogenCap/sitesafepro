@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -49,9 +50,28 @@ import ClientProjectView from "./pages/ClientProjectView";
 import Contractors from "./pages/Contractors";
 import NewContractor from "./pages/NewContractor";
 import ContractorDetail from "./pages/ContractorDetail";
+
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = () => {
+  // Global handler for unhandled promise rejections (e.g., from browser extensions like MetaMask)
+  useEffect(() => {
+    const handleRejection = (event: PromiseRejectionEvent) => {
+      // Check if it's from a browser extension (not our app code)
+      const isExtensionError = event.reason?.stack?.includes("chrome-extension://") ||
+        event.reason?.message?.includes("MetaMask");
+      
+      if (isExtensionError) {
+        console.warn("Suppressed browser extension error:", event.reason);
+        event.preventDefault(); // Prevent the error from crashing the app
+      }
+    };
+
+    window.addEventListener("unhandledrejection", handleRejection);
+    return () => window.removeEventListener("unhandledrejection", handleRejection);
+  }, []);
+
+  return (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <ClientPortalProvider>
@@ -116,6 +136,7 @@ const App = () => (
       </ClientPortalProvider>
     </AuthProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
