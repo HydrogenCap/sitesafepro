@@ -116,7 +116,7 @@ export function InviteClientDialog({
       // Generate invite token
       const inviteToken = crypto.randomUUID();
 
-      const { error } = await supabase.from("client_portal_users").insert({
+      const { data: clientUser, error } = await supabase.from("client_portal_users").insert({
         organisation_id: orgData.organisation_id,
         email: formData.email,
         full_name: formData.full_name,
@@ -127,14 +127,31 @@ export function InviteClientDialog({
         invited_by: user.id,
         invite_token: inviteToken,
         ...formData.permissions,
-      });
+      }).select().single();
 
       if (error) throw error;
 
-      // TODO: Send invitation email via edge function
-      // For now, we'll just create the record
+      // Send invitation email via edge function
+      const { data: emailResult, error: emailError } = await supabase.functions.invoke("client-invite", {
+        body: {
+          action: "send",
+          clientUserId: clientUser.id,
+          email: formData.email,
+          fullName: formData.full_name,
+          companyName: formData.company_name,
+          role: formData.role,
+          organisationId: orgData.organisation_id,
+          inviteToken,
+          permissions: formData.permissions,
+        },
+      });
 
-      return { inviteToken };
+      if (emailError) {
+        console.error("Email sending failed:", emailError);
+        // Don't fail the whole operation if email fails
+      }
+
+      return { inviteToken, emailSent: emailResult?.emailSent };
     },
     onSuccess: () => {
       toast({

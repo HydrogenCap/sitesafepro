@@ -23,12 +23,12 @@ export default defineConfig(({ mode }) => ({
         name: "SiteSafe Pro",
         short_name: "SiteSafe",
         description: "UK Construction Site Health & Safety Management Platform",
-        theme_color: "#f97316",
+        theme_color: "#0F766E",
         background_color: "#ffffff",
         display: "standalone",
         orientation: "portrait-primary",
         scope: "/",
-        start_url: "/",
+        start_url: "/dashboard",
         icons: [
           {
             src: "/pwa-192x192.png",
