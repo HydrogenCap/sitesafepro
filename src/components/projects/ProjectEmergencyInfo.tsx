@@ -22,6 +22,8 @@ import {
   Edit,
   HeartPulse,
   Users,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -41,13 +43,53 @@ interface EmergencyInfo {
 interface Props {
   projectId: string;
   emergencyInfo: EmergencyInfo;
+  projectAddress?: string | null;
   onUpdate: () => void;
 }
 
-export const ProjectEmergencyInfo = ({ projectId, emergencyInfo, onUpdate }: Props) => {
+export const ProjectEmergencyInfo = ({ projectId, emergencyInfo, projectAddress, onUpdate }: Props) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [autoFilling, setAutoFilling] = useState(false);
   const [form, setForm] = useState<EmergencyInfo>(emergencyInfo);
+
+  const handleAutoFill = async () => {
+    if (!projectAddress) {
+      toast.error("No site address available. Please add an address first.");
+      return;
+    }
+
+    setAutoFilling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('lookup-emergency-services', {
+        body: { address: projectAddress },
+      });
+
+      if (error) throw error;
+
+      if (data?.success && data?.data) {
+        const aiData = data.data;
+        setForm((prev) => ({
+          ...prev,
+          nearest_ae_name: aiData.nearest_ae_name || prev.nearest_ae_name,
+          nearest_ae_address: aiData.nearest_ae_address || prev.nearest_ae_address,
+          nearest_ae_distance: aiData.nearest_ae_distance || prev.nearest_ae_distance,
+          nearest_fire_station_name: aiData.nearest_fire_station_name || prev.nearest_fire_station_name,
+          nearest_fire_station_address: aiData.nearest_fire_station_address || prev.nearest_fire_station_address,
+          nearest_police_station_name: aiData.nearest_police_station_name || prev.nearest_police_station_name,
+          nearest_police_station_address: aiData.nearest_police_station_address || prev.nearest_police_station_address,
+        }));
+        toast.success("Emergency services found! Review and save.");
+      } else {
+        throw new Error(data?.error || 'Failed to lookup emergency services');
+      }
+    } catch (error) {
+      console.error("Error auto-filling emergency info:", error);
+      toast.error("Failed to lookup emergency services. Please enter manually.");
+    } finally {
+      setAutoFilling(false);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -148,6 +190,39 @@ export const ProjectEmergencyInfo = ({ projectId, emergencyInfo, onUpdate }: Pro
                 Configure emergency contacts and nearest emergency services for this site.
               </DialogDescription>
             </DialogHeader>
+
+            {/* AI Auto-fill button */}
+            {projectAddress && (
+              <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                <Sparkles className="h-5 w-5 text-primary" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-foreground">Auto-fill with AI</p>
+                  <p className="text-xs text-muted-foreground">
+                    Find nearest A&E, Fire Station, and Police based on site address
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAutoFill}
+                  disabled={autoFilling}
+                  className="shrink-0"
+                >
+                  {autoFilling ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Finding...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Auto-fill
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
 
             <div className="space-y-6 py-4">
               {/* Site Emergency */}

@@ -363,6 +363,7 @@ const ProjectDetail = () => {
         <div className="mb-8">
           <ProjectEmergencyInfo
             projectId={project.id}
+            projectAddress={project.address}
             emergencyInfo={{
               nearest_ae_name: project.nearest_ae_name,
               nearest_ae_address: project.nearest_ae_address,
