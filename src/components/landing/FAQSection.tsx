@@ -8,14 +8,24 @@ import {
 
 const faqs = [
   {
-    question: "What happens after the 14-day free trial?",
+    question: "What is SiteSafe Pro?",
     answer:
-      "After your trial ends, you can choose to subscribe to any of our plans. If you don't subscribe, your account will be converted to a free contractor account, and you'll still be able to access any organisations that invite you. Your data is never deleted.",
+      "SiteSafe Pro is a cloud-based health and safety management platform built specifically for UK construction companies. It replaces paper-based systems, spreadsheets, and shared drives with a single digital platform covering document management, RAMS, permits to work, site access, inspections, incidents, toolbox talks, contractor compliance, and more. It works on any device — desktop, tablet, or phone — and includes a Progressive Web App (PWA) for installation on mobile devices.",
   },
   {
-    question: "Do I need to provide a credit card to start the trial?",
+    question: "Is SiteSafe Pro compliant with UK legislation?",
     answer:
-      "No, you can start your 14-day free trial without providing any payment information. You'll only need to add a payment method when you're ready to subscribe.",
+      "Yes. SiteSafe Pro is built around UK construction health and safety legislation including CDM 2015, the Health and Safety at Work Act 1974, the Work at Height Regulations 2005, COSHH Regulations 2002, and RIDDOR 2013. The pre-construction checklist, RAMS builder, permit types, and inspection categories all reference the correct UK regulatory framework.",
+  },
+  {
+    question: "What plans are available?",
+    answer:
+      "There are three plans: Starter (£49/month) — 1 active project, 5GB storage, document management, e-signatures, QR site access, and inductions. Professional (£99/month) — up to 5 projects, 25GB storage, plus permits, toolbox talks, inspections, incidents, COSHH register, RAMS workflow, and compliance calendar. Enterprise (£199/month) — unlimited projects, 100GB storage, client portal, AI document analysis, custom branding, API access, and a dedicated account manager.",
+  },
+  {
+    question: "Is there a free trial?",
+    answer:
+      "Yes. All new accounts start with a 14-day free trial so you can explore the platform before committing. No credit card is required. You can upgrade, downgrade, or cancel at any time from the Settings page.",
   },
   {
     question: "Are contractor accounts really free?",
@@ -23,24 +33,34 @@ const faqs = [
       "Yes! Contractors invited by a paying customer get completely free access. They can view documents, sign acknowledgements, scan QR codes, attend toolbox talks, and upload their RAMS—all at no cost. This removes friction from adoption.",
   },
   {
-    question: "Can I upgrade or downgrade my plan at any time?",
+    question: "How does QR code site access work?",
     answer:
-      "Absolutely. You can upgrade or downgrade your plan at any time from your billing settings. When upgrading, you'll be charged a prorated amount. When downgrading, the new rate applies from your next billing cycle.",
+      "Each project has a unique QR code. Workers scan it on arrival using their phone camera. They enter their name, company, trade, and confirm they are inducted. On departure, they scan again to sign out. You can view who is on site in real time from the Site Access dashboard, with emergency headcount features for fire drills.",
   },
   {
-    question: "Is SiteSafe Pro compliant with UK CDM 2015 regulations?",
+    question: "What is the pre-construction compliance checklist?",
     answer:
-      "Yes, SiteSafe Pro is specifically designed for UK CDM 2015 compliance. Our document categories, workflows, and templates are all aligned with CDM requirements for principal contractors, designers, and clients.",
+      "Every project starts in 'setup' mode. Before work begins, you must confirm five compliance requirements: F10 Notification to HSE, Asbestos Survey, Pre-Construction Information (PCI), Construction Phase Plan (CPP), and Principal Contractor Appointment. Each item can be marked as complete, exempt (with reason), or pending. Once complete, you can 'Go Live' and unlock all project features.",
+  },
+  {
+    question: "Can contractors upload their own documents?",
+    answer:
+      "Yes. When you request documents from a contractor, they receive an email with a secure upload link. They can upload the requested files without needing an account. The documents appear in your dashboard for review and verification.",
+  },
+  {
+    question: "Is my data secure?",
+    answer:
+      "Yes. All data is encrypted in transit and at rest. We use industry-standard security practices and our infrastructure is hosted on secure, EU-based cloud servers compliant with GDPR. All access is logged and auditable.",
+  },
+  {
+    question: "Can I use SiteSafe Pro on my phone?",
+    answer:
+      "Yes. SiteSafe Pro is fully responsive and works in any modern web browser on mobile. You can also install it as a Progressive Web App (PWA) by visiting the Install page or tapping the install prompt in your browser. The PWA gives you an app-like experience with a home screen icon and standalone window.",
   },
   {
     question: "Can I export my data if I decide to leave?",
     answer:
       "Yes, you can export all your data at any time, including documents, signatures, inspection records, and compliance history. We believe in data portability and will never hold your data hostage.",
-  },
-  {
-    question: "Is my data secure?",
-    answer:
-      "Your data is stored in secure EU-based data centres with enterprise-grade encryption at rest and in transit. We're fully GDPR compliant and undergo regular security audits. All access is logged and auditable.",
   },
   {
     question: "Do you offer discounts for annual billing?",
@@ -118,10 +138,14 @@ export const FAQSection = () => {
           className="text-center text-muted-foreground mt-12"
         >
           Still have questions?{" "}
-          <a href="#contact" className="text-primary font-medium hover:underline">
+          <a href="/contact" className="text-primary font-medium hover:underline">
             Get in touch
           </a>{" "}
-          and we'll help you out.
+          or visit our{" "}
+          <a href="/documentation" className="text-primary font-medium hover:underline">
+            full documentation
+          </a>
+          .
         </motion.p>
       </div>
     </section>
