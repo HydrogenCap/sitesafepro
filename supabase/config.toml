@@ -32,3 +32,9 @@ verify_jwt = false
 
 [functions.send-notification]
 verify_jwt = false
+
+[functions.check-overdue-actions]
+verify_jwt = false
+
+[functions.check-permit-expiry]
+verify_jwt = false
