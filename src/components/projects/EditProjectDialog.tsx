@@ -4,7 +4,6 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ProjectImageUpload } from "./ProjectImageUpload";
+import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
@@ -146,13 +146,11 @@ export const EditProjectDialog = ({
           {/* Site address */}
           <div className="space-y-2">
             <Label htmlFor="edit-address">Site Address</Label>
-            <Textarea
+            <AddressAutocomplete
               id="edit-address"
-              placeholder="Enter the construction site address"
               value={formData.address}
-              onChange={(e) => updateField("address", e.target.value)}
-              className="resize-none"
-              rows={2}
+              onChange={(value) => updateField("address", value)}
+              placeholder="Start typing to search for an address..."
             />
           </div>
 
