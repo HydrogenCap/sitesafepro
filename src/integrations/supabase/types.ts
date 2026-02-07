@@ -386,6 +386,314 @@ export type Database = {
           },
         ]
       }
+      contractor_companies: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          company_name: string
+          company_registration_number: string | null
+          compliance_score: number | null
+          compliance_status: string | null
+          created_at: string
+          id: string
+          internal_rating: number | null
+          is_active: boolean | null
+          is_approved: boolean | null
+          notes: string | null
+          office_address: string | null
+          organisation_id: string
+          primary_contact_email: string | null
+          primary_contact_name: string | null
+          primary_contact_phone: string | null
+          primary_trade: string
+          secondary_trades: string[] | null
+          tax_status: string | null
+          trading_name: string | null
+          updated_at: string
+          utr_number: string | null
+          vat_number: string | null
+          website: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          company_name: string
+          company_registration_number?: string | null
+          compliance_score?: number | null
+          compliance_status?: string | null
+          created_at?: string
+          id?: string
+          internal_rating?: number | null
+          is_active?: boolean | null
+          is_approved?: boolean | null
+          notes?: string | null
+          office_address?: string | null
+          organisation_id: string
+          primary_contact_email?: string | null
+          primary_contact_name?: string | null
+          primary_contact_phone?: string | null
+          primary_trade: string
+          secondary_trades?: string[] | null
+          tax_status?: string | null
+          trading_name?: string | null
+          updated_at?: string
+          utr_number?: string | null
+          vat_number?: string | null
+          website?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          company_name?: string
+          company_registration_number?: string | null
+          compliance_score?: number | null
+          compliance_status?: string | null
+          created_at?: string
+          id?: string
+          internal_rating?: number | null
+          is_active?: boolean | null
+          is_approved?: boolean | null
+          notes?: string | null
+          office_address?: string | null
+          organisation_id?: string
+          primary_contact_email?: string | null
+          primary_contact_name?: string | null
+          primary_contact_phone?: string | null
+          primary_trade?: string
+          secondary_trades?: string[] | null
+          tax_status?: string | null
+          trading_name?: string | null
+          updated_at?: string
+          utr_number?: string | null
+          vat_number?: string | null
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contractor_companies_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_companies_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contractor_compliance_docs: {
+        Row: {
+          contractor_company_id: string | null
+          cover_amount: string | null
+          created_at: string
+          doc_type: Database["public"]["Enums"]["compliance_doc_type"]
+          document_id: string | null
+          expiry_date: string | null
+          file_path: string | null
+          id: string
+          issue_date: string | null
+          organisation_id: string
+          profile_id: string | null
+          provider: string | null
+          reference_number: string | null
+          reminder_sent_30_days: boolean | null
+          reminder_sent_7_days: boolean | null
+          reminder_sent_expired: boolean | null
+          updated_at: string
+          uploaded_by: string
+          verification_notes: string | null
+          verified: boolean | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          contractor_company_id?: string | null
+          cover_amount?: string | null
+          created_at?: string
+          doc_type: Database["public"]["Enums"]["compliance_doc_type"]
+          document_id?: string | null
+          expiry_date?: string | null
+          file_path?: string | null
+          id?: string
+          issue_date?: string | null
+          organisation_id: string
+          profile_id?: string | null
+          provider?: string | null
+          reference_number?: string | null
+          reminder_sent_30_days?: boolean | null
+          reminder_sent_7_days?: boolean | null
+          reminder_sent_expired?: boolean | null
+          updated_at?: string
+          uploaded_by: string
+          verification_notes?: string | null
+          verified?: boolean | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          contractor_company_id?: string | null
+          cover_amount?: string | null
+          created_at?: string
+          doc_type?: Database["public"]["Enums"]["compliance_doc_type"]
+          document_id?: string | null
+          expiry_date?: string | null
+          file_path?: string | null
+          id?: string
+          issue_date?: string | null
+          organisation_id?: string
+          profile_id?: string | null
+          provider?: string | null
+          reference_number?: string | null
+          reminder_sent_30_days?: boolean | null
+          reminder_sent_7_days?: boolean | null
+          reminder_sent_expired?: boolean | null
+          updated_at?: string
+          uploaded_by?: string
+          verification_notes?: string | null
+          verified?: boolean | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contractor_compliance_docs_contractor_company_id_fkey"
+            columns: ["contractor_company_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_compliance_docs_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_compliance_docs_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_compliance_docs_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_compliance_docs_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_compliance_docs_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contractor_operatives: {
+        Row: {
+          blood_type: string | null
+          contractor_company_id: string
+          created_at: string
+          cscs_card_number: string | null
+          cscs_card_type: string | null
+          cscs_expiry_date: string | null
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          emergency_contact_relationship: string | null
+          full_name: string
+          id: string
+          is_active: boolean | null
+          known_medical_conditions: string | null
+          organisation_id: string
+          phone: string | null
+          profile_id: string | null
+          role_on_site: string | null
+          trade: string
+          updated_at: string
+        }
+        Insert: {
+          blood_type?: string | null
+          contractor_company_id: string
+          created_at?: string
+          cscs_card_number?: string | null
+          cscs_card_type?: string | null
+          cscs_expiry_date?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
+          full_name: string
+          id?: string
+          is_active?: boolean | null
+          known_medical_conditions?: string | null
+          organisation_id: string
+          phone?: string | null
+          profile_id?: string | null
+          role_on_site?: string | null
+          trade: string
+          updated_at?: string
+        }
+        Update: {
+          blood_type?: string | null
+          contractor_company_id?: string
+          created_at?: string
+          cscs_card_number?: string | null
+          cscs_card_type?: string | null
+          cscs_expiry_date?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
+          full_name?: string
+          id?: string
+          is_active?: boolean | null
+          known_medical_conditions?: string | null
+          organisation_id?: string
+          phone?: string | null
+          profile_id?: string | null
+          role_on_site?: string | null
+          trade?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contractor_operatives_contractor_company_id_fkey"
+            columns: ["contractor_company_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_operatives_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_operatives_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       corrective_actions: {
         Row: {
           assigned_to: string | null
@@ -1741,6 +2049,92 @@ export type Database = {
           },
         ]
       }
+      project_contractors: {
+        Row: {
+          assigned_by: string
+          contractor_company_id: string
+          created_at: string
+          estimated_end_date: string | null
+          id: string
+          order_value: number | null
+          organisation_id: string
+          project_id: string
+          purchase_order_number: string | null
+          required_doc_types:
+            | Database["public"]["Enums"]["compliance_doc_type"][]
+            | null
+          scope_of_works: string | null
+          start_date: string | null
+          status: string | null
+          trade: string
+        }
+        Insert: {
+          assigned_by: string
+          contractor_company_id: string
+          created_at?: string
+          estimated_end_date?: string | null
+          id?: string
+          order_value?: number | null
+          organisation_id: string
+          project_id: string
+          purchase_order_number?: string | null
+          required_doc_types?:
+            | Database["public"]["Enums"]["compliance_doc_type"][]
+            | null
+          scope_of_works?: string | null
+          start_date?: string | null
+          status?: string | null
+          trade: string
+        }
+        Update: {
+          assigned_by?: string
+          contractor_company_id?: string
+          created_at?: string
+          estimated_end_date?: string | null
+          id?: string
+          order_value?: number | null
+          organisation_id?: string
+          project_id?: string
+          purchase_order_number?: string | null
+          required_doc_types?:
+            | Database["public"]["Enums"]["compliance_doc_type"][]
+            | null
+          scope_of_works?: string | null
+          start_date?: string | null
+          status?: string | null
+          trade?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_contractors_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_contractors_contractor_company_id_fkey"
+            columns: ["contractor_company_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_contractors_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_contractors_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_generated_documents: {
         Row: {
           created_at: string
@@ -3041,6 +3435,42 @@ export type Database = {
         | "principal_designer"
         | "cdm_advisor"
         | "building_control"
+      compliance_doc_type:
+        | "car_insurance"
+        | "public_liability"
+        | "employers_liability"
+        | "professional_indemnity"
+        | "plant_insurance"
+        | "cscs_card"
+        | "gas_safe"
+        | "niceic"
+        | "part_p"
+        | "fgas"
+        | "ipaf"
+        | "pasma"
+        | "cpcs"
+        | "cisrs"
+        | "nvq"
+        | "first_aid"
+        | "fire_marshal"
+        | "sssts"
+        | "smsts"
+        | "asbestos_awareness"
+        | "confined_spaces"
+        | "working_at_height"
+        | "manual_handling"
+        | "abrasive_wheels"
+        | "face_fit"
+        | "chas"
+        | "safe_contractor"
+        | "constructionline"
+        | "smas"
+        | "iso_45001"
+        | "iso_9001"
+        | "iso_14001"
+        | "dbs_check"
+        | "right_to_work"
+        | "other"
       document_category:
         | "rams"
         | "method_statement"
@@ -3298,6 +3728,43 @@ export const Constants = {
         "principal_designer",
         "cdm_advisor",
         "building_control",
+      ],
+      compliance_doc_type: [
+        "car_insurance",
+        "public_liability",
+        "employers_liability",
+        "professional_indemnity",
+        "plant_insurance",
+        "cscs_card",
+        "gas_safe",
+        "niceic",
+        "part_p",
+        "fgas",
+        "ipaf",
+        "pasma",
+        "cpcs",
+        "cisrs",
+        "nvq",
+        "first_aid",
+        "fire_marshal",
+        "sssts",
+        "smsts",
+        "asbestos_awareness",
+        "confined_spaces",
+        "working_at_height",
+        "manual_handling",
+        "abrasive_wheels",
+        "face_fit",
+        "chas",
+        "safe_contractor",
+        "constructionline",
+        "smas",
+        "iso_45001",
+        "iso_9001",
+        "iso_14001",
+        "dbs_check",
+        "right_to_work",
+        "other",
       ],
       document_category: [
         "rams",

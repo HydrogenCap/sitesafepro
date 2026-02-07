@@ -30,7 +30,7 @@ interface DashboardLayoutProps {
   children: ReactNode;
 }
 
-import { CheckSquare, FileCheck } from "lucide-react";
+import { HardHat } from "lucide-react";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -44,6 +44,7 @@ const navItems = [
   { icon: FileWarning, label: "Permits", href: "/permits" },
   { icon: Shield, label: "Inspections", href: "/inspections" },
   { icon: AlertTriangle, label: "Incidents", href: "/incidents" },
+  { icon: HardHat, label: "Contractors", href: "/contractors" },
   { icon: Users, label: "Team", href: "/team" },
   { icon: Activity, label: "Activity", href: "/activity" },
   { icon: BarChart3, label: "Analytics", href: "/analytics" },

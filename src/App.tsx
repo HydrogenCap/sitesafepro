@@ -46,7 +46,9 @@ import SiteDiary from "./pages/SiteDiary";
 import DiaryEntry from "./pages/DiaryEntry";
 import ClientDashboard from "./pages/ClientDashboard";
 import ClientProjectView from "./pages/ClientProjectView";
-
+import Contractors from "./pages/Contractors";
+import NewContractor from "./pages/NewContractor";
+import ContractorDetail from "./pages/ContractorDetail";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -102,6 +104,9 @@ const App = () => (
               <Route path="/actions" element={<ProtectedRoute><Actions /></ProtectedRoute>} />
               <Route path="/actions/new" element={<ProtectedRoute><NewAction /></ProtectedRoute>} />
               <Route path="/actions/:id" element={<ProtectedRoute><ActionDetail /></ProtectedRoute>} />
+              <Route path="/contractors" element={<ProtectedRoute><Contractors /></ProtectedRoute>} />
+              <Route path="/contractors/new" element={<ProtectedRoute><NewContractor /></ProtectedRoute>} />
+              <Route path="/contractors/:id" element={<ProtectedRoute><ContractorDetail /></ProtectedRoute>} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
