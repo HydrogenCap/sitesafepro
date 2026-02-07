@@ -25,6 +25,7 @@ import {
   FileBarChart,
   FileWarning,
   Shield,
+  CalendarClock,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -47,6 +48,7 @@ const navItems = [
   { icon: Shield, label: "Inspections", href: "/inspections" },
   { icon: AlertTriangle, label: "Incidents", href: "/incidents" },
   { icon: HardHat, label: "Contractors", href: "/contractors" },
+  { icon: CalendarClock, label: "Compliance Calendar", href: "/compliance-calendar" },
   { icon: Users, label: "Team", href: "/team" },
   { icon: Activity, label: "Activity", href: "/activity" },
   { icon: BarChart3, label: "Analytics", href: "/analytics" },
