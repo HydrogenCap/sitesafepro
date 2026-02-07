@@ -59,9 +59,9 @@ export default function Settings() {
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Client Portal</span>
             </TabsTrigger>
-            <TabsTrigger value="integrations" className="flex items-center gap-2">
+            <TabsTrigger value="whatsapp" className="flex items-center gap-2">
               <Plug className="h-4 w-4" />
-              <span className="hidden sm:inline">Integrations</span>
+              <span className="hidden sm:inline">WhatsApp</span>
             </TabsTrigger>
             <TabsTrigger value="subscription" className="flex items-center gap-2">
               <CreditCard className="h-4 w-4" />
@@ -89,7 +89,7 @@ export default function Settings() {
             <ClientPortalSettings />
           </TabsContent>
 
-          <TabsContent value="integrations">
+          <TabsContent value="whatsapp">
             <WhatsAppSettings />
           </TabsContent>
 

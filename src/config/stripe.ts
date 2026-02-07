@@ -1,10 +1,18 @@
 // Stripe product and price configuration
-// These IDs are from your Stripe dashboard
+// Use environment variables for product/price IDs when available, 
+// with fallbacks for development
+
+const getEnvVar = (key: string, fallback: string): string => {
+  if (typeof import.meta !== 'undefined' && import.meta.env) {
+    return import.meta.env[key] || fallback;
+  }
+  return fallback;
+};
 
 export const STRIPE_PRODUCTS = {
   starter: {
-    productId: "prod_TvhlSRnZEPA9fh",
-    priceId: "price_1SxqLuAZFDMuITvQ0R713pKz",
+    productId: getEnvVar('VITE_STRIPE_STARTER_PRODUCT_ID', 'prod_TvhlSRnZEPA9fh'),
+    priceId: getEnvVar('VITE_STRIPE_STARTER_PRICE_ID', 'price_1SxqLuAZFDMuITvQ0R713pKz'),
     name: "Starter",
     price: 49,
     currency: "GBP",
@@ -20,8 +28,8 @@ export const STRIPE_PRODUCTS = {
     ],
   },
   professional: {
-    productId: "prod_Tvhlx1rQqSEXrr",
-    priceId: "price_1SxqMBAZFDMuITvQmi1VUVhu",
+    productId: getEnvVar('VITE_STRIPE_PROFESSIONAL_PRODUCT_ID', 'prod_Tvhlx1rQqSEXrr'),
+    priceId: getEnvVar('VITE_STRIPE_PROFESSIONAL_PRICE_ID', 'price_1SxqMBAZFDMuITvQmi1VUVhu'),
     name: "Professional",
     price: 99,
     currency: "GBP",
@@ -42,8 +50,8 @@ export const STRIPE_PRODUCTS = {
     popular: true,
   },
   enterprise: {
-    productId: "prod_Tvhm61rgsuEQEI",
-    priceId: "price_1SxqMVAZFDMuITvQtnR3v92b",
+    productId: getEnvVar('VITE_STRIPE_ENTERPRISE_PRODUCT_ID', 'prod_Tvhm61rgsuEQEI'),
+    priceId: getEnvVar('VITE_STRIPE_ENTERPRISE_PRICE_ID', 'price_1SxqMVAZFDMuITvQtnR3v92b'),
     name: "Enterprise",
     price: 199,
     currency: "GBP",
@@ -65,9 +73,9 @@ export const STRIPE_PRODUCTS = {
 
 export type SubscriptionTier = keyof typeof STRIPE_PRODUCTS;
 
-// Map Stripe product IDs to tier names
+// Build dynamic product ID to tier mapping
 export const PRODUCT_ID_TO_TIER: Record<string, SubscriptionTier> = {
-  "prod_TvhlSRnZEPA9fh": "starter",
-  "prod_Tvhlx1rQqSEXrr": "professional",
-  "prod_Tvhm61rgsuEQEI": "enterprise",
+  [STRIPE_PRODUCTS.starter.productId]: "starter",
+  [STRIPE_PRODUCTS.professional.productId]: "professional",
+  [STRIPE_PRODUCTS.enterprise.productId]: "enterprise",
 };
