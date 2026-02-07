@@ -18,6 +18,7 @@ import {
   MoreVertical,
   Building2,
   AlertCircle,
+  ClipboardList,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -31,11 +32,12 @@ interface Project {
   name: string;
   address: string | null;
   client_name: string | null;
-  status: "active" | "completed" | "archived";
+  status: "setup" | "active" | "completed" | "archived";
   start_date: string | null;
   estimated_end_date: string | null;
   created_at: string;
   image_url: string | null;
+  is_live: boolean | null;
 }
 
 const Projects = () => {
@@ -76,11 +78,13 @@ const Projects = () => {
       project.client_name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const activeProjects = projects.filter((p) => p.status === "active");
+  const activeProjects = projects.filter((p) => p.status === "active" || p.status === "setup");
   const canCreateProject = activeProjects.length < projectLimit;
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case "setup":
+        return "bg-blue-500/10 text-blue-600";
       case "active":
         return "bg-success/10 text-success";
       case "completed":

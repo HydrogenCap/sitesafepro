@@ -45,12 +45,14 @@ interface Project {
   address: string | null;
   client_name: string | null;
   principal_designer: string | null;
-  status: "active" | "completed" | "archived";
+  status: "setup" | "active" | "completed" | "archived";
   start_date: string | null;
   estimated_end_date: string | null;
   created_at: string;
   image_url: string | null;
-  is_live: boolean;
+  is_live: boolean | null;
+  went_live_at: string | null;
+  went_live_by: string | null;
 }
 
 interface GeneratedDocument {
@@ -138,6 +140,8 @@ const ProjectDetail = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case "setup":
+        return "bg-blue-500/10 text-blue-600";
       case "active":
         return "bg-success/10 text-success";
       case "completed":
@@ -305,8 +309,8 @@ const ProjectDetail = () => {
           </div>
         </motion.div>
 
-        {/* Compliance Checklist - only show if not live */}
-        {!project.is_live && (
+        {/* Compliance Checklist - only show if in setup mode */}
+        {project.status === "setup" && (
           <div className="mb-8">
             <ProjectComplianceChecklist
               projectId={project.id}

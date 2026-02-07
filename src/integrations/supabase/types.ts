@@ -145,6 +145,75 @@ export type Database = {
           },
         ]
       }
+      document_templates: {
+        Row: {
+          auto_generate_on_go_live: boolean
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          file_path: string
+          file_size: number
+          id: string
+          is_active: boolean
+          mime_type: string
+          name: string
+          organisation_id: string
+          requires_acknowledgement: boolean
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          auto_generate_on_go_live?: boolean
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          file_path: string
+          file_size: number
+          id?: string
+          is_active?: boolean
+          mime_type: string
+          name: string
+          organisation_id: string
+          requires_acknowledgement?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          auto_generate_on_go_live?: boolean
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          file_path?: string
+          file_size?: number
+          id?: string
+          is_active?: boolean
+          mime_type?: string
+          name?: string
+          organisation_id?: string
+          requires_acknowledgement?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_templates_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           acknowledgement_deadline: string | null
@@ -158,7 +227,9 @@ export type Database = {
           description: string | null
           file_path: string
           file_size: number
+          generated_from_template_id: string | null
           id: string
+          is_auto_generated: boolean | null
           mime_type: string
           name: string
           organisation_id: string
@@ -185,7 +256,9 @@ export type Database = {
           description?: string | null
           file_path: string
           file_size: number
+          generated_from_template_id?: string | null
           id?: string
+          is_auto_generated?: boolean | null
           mime_type: string
           name: string
           organisation_id: string
@@ -212,7 +285,9 @@ export type Database = {
           description?: string | null
           file_path?: string
           file_size?: number
+          generated_from_template_id?: string | null
           id?: string
+          is_auto_generated?: boolean | null
           mime_type?: string
           name?: string
           organisation_id?: string
@@ -233,6 +308,13 @@ export type Database = {
             columns: ["approved_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_generated_from_template_id_fkey"
+            columns: ["generated_from_template_id"]
+            isOneToOne: false
+            referencedRelation: "document_templates"
             referencedColumns: ["id"]
           },
           {
@@ -1107,6 +1189,8 @@ export type Database = {
           start_date: string | null
           status: Database["public"]["Enums"]["project_status"] | null
           updated_at: string
+          went_live_at: string | null
+          went_live_by: string | null
         }
         Insert: {
           address?: string | null
@@ -1123,6 +1207,8 @@ export type Database = {
           start_date?: string | null
           status?: Database["public"]["Enums"]["project_status"] | null
           updated_at?: string
+          went_live_at?: string | null
+          went_live_by?: string | null
         }
         Update: {
           address?: string | null
@@ -1139,6 +1225,8 @@ export type Database = {
           start_date?: string | null
           status?: Database["public"]["Enums"]["project_status"] | null
           updated_at?: string
+          went_live_at?: string | null
+          went_live_by?: string | null
         }
         Relationships: [
           {
@@ -1153,6 +1241,13 @@ export type Database = {
             columns: ["organisation_id"]
             isOneToOne: false
             referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_went_live_by_fkey"
+            columns: ["went_live_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1784,7 +1879,7 @@ export type Database = {
         | "demolition"
         | "lifting_operations"
         | "general"
-      project_status: "active" | "completed" | "archived"
+      project_status: "setup" | "active" | "completed" | "archived"
       subscription_status: "active" | "past_due" | "cancelled" | "trialing"
       subscription_tier: "starter" | "professional" | "enterprise"
       toolbox_talk_category:
@@ -2025,7 +2120,7 @@ export const Constants = {
         "lifting_operations",
         "general",
       ],
-      project_status: ["active", "completed", "archived"],
+      project_status: ["setup", "active", "completed", "archived"],
       subscription_status: ["active", "past_due", "cancelled", "trialing"],
       subscription_tier: ["starter", "professional", "enterprise"],
       toolbox_talk_category: [
