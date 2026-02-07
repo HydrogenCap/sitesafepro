@@ -51,6 +51,7 @@ import Contractors from "./pages/Contractors";
 import NewContractor from "./pages/NewContractor";
 import ContractorDetail from "./pages/ContractorDetail";
 import ContractorUpload from "./pages/ContractorUpload";
+import ComplianceCalendar from "./pages/ComplianceCalendar";
 
 const queryClient = new QueryClient();
 
@@ -129,6 +130,7 @@ const App = () => {
               <Route path="/contractors" element={<ProtectedRoute><Contractors /></ProtectedRoute>} />
               <Route path="/contractors/new" element={<ProtectedRoute><NewContractor /></ProtectedRoute>} />
               <Route path="/contractors/:id" element={<ProtectedRoute><ContractorDetail /></ProtectedRoute>} />
+              <Route path="/compliance-calendar" element={<ProtectedRoute><ComplianceCalendar /></ProtectedRoute>} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
