@@ -53,6 +53,13 @@ export type Database = {
             foreignKeyName: "action_comments_action_id_fkey"
             columns: ["action_id"]
             isOneToOne: false
+            referencedRelation: "actions_with_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_comments_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
             referencedRelation: "corrective_actions"
             referencedColumns: ["id"]
           },
@@ -113,6 +120,13 @@ export type Database = {
           uploaded_by?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "action_evidence_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "actions_with_status"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "action_evidence_action_id_fkey"
             columns: ["action_id"]
@@ -2027,7 +2041,78 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      actions_with_status: {
+        Row: {
+          assigned_to: string | null
+          assigned_to_company: string | null
+          assigned_to_name: string | null
+          closed_at: string | null
+          completed_at: string | null
+          computed_status: string | null
+          created_at: string | null
+          days_overdue: number | null
+          description: string | null
+          due_date: string | null
+          id: string | null
+          is_recurring: boolean | null
+          location_on_site: string | null
+          organisation_id: string | null
+          priority: Database["public"]["Enums"]["action_priority"] | null
+          project_id: string | null
+          project_name: string | null
+          raised_at: string | null
+          raised_by: string | null
+          raised_by_name: string | null
+          recurrence_count: number | null
+          resolution_notes: string | null
+          source: Database["public"]["Enums"]["action_source"] | null
+          source_reference_id: string | null
+          source_reference_type: string | null
+          status: Database["public"]["Enums"]["action_status"] | null
+          title: string | null
+          updated_at: string | null
+          verified_at: string | null
+          verified_by: string | null
+          verified_by_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "corrective_actions_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corrective_actions_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corrective_actions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corrective_actions_raised_by_fkey"
+            columns: ["raised_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corrective_actions_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       generate_unique_slug: { Args: { base_name: string }; Returns: string }

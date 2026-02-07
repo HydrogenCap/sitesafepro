@@ -8,6 +8,7 @@ import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { EditProjectDialog } from "@/components/projects/EditProjectDialog";
 import { ProjectComplianceChecklist } from "@/components/projects/ProjectComplianceChecklist";
 import { GeneratedDocumentsList } from "@/components/projects/GeneratedDocumentsList";
+import { ProjectActionsTab } from "@/components/projects/ProjectActionsTab";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -24,6 +25,7 @@ import {
   Plus,
   Rocket,
   CheckCircle,
+  AlertTriangle,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -361,6 +363,10 @@ const ProjectDetail = () => {
         <Tabs defaultValue="documents" className="w-full">
           <TabsList className="mb-6">
             <TabsTrigger value="documents">Documents</TabsTrigger>
+            <TabsTrigger value="actions" className="flex items-center gap-1.5">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              Actions
+            </TabsTrigger>
             <TabsTrigger value="contractors">Contractors</TabsTrigger>
             <TabsTrigger value="permits">Permits</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
@@ -386,6 +392,10 @@ const ProjectDetail = () => {
                 Upload Document
               </Button>
             </motion.div>
+          </TabsContent>
+
+          <TabsContent value="actions">
+            <ProjectActionsTab projectId={project.id} projectName={project.name} />
           </TabsContent>
 
           <TabsContent value="contractors">

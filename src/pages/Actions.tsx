@@ -1,16 +1,18 @@
 import { useState, useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Plus, Shield, Loader2 } from "lucide-react";
+import { Plus, Shield, Loader2, BarChart3 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ActionSummaryCards,
   ActionFilters,
   ActionTable,
+  ActionsReportCharts,
 } from "@/components/actions";
 import { toast } from "sonner";
 import { startOfMonth, isBefore, startOfToday } from "date-fns";
@@ -26,6 +28,7 @@ interface Action {
   assigned_to_company: string | null;
   project_id: string;
   closed_at: string | null;
+  created_at: string;
   projects?: { name: string };
   assigned_profile?: { full_name: string };
 }
@@ -43,10 +46,12 @@ interface TeamMember {
 const Actions = () => {
   const { user } = useAuth();
   const { organisation, tier } = useSubscription();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [actions, setActions] = useState<Action[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "list");
   const [filters, setFilters] = useState({
     project: "all",
     priority: "all",
@@ -357,63 +362,80 @@ const Actions = () => {
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <>
-            {/* Summary Cards */}
-            <ActionSummaryCards
-              overdue={summaryStats.overdue}
-              open={summaryStats.open}
-              awaitingVerification={summaryStats.awaitingVerification}
-              closedThisMonth={summaryStats.closedThisMonth}
-              onFilterClick={handleCardFilterClick}
-              activeFilter={activeStatusFilter}
-            />
+          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setSearchParams({ tab: v }); }}>
+            <TabsList className="mb-6">
+              <TabsTrigger value="list" className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                All Actions
+              </TabsTrigger>
+              <TabsTrigger value="reports" className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
+                Reports
+              </TabsTrigger>
+            </TabsList>
 
-            {/* Filters */}
-            <ActionFilters
-              projects={projects}
-              teamMembers={teamMembers}
-              filters={filters}
-              onFilterChange={handleFilterChange}
-            />
-
-            {/* Actions Table or Empty State */}
-            {filteredActions.length === 0 ? (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-card rounded-xl border-2 border-dashed border-border p-12 text-center"
-              >
-                <div className="h-16 w-16 rounded-2xl bg-muted mx-auto mb-4 flex items-center justify-center">
-                  <Shield className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">
-                  {actions.length === 0
-                    ? "No corrective actions yet"
-                    : "No actions match your filters"}
-                </h3>
-                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                  {actions.length === 0
-                    ? "Raise an action when you spot something unsafe on site — from a loose cable to a missing guardrail."
-                    : "Try adjusting your filters to see more results."}
-                </p>
-                {actions.length === 0 && (
-                  <Button asChild>
-                    <Link to="/actions/new">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Raise Your First Action
-                    </Link>
-                  </Button>
-                )}
-              </motion.div>
-            ) : (
-              <ActionTable
-                actions={filteredActions}
-                isAdmin={isAdmin}
-                onClose={handleCloseAction}
-                onDelete={handleDeleteAction}
+            <TabsContent value="list" className="space-y-6">
+              {/* Summary Cards */}
+              <ActionSummaryCards
+                overdue={summaryStats.overdue}
+                open={summaryStats.open}
+                awaitingVerification={summaryStats.awaitingVerification}
+                closedThisMonth={summaryStats.closedThisMonth}
+                onFilterClick={handleCardFilterClick}
+                activeFilter={activeStatusFilter}
               />
-            )}
-          </>
+
+              {/* Filters */}
+              <ActionFilters
+                projects={projects}
+                teamMembers={teamMembers}
+                filters={filters}
+                onFilterChange={handleFilterChange}
+              />
+
+              {/* Actions Table or Empty State */}
+              {filteredActions.length === 0 ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-card rounded-xl border-2 border-dashed border-border p-12 text-center"
+                >
+                  <div className="h-16 w-16 rounded-2xl bg-muted mx-auto mb-4 flex items-center justify-center">
+                    <Shield className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    {actions.length === 0
+                      ? "No corrective actions yet"
+                      : "No actions match your filters"}
+                  </h3>
+                  <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                    {actions.length === 0
+                      ? "Raise an action when you spot something unsafe on site — from a loose cable to a missing guardrail."
+                      : "Try adjusting your filters to see more results."}
+                  </p>
+                  {actions.length === 0 && (
+                    <Button asChild>
+                      <Link to="/actions/new">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Raise Your First Action
+                      </Link>
+                    </Button>
+                  )}
+                </motion.div>
+              ) : (
+                <ActionTable
+                  actions={filteredActions}
+                  isAdmin={isAdmin}
+                  onClose={handleCloseAction}
+                  onDelete={handleDeleteAction}
+                />
+              )}
+            </TabsContent>
+
+            <TabsContent value="reports">
+              <ActionsReportCharts actions={actions} />
+            </TabsContent>
+          </Tabs>
         )}
       </div>
     </DashboardLayout>
