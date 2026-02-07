@@ -1,9 +1,14 @@
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Logo } from "@/components/landing/Logo";
 import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   LayoutDashboard,
   FolderOpen,
@@ -26,39 +31,116 @@ import {
   FileWarning,
   Shield,
   CalendarClock,
+  ChevronDown,
+  HardHat,
+  LucideIcon,
 } from "lucide-react";
-import { useState } from "react";
 
 interface DashboardLayoutProps {
   children: ReactNode;
 }
 
-import { HardHat } from "lucide-react";
+interface NavItem {
+  icon: LucideIcon;
+  label: string;
+  href: string;
+}
 
-const navItems = [
-  { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-  { icon: FolderOpen, label: "Projects", href: "/projects" },
-  { icon: FileText, label: "Documents", href: "/documents" },
-  { icon: FileCheck, label: "RAMS", href: "/rams" },
-  { icon: CheckSquare, label: "Actions", href: "/actions" },
-  { icon: QrCode, label: "Site Access", href: "/site-access" },
-  { icon: ClipboardCheck, label: "Inductions", href: "/inductions" },
-  { icon: MessageSquare, label: "Toolbox Talks", href: "/toolbox-talks" },
-  { icon: FileWarning, label: "Permits", href: "/permits" },
-  { icon: Shield, label: "Inspections", href: "/inspections" },
-  { icon: AlertTriangle, label: "Incidents", href: "/incidents" },
-  { icon: HardHat, label: "Contractors", href: "/contractors" },
-  { icon: CalendarClock, label: "Compliance Calendar", href: "/compliance-calendar" },
-  { icon: Users, label: "Team", href: "/team" },
-  { icon: Activity, label: "Activity", href: "/activity" },
-  { icon: BarChart3, label: "Analytics", href: "/analytics" },
-  { icon: FileBarChart, label: "Reports", href: "/reports" },
-  { icon: Settings, label: "Settings", href: "/settings" },
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const navGroups: NavGroup[] = [
+  {
+    label: "Core",
+    items: [
+      { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+      { icon: FolderOpen, label: "Projects", href: "/projects" },
+      { icon: FileText, label: "Documents", href: "/documents" },
+      { icon: FileCheck, label: "RAMS", href: "/rams" },
+    ],
+  },
+  {
+    label: "Safety",
+    items: [
+      { icon: CheckSquare, label: "Actions", href: "/actions" },
+      { icon: FileWarning, label: "Permits", href: "/permits" },
+      { icon: Shield, label: "Inspections", href: "/inspections" },
+      { icon: AlertTriangle, label: "Incidents", href: "/incidents" },
+    ],
+  },
+  {
+    label: "People",
+    items: [
+      { icon: QrCode, label: "Site Access", href: "/site-access" },
+      { icon: ClipboardCheck, label: "Inductions", href: "/inductions" },
+      { icon: MessageSquare, label: "Toolbox Talks", href: "/toolbox-talks" },
+      { icon: HardHat, label: "Contractors", href: "/contractors" },
+      { icon: CalendarClock, label: "Compliance Calendar", href: "/compliance-calendar" },
+      { icon: Users, label: "Team", href: "/team" },
+    ],
+  },
+  {
+    label: "Reports",
+    items: [
+      { icon: Activity, label: "Activity", href: "/activity" },
+      { icon: BarChart3, label: "Analytics", href: "/analytics" },
+      { icon: FileBarChart, label: "Reports", href: "/reports" },
+    ],
+  },
 ];
+
+interface NavSectionProps {
+  group: NavGroup;
+  isActive: (href: string) => boolean;
+  onItemClick?: () => void;
+  defaultOpen?: boolean;
+}
+
+const NavSection = ({ group, isActive, onItemClick, defaultOpen = true }: NavSectionProps) => {
+  const [open, setOpen] = useState(defaultOpen);
+  const hasActiveItem = group.items.some((item) => isActive(item.href));
+
+  // Auto-expand if an item is active
+  useEffect(() => {
+    if (hasActiveItem && !open) {
+      setOpen(true);
+    }
+  }, [hasActiveItem]);
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="flex items-center justify-between w-full px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
+        {group.label}
+        <ChevronDown
+          className={`h-4 w-4 transition-transform ${open ? "rotate-0" : "-rotate-90"}`}
+        />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="space-y-1">
+        {group.items.map((item) => (
+          <Link
+            key={item.label}
+            to={item.href}
+            onClick={onItemClick}
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              isActive(item.href)
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            <item.icon className="h-4 w-4" />
+            {item.label}
+          </Link>
+        ))}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+};
 
 export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { user, signOut, loading: authLoading } = useAuth();
-  const { tier, isTrialing, trialDaysRemaining, loading: subLoading } = useSubscription();
+  const { isTrialing, trialDaysRemaining, loading: subLoading } = useSubscription();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -79,7 +161,8 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   if (!user) return null;
 
-  const isActive = (href: string) => location.pathname === href || location.pathname.startsWith(href + "/");
+  const isActive = (href: string) =>
+    location.pathname === href || location.pathname.startsWith(href + "/");
 
   return (
     <div className="min-h-screen bg-muted/30 flex">
@@ -91,29 +174,30 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           </Link>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.label}
-              to={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                isActive(item.href)
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-            >
-              <item.icon className="h-5 w-5" />
-              {item.label}
-            </Link>
+        <nav className="flex-1 p-3 space-y-2 overflow-y-auto">
+          {navGroups.map((group) => (
+            <NavSection key={group.label} group={group} isActive={isActive} />
           ))}
         </nav>
 
-        <div className="p-4 border-t border-border">
+        {/* Settings - always visible */}
+        <div className="p-3 border-t border-border space-y-1">
+          <Link
+            to="/settings"
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              isActive("/settings")
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            <Settings className="h-4 w-4" />
+            Settings
+          </Link>
           <button
             onClick={() => signOut()}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground w-full transition-colors"
+            className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground w-full transition-colors"
           >
-            <LogOut className="h-5 w-5" />
+            <LogOut className="h-4 w-4" />
             Sign Out
           </button>
         </div>
@@ -129,11 +213,11 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
       {/* Mobile sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 w-64 bg-card border-r border-border z-50 transform transition-transform md:hidden ${
+        className={`fixed inset-y-0 left-0 w-64 bg-card border-r border-border z-50 transform transition-transform md:hidden overflow-y-auto ${
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="p-6 border-b border-border flex items-center justify-between">
+        <div className="p-6 border-b border-border flex items-center justify-between sticky top-0 bg-card">
           <Link to="/" onClick={() => setMobileMenuOpen(false)}>
             <Logo />
           </Link>
@@ -142,33 +226,38 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           </button>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.label}
-              to={item.href}
-              onClick={() => setMobileMenuOpen(false)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                isActive(item.href)
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-            >
-              <item.icon className="h-5 w-5" />
-              {item.label}
-            </Link>
+        <nav className="p-3 space-y-2">
+          {navGroups.map((group) => (
+            <NavSection
+              key={group.label}
+              group={group}
+              isActive={isActive}
+              onItemClick={() => setMobileMenuOpen(false)}
+            />
           ))}
         </nav>
 
-        <div className="p-4 border-t border-border">
+        <div className="p-3 border-t border-border space-y-1 sticky bottom-0 bg-card">
+          <Link
+            to="/settings"
+            onClick={() => setMobileMenuOpen(false)}
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              isActive("/settings")
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            <Settings className="h-4 w-4" />
+            Settings
+          </Link>
           <button
             onClick={() => {
               signOut();
               setMobileMenuOpen(false);
             }}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground w-full transition-colors"
+            className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground w-full transition-colors"
           >
-            <LogOut className="h-5 w-5" />
+            <LogOut className="h-4 w-4" />
             Sign Out
           </button>
         </div>

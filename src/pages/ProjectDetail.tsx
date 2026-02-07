@@ -12,6 +12,7 @@ import { ProjectActionsTab } from "@/components/projects/ProjectActionsTab";
 import { InviteClientDialog } from "@/components/client/InviteClientDialog";
 import { COSHHTab } from "@/components/coshh";
 import { ProjectContractorsTab } from "@/components/projects/ProjectContractorsTab";
+import { ProjectEmergencyInfo } from "@/components/projects/ProjectEmergencyInfo";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -61,6 +62,17 @@ interface Project {
   is_live: boolean | null;
   went_live_at: string | null;
   went_live_by: string | null;
+  // Emergency info
+  nearest_ae_name: string | null;
+  nearest_ae_address: string | null;
+  nearest_ae_distance: string | null;
+  nearest_fire_station_name: string | null;
+  nearest_fire_station_address: string | null;
+  nearest_police_station_name: string | null;
+  nearest_police_station_address: string | null;
+  site_emergency_number: string | null;
+  first_aider_name: string | null;
+  fire_warden_name: string | null;
 }
 
 interface GeneratedDocument {
@@ -347,7 +359,36 @@ const ProjectDetail = () => {
           </div>
         </motion.div>
 
-        {/* Compliance Checklist - only show if in setup mode */}
+        {/* Emergency Information */}
+        <div className="mb-8">
+          <ProjectEmergencyInfo
+            projectId={project.id}
+            emergencyInfo={{
+              nearest_ae_name: project.nearest_ae_name,
+              nearest_ae_address: project.nearest_ae_address,
+              nearest_ae_distance: project.nearest_ae_distance,
+              nearest_fire_station_name: project.nearest_fire_station_name,
+              nearest_fire_station_address: project.nearest_fire_station_address,
+              nearest_police_station_name: project.nearest_police_station_name,
+              nearest_police_station_address: project.nearest_police_station_address,
+              site_emergency_number: project.site_emergency_number,
+              first_aider_name: project.first_aider_name,
+              fire_warden_name: project.fire_warden_name,
+            }}
+            onUpdate={() => {
+              // Refresh project data
+              supabase
+                .from("projects")
+                .select("*")
+                .eq("id", project.id)
+                .single()
+                .then(({ data }) => {
+                  if (data) setProject(data as Project);
+                });
+            }}
+          />
+        </div>
+
         {project.status === "setup" && (
           <div className="mb-8">
             <ProjectComplianceChecklist
