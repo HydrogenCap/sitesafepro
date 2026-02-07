@@ -74,6 +74,7 @@ export default function DiaryEntry() {
   });
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [isFetchingWeather, setIsFetchingWeather] = useState(false);
 
   const { data: project } = useQuery({
     queryKey: ['project', projectId],
@@ -307,6 +308,56 @@ export default function DiaryEntry() {
     updateEntry('weather_conditions', updated);
   };
 
+  const fetchWeatherWithAI = async () => {
+    const location = project?.address || project?.name;
+    if (!location) {
+      toast({
+        title: "Location required",
+        description: "Please add a project address to fetch weather data.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsFetchingWeather(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('get-weather', {
+        body: { location, date }
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      // Update entry with fetched weather data
+      setEntry(prev => ({
+        ...prev,
+        weather_morning: data.weather_morning || prev.weather_morning,
+        weather_afternoon: data.weather_afternoon || prev.weather_afternoon,
+        temperature_high: data.temperature_high ?? prev.temperature_high,
+        temperature_low: data.temperature_low ?? prev.temperature_low,
+        weather_conditions: data.conditions || prev.weather_conditions,
+        weather_impact: data.weather_impact || prev.weather_impact,
+      }));
+
+      toast({
+        title: "Weather populated",
+        description: "AI has filled in the weather information based on your location.",
+      });
+    } catch (error: any) {
+      console.error('Error fetching weather:', error);
+      toast({
+        title: "Failed to fetch weather",
+        description: error.message || "Please try again or enter manually.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsFetchingWeather(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -353,6 +404,21 @@ export default function DiaryEntry() {
           onToggle={() => toggleSection('weather')}
         >
           <div className="space-y-4">
+            {/* AI Weather Fetch Button */}
+            <Button 
+              variant="outline" 
+              onClick={fetchWeatherWithAI} 
+              disabled={isFetchingWeather}
+              className="w-full"
+            >
+              {isFetchingWeather ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Cloud className="h-4 w-4 mr-2" />
+              )}
+              {isFetchingWeather ? 'Fetching weather...' : 'Auto-fill with AI'}
+            </Button>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Morning</Label>
