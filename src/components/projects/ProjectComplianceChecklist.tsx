@@ -18,6 +18,7 @@ import {
   COMPLIANCE_REQUIREMENTS,
   getExemptionReasonForType,
 } from "./compliance";
+import { generateGoLiveDocuments } from "@/hooks/useGoLiveDocuments";
 
 interface ProjectComplianceChecklistProps {
   projectId: string;
@@ -355,7 +356,7 @@ export const ProjectComplianceChecklist = ({
   };
 
   const handleGoLive = async () => {
-    if (!allComplete) {
+    if (!allComplete || !organisation || !user) {
       toast.error("Please complete all requirements before going live");
       return;
     }
@@ -369,14 +370,27 @@ export const ProjectComplianceChecklist = ({
           is_live: true,
           status: "active",
           went_live_at: new Date().toISOString(),
-          went_live_by: user?.id,
+          went_live_by: user.id,
         })
         .eq("id", projectId);
 
       if (projectError) throw projectError;
 
+      // Generate documents from templates
+      const result = await generateGoLiveDocuments(projectId, organisation.id, user.id);
+      
+      if (result.errors.length > 0) {
+        console.warn("Some documents failed to generate:", result.errors);
+      }
+
       setGoLiveDialogOpen(false);
-      toast.success("Site is now live! Generating site-specific documents...");
+      
+      if (result.documentsGenerated > 0) {
+        toast.success(`Site is now live! ${result.documentsGenerated} document${result.documentsGenerated !== 1 ? 's' : ''} generated.`);
+      } else {
+        toast.success("Site is now live!");
+      }
+      
       onGoLive();
     } catch (error) {
       console.error("Error going live:", error);

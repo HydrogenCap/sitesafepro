@@ -3,11 +3,12 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Building2, CreditCard, Bell } from "lucide-react";
+import { User, Building2, CreditCard, Bell, FileText } from "lucide-react";
 import ProfileSettings from "@/components/settings/ProfileSettings";
 import OrganisationSettings from "@/components/settings/OrganisationSettings";
 import SubscriptionSettings from "@/components/settings/SubscriptionSettings";
 import NotificationSettings from "@/components/settings/NotificationSettings";
+import TemplateSettings from "@/components/settings/TemplateSettings";
 
 export default function Settings() {
   const { user } = useAuth();
@@ -39,7 +40,7 @@ export default function Settings() {
 
         {/* Settings Tabs */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3 lg:grid-cols-5">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">Profile</span>
@@ -47,6 +48,10 @@ export default function Settings() {
             <TabsTrigger value="organisation" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               <span className="hidden sm:inline">Organisation</span>
+            </TabsTrigger>
+            <TabsTrigger value="templates" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">Templates</span>
             </TabsTrigger>
             <TabsTrigger value="subscription" className="flex items-center gap-2">
               <CreditCard className="h-4 w-4" />
@@ -64,6 +69,10 @@ export default function Settings() {
 
           <TabsContent value="organisation">
             <OrganisationSettings />
+          </TabsContent>
+
+          <TabsContent value="templates">
+            <TemplateSettings />
           </TabsContent>
 
           <TabsContent value="subscription">
