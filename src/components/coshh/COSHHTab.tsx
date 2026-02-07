@@ -36,6 +36,7 @@ export const COSHHTab = ({
   organisationName,
   projectAddress,
 }: COSHHTabProps) => {
+  // All hooks MUST be called before any conditional returns
   const { canAccess, loading: subscriptionLoading } = useSubscription();
   const {
     substances,
@@ -62,6 +63,7 @@ export const COSHHTab = ({
   // Check tier access (Professional+)
   const hasCOSHHAccess = canAccess('coshh_register');
 
+  // Show upgrade prompt if no access - AFTER all hooks are called
   if (!hasCOSHHAccess) {
     return (
       <div className="bg-card rounded-xl border border-border p-8 text-center">
