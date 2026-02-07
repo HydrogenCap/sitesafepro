@@ -54,6 +54,12 @@ import ContractorDetail from "./pages/ContractorDetail";
 import ContractorUpload from "./pages/ContractorUpload";
 import ComplianceCalendar from "./pages/ComplianceCalendar";
 import Help from "./pages/Help";
+import Documentation from "./pages/Documentation";
+import CDMGuide from "./pages/CDMGuide";
+import CookiePolicy from "./pages/CookiePolicy";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Templates from "./pages/Templates";
 
 const queryClient = new QueryClient();
 
@@ -91,6 +97,12 @@ const App = () => {
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/terms" element={<Terms />} />
+              <Route path="/cookies" element={<CookiePolicy />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/documentation" element={<Documentation />} />
+              <Route path="/cdm-guide" element={<CDMGuide />} />
+              <Route path="/templates" element={<Templates />} />
               <Route path="/install" element={<Install />} />
               <Route path="/check-in/:code" element={<CheckIn />} />
               <Route path="/accept-invite" element={<AcceptInvite />} />

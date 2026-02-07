@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Logo } from "./Logo";
 import { Linkedin, Twitter, Mail } from "lucide-react";
 
@@ -5,37 +6,34 @@ const footerLinks = {
   product: {
     title: "Product",
     links: [
-      { label: "Features", href: "#features" },
-      { label: "Pricing", href: "#pricing" },
-      { label: "Integrations", href: "#" },
-      { label: "Changelog", href: "#" },
+      { label: "Features", href: "/#features" },
+      { label: "Pricing", href: "/#pricing" },
+      { label: "Install App", href: "/install" },
+      { label: "FAQ", href: "/#faq" },
     ],
   },
   company: {
     title: "Company",
     links: [
-      { label: "About", href: "#about" },
-      { label: "Blog", href: "#" },
-      { label: "Careers", href: "#" },
-      { label: "Contact", href: "#contact" },
+      { label: "About", href: "/about" },
+      { label: "Contact", href: "/contact" },
     ],
   },
   resources: {
     title: "Resources",
     links: [
-      { label: "Documentation", href: "#" },
-      { label: "Help Centre", href: "#" },
-      { label: "CDM 2015 Guide", href: "#" },
-      { label: "Templates", href: "#" },
+      { label: "Documentation", href: "/documentation" },
+      { label: "Help Centre", href: "/help" },
+      { label: "CDM 2015 Guide", href: "/cdm-guide" },
+      { label: "Templates", href: "/templates" },
     ],
   },
   legal: {
     title: "Legal",
     links: [
-      { label: "Privacy Policy", href: "#" },
-      { label: "Terms of Service", href: "#" },
-      { label: "Cookie Policy", href: "#" },
-      { label: "GDPR", href: "#" },
+      { label: "Privacy Policy", href: "/privacy" },
+      { label: "Terms of Service", href: "/terms" },
+      { label: "Cookie Policy", href: "/cookies" },
     ],
   },
 };
@@ -87,12 +85,21 @@ export const Footer = () => {
               <ul className="space-y-3">
                 {section.links.map((link) => (
                   <li key={link.label}>
-                    <a
-                      href={link.href}
-                      className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors"
-                    >
-                      {link.label}
-                    </a>
+                    {link.href.startsWith('/') && !link.href.startsWith('/#') ? (
+                      <Link
+                        to={link.href}
+                        className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors"
+                      >
+                        {link.label}
+                      </Link>
+                    ) : (
+                      <a
+                        href={link.href}
+                        className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors"
+                      >
+                        {link.label}
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>
