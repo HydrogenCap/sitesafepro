@@ -12,7 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
-import { Plus, ClipboardCheck, Search, Filter, CheckCircle, XCircle, AlertTriangle, Calendar, Building } from "lucide-react";
+import { BulkPhotoUpload } from "@/components/inspections/BulkPhotoUpload";
+import { Plus, ClipboardCheck, Search, Filter, CheckCircle, XCircle, AlertTriangle, Calendar, Building, ImageIcon } from "lucide-react";
 import { format } from "date-fns";
 
 interface Inspection {
@@ -95,6 +96,7 @@ export default function Inspections() {
     next_inspection_date: "",
     notes: "",
   });
+  const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
 
   const [checklistItems, setChecklistItems] = useState<{ question: string; result: string; notes: string }[]>([]);
 
@@ -203,6 +205,7 @@ export default function Inspections() {
           notes: formData.notes || null,
           inspector_id: user.id,
           completed_at: overallResult ? new Date().toISOString() : null,
+          photos: uploadedPhotos.length > 0 ? uploadedPhotos : null,
         })
         .select()
         .single();
@@ -240,6 +243,7 @@ export default function Inspections() {
         notes: "",
       });
       setChecklistItems([]);
+      setUploadedPhotos([]);
       fetchData();
     } catch (error) {
       console.error("Error creating inspection:", error);
@@ -435,6 +439,21 @@ export default function Inspections() {
                         )}
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {/* Bulk Photo Upload */}
+                {organisationId && (
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <ImageIcon className="h-4 w-4" />
+                      Inspection Photos
+                    </Label>
+                    <BulkPhotoUpload
+                      organisationId={organisationId}
+                      onPhotosUploaded={setUploadedPhotos}
+                      existingPhotos={uploadedPhotos}
+                    />
                   </div>
                 )}
 
