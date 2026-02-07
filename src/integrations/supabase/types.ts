@@ -220,6 +220,172 @@ export type Database = {
           },
         ]
       }
+      client_portal_activity: {
+        Row: {
+          action: string
+          client_user_id: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          organisation_id: string
+          resource_id: string | null
+          resource_name: string | null
+          resource_type: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          client_user_id: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          organisation_id: string
+          resource_id?: string | null
+          resource_name?: string | null
+          resource_type?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          client_user_id?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          organisation_id?: string
+          resource_id?: string | null
+          resource_name?: string | null
+          resource_type?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_portal_activity_client_user_id_fkey"
+            columns: ["client_user_id"]
+            isOneToOne: false
+            referencedRelation: "client_portal_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_portal_activity_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_portal_users: {
+        Row: {
+          accepted_at: string | null
+          can_download_reports: boolean | null
+          can_view_actions: boolean | null
+          can_view_diary: boolean | null
+          can_view_documents: boolean | null
+          can_view_incidents: boolean | null
+          can_view_rams: boolean | null
+          can_view_workforce: boolean | null
+          company_name: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          invite_token: string | null
+          invited_at: string
+          invited_by: string
+          is_active: boolean | null
+          last_login_at: string | null
+          notify_incidents: boolean | null
+          notify_monthly_report: boolean | null
+          notify_overdue_actions: boolean | null
+          notify_weekly_report: boolean | null
+          organisation_id: string
+          phone: string | null
+          profile_id: string | null
+          project_ids: string[]
+          role: Database["public"]["Enums"]["client_role"]
+        }
+        Insert: {
+          accepted_at?: string | null
+          can_download_reports?: boolean | null
+          can_view_actions?: boolean | null
+          can_view_diary?: boolean | null
+          can_view_documents?: boolean | null
+          can_view_incidents?: boolean | null
+          can_view_rams?: boolean | null
+          can_view_workforce?: boolean | null
+          company_name: string
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          invite_token?: string | null
+          invited_at?: string
+          invited_by: string
+          is_active?: boolean | null
+          last_login_at?: string | null
+          notify_incidents?: boolean | null
+          notify_monthly_report?: boolean | null
+          notify_overdue_actions?: boolean | null
+          notify_weekly_report?: boolean | null
+          organisation_id: string
+          phone?: string | null
+          profile_id?: string | null
+          project_ids?: string[]
+          role?: Database["public"]["Enums"]["client_role"]
+        }
+        Update: {
+          accepted_at?: string | null
+          can_download_reports?: boolean | null
+          can_view_actions?: boolean | null
+          can_view_diary?: boolean | null
+          can_view_documents?: boolean | null
+          can_view_incidents?: boolean | null
+          can_view_rams?: boolean | null
+          can_view_workforce?: boolean | null
+          company_name?: string
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          invite_token?: string | null
+          invited_at?: string
+          invited_by?: string
+          is_active?: boolean | null
+          last_login_at?: string | null
+          notify_incidents?: boolean | null
+          notify_monthly_report?: boolean | null
+          notify_overdue_actions?: boolean | null
+          notify_weekly_report?: boolean | null
+          organisation_id?: string
+          phone?: string | null
+          profile_id?: string | null
+          project_ids?: string[]
+          role?: Database["public"]["Enums"]["client_role"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_portal_users_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_portal_users_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_portal_users_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       corrective_actions: {
         Row: {
           assigned_to: string | null
@@ -2512,7 +2678,9 @@ export type Database = {
     }
     Functions: {
       generate_unique_slug: { Args: { base_name: string }; Returns: string }
+      get_client_org_id: { Args: { _user_id: string }; Returns: string }
       get_user_org_id: { Args: never; Returns: string }
+      is_client_portal_user: { Args: { _user_id: string }; Returns: boolean }
       is_org_admin: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
@@ -2556,6 +2724,11 @@ export type Database = {
         | "site_visit_checkout"
         | "settings_updated"
         | "subscription_changed"
+      client_role:
+        | "client"
+        | "principal_designer"
+        | "cdm_advisor"
+        | "building_control"
       document_category:
         | "rams"
         | "method_statement"
@@ -2807,6 +2980,12 @@ export const Constants = {
         "site_visit_checkout",
         "settings_updated",
         "subscription_changed",
+      ],
+      client_role: [
+        "client",
+        "principal_designer",
+        "cdm_advisor",
+        "building_control",
       ],
       document_category: [
         "rams",

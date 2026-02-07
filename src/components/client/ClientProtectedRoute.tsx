@@ -1,12 +1,13 @@
+import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClientPortal } from "@/contexts/ClientPortalContext";
 
-interface ProtectedRouteProps {
-  children: React.ReactNode;
+interface ClientProtectedRouteProps {
+  children: ReactNode;
 }
 
-export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+export const ClientProtectedRoute = ({ children }: ClientProtectedRouteProps) => {
   const { user, loading: authLoading } = useAuth();
   const { isClientUser, loading: clientLoading } = useClientPortal();
 
@@ -22,9 +23,9 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return <Navigate to="/auth" replace />;
   }
 
-  // If user is a client portal user, redirect them to the client portal
-  if (isClientUser) {
-    return <Navigate to="/client" replace />;
+  if (!isClientUser) {
+    // If they're logged in but not a client user, redirect to main dashboard
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
