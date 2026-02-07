@@ -6,6 +6,12 @@ import {
   ClipboardList,
   Calendar,
   Building2,
+  Shield,
+  AlertTriangle,
+  FileCheck,
+  HardHat,
+  BookOpen,
+  Beaker,
 } from "lucide-react";
 
 const features = [
@@ -13,37 +19,73 @@ const features = [
     icon: FileSignature,
     title: "Documents & E-Signatures",
     description:
-      "Upload RAMS, method statements, and safety documents. Get digital signatures with full audit trails.",
+      "Upload RAMS, method statements, and safety documents. AI-powered categorisation suggests the right category. Get digital signatures with full audit trails and acknowledgement tracking.",
   },
   {
     icon: QrCode,
     title: "QR Site Access",
     description:
-      "Generate unique QR codes for each site. Track real-time headcount and enable emergency roll calls.",
+      "Generate unique QR codes for each site. Workers scan to sign in/out with name, company, and trade. Real-time headcount dashboard and emergency muster list export.",
   },
   {
-    icon: Users,
-    title: "Toolbox Talks",
+    icon: FileCheck,
+    title: "RAMS Builder",
     description:
-      "35+ pre-loaded safety talks. Record attendance digitally and track completion across your workforce.",
+      "5-step guided wizard to create professional Risk Assessments and Method Statements. 80+ pre-loaded activities, hazard controls, and formatted PDF export with signatures.",
   },
   {
     icon: ClipboardList,
     title: "Permits to Work",
     description:
-      "Hot works, confined spaces, and more. Digital approval workflows with time-limited permits.",
+      "Digital permits for Hot Works, Confined Space, Excavation, Electrical Isolation, Working at Height, and Roof Work. Approval workflows with time-limited validity.",
+  },
+  {
+    icon: Shield,
+    title: "Inspections",
+    description:
+      "Mobile-friendly checklists for scaffold, excavation, lifting equipment, electrical, fire safety, housekeeping, and PPE compliance. Photo evidence and automatic action creation.",
+  },
+  {
+    icon: AlertTriangle,
+    title: "Incident Reporting",
+    description:
+      "Full incident investigation workflow with photos, witness statements, and root cause analysis. RIDDOR guidance flags reportable incidents automatically.",
+  },
+  {
+    icon: Users,
+    title: "Toolbox Talks",
+    description:
+      "35+ pre-loaded safety talks covering working at height, manual handling, electrical safety, and more. Digital attendance recording and completion tracking.",
+  },
+  {
+    icon: HardHat,
+    title: "Contractor Compliance",
+    description:
+      "Track subcontractor documents, insurance, RAMS, and training certifications. Automated expiry alerts, compliance scoring, and one-click document request emails.",
+  },
+  {
+    icon: BookOpen,
+    title: "Site Inductions",
+    description:
+      "Configure induction content with slides and documents. New workers complete on first QR sign-in. Acknowledgement tracking and completion records for compliance.",
+  },
+  {
+    icon: Beaker,
+    title: "COSHH Register",
+    description:
+      "Hazardous substance management with GHS pictograms, PPE requirements, control measures, and SDS document links. Health surveillance tracking where required.",
   },
   {
     icon: Calendar,
     title: "Compliance Calendar",
     description:
-      "Never miss a renewal. Automated alerts for expiring certificates, insurances, and inspections.",
+      "Never miss a renewal. Visual calendar of expiring certificates, insurances, permits, and inspection due dates. Automated email alerts 30, 14, and 7 days before expiry.",
   },
   {
     icon: Building2,
-    title: "Contractor Portal",
+    title: "Client Portal",
     description:
-      "Free access for sub-contractors. They can view documents, sign off, and upload their RAMS.",
+      "Give clients read-only access to project documents, compliance status, and reports. Configure exactly what they can see. Perfect for principal contractors and developers.",
   },
 ];
 
@@ -109,7 +151,7 @@ export const FeaturesSection = () => {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
+          className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
         >
           {features.map((feature) => (
             <motion.div
