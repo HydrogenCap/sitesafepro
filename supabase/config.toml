@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.bulk-contractor-reminder]
 verify_jwt = false
+
+[functions.seed-default-templates]
+verify_jwt = false
