@@ -7,3 +7,4 @@ export { ActionTable } from "./ActionTable";
 export { EvidenceUpload } from "./EvidenceUpload";
 export { StatusWorkflowButtons } from "./StatusWorkflowButtons";
 export { ActionActivityFeed } from "./ActionActivityFeed";
+export { ActionsReportCharts } from "./ActionsReportCharts";

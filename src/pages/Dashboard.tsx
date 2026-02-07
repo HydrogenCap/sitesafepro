@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Button } from "@/components/ui/button";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { ActionsDashboardWidget } from "@/components/dashboard/ActionsDashboardWidget";
 import { toast } from "sonner";
 import {
   Plus,
@@ -147,6 +148,11 @@ const Dashboard = () => {
               </motion.div>
             ))}
           </div>
+        </div>
+
+        {/* Actions Widget */}
+        <div className="mb-8">
+          <ActionsDashboardWidget />
         </div>
 
         {/* Recent activity / empty state */}
