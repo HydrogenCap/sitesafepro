@@ -47,7 +47,9 @@ import {
   Download,
   Rocket,
   PenTool,
+  FolderDown,
 } from "lucide-react";
+import { DEFAULT_TEMPLATES } from "@/config/defaultTemplates";
 
 interface DocumentTemplate {
   id: string;
@@ -78,6 +80,7 @@ export default function TemplateSettings() {
   const [templates, setTemplates] = useState<DocumentTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [loadingDefaults, setLoadingDefaults] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -314,6 +317,96 @@ export default function TemplateSettings() {
     return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   };
 
+  const loadDefaultTemplates = async () => {
+    if (!organisation?.id || !user?.id) return;
+
+    setLoadingDefaults(true);
+    let successCount = 0;
+    let skipCount = 0;
+
+    try {
+      for (const template of DEFAULT_TEMPLATES) {
+        // Check if template with same name already exists
+        const exists = templates.some(
+          (t) => t.name.toLowerCase() === template.name.toLowerCase()
+        );
+        if (exists) {
+          skipCount++;
+          continue;
+        }
+
+        try {
+          // Fetch the file from public/templates
+          const response = await fetch(`/templates/${template.fileName}`);
+          if (!response.ok) {
+            console.error(`Failed to fetch ${template.fileName}`);
+            continue;
+          }
+
+          const blob = await response.blob();
+          const file = new File([blob], template.fileName, {
+            type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          });
+
+          // Upload to storage
+          const filePath = `${organisation.id}/${crypto.randomUUID()}.docx`;
+          const { error: uploadError } = await supabase.storage
+            .from("document-templates")
+            .upload(filePath, file);
+
+          if (uploadError) {
+            console.error(`Upload error for ${template.name}:`, uploadError);
+            continue;
+          }
+
+          // Create template record
+          const { error: insertError } = await supabase
+            .from("document_templates")
+            .insert({
+              organisation_id: organisation.id,
+              name: template.name,
+              description: template.description,
+              category: template.category,
+              file_path: filePath,
+              file_size: file.size,
+              mime_type: file.type,
+              requires_acknowledgement: template.requiresAcknowledgement,
+              auto_generate_on_go_live: template.autoGenerateOnGoLive,
+              sort_order: templates.length + successCount,
+              created_by: user.id,
+            });
+
+          if (insertError) {
+            console.error(`Insert error for ${template.name}:`, insertError);
+            // Clean up uploaded file
+            await supabase.storage.from("document-templates").remove([filePath]);
+            continue;
+          }
+
+          successCount++;
+        } catch (err) {
+          console.error(`Error processing ${template.name}:`, err);
+        }
+      }
+
+      if (successCount > 0) {
+        toast.success(`Loaded ${successCount} default template${successCount > 1 ? "s" : ""}`);
+        fetchTemplates();
+      }
+      if (skipCount > 0) {
+        toast.info(`Skipped ${skipCount} template${skipCount > 1 ? "s" : ""} (already exist)`);
+      }
+      if (successCount === 0 && skipCount === 0) {
+        toast.error("Failed to load default templates");
+      }
+    } catch (error) {
+      console.error("Error loading default templates:", error);
+      toast.error("Failed to load default templates");
+    } finally {
+      setLoadingDefaults(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -332,10 +425,29 @@ export default function TemplateSettings() {
             Upload templates that will be automatically generated when projects go live
           </p>
         </div>
-        <Button onClick={() => setUploadDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Template
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={loadDefaultTemplates}
+            disabled={loadingDefaults}
+          >
+            {loadingDefaults ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              <>
+                <FolderDown className="h-4 w-4 mr-2" />
+                Load Defaults
+              </>
+            )}
+          </Button>
+          <Button onClick={() => setUploadDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Template
+          </Button>
+        </div>
       </div>
 
       {/* Info Card */}
