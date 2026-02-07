@@ -8,9 +8,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { ProjectImageUpload } from "@/components/projects/ProjectImageUpload";
+import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -226,13 +226,11 @@ const NewProject = () => {
               <MapPin className="h-4 w-4" />
               Site Address
             </Label>
-            <Textarea
+            <AddressAutocomplete
               id="address"
-              placeholder="Enter the construction site address"
               value={formData.address}
-              onChange={(e) => updateField("address", e.target.value)}
-              className="resize-none"
-              rows={3}
+              onChange={(value) => updateField("address", value)}
+              placeholder="Start typing to search for an address..."
             />
           </div>
 
