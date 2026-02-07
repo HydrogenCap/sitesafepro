@@ -224,7 +224,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error("Bulk reminder error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Failed to send reminders. Please try again or contact support." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
