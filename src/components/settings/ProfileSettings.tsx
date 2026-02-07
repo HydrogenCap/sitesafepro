@@ -6,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload, User, Mail, Phone, Save } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
+import { Loader2, Upload, User, Mail, Phone, Save, MessageSquare } from "lucide-react";
 
 interface Profile {
   id: string;
@@ -15,21 +17,38 @@ interface Profile {
   email: string;
   phone: string | null;
   avatar_url: string | null;
+  whatsapp_number: string | null;
+  whatsapp_opted_in: boolean;
+  whatsapp_opted_in_at: string | null;
 }
 
 export default function ProfileSettings() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { organisation } = useSubscription();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
-
+  const [orgWhatsappEnabled, setOrgWhatsappEnabled] = useState(false);
   useEffect(() => {
     if (user) {
       fetchProfile();
     }
-  }, [user]);
+    if (organisation?.id) {
+      checkOrgWhatsapp();
+    }
+  }, [user, organisation?.id]);
+
+  const checkOrgWhatsapp = async () => {
+    if (!organisation?.id) return;
+    const { data } = await supabase
+      .from("organisations")
+      .select("whatsapp_enabled")
+      .eq("id", organisation.id)
+      .single();
+    setOrgWhatsappEnabled(data?.whatsapp_enabled || false);
+  };
 
   const fetchProfile = async () => {
     try {
@@ -58,12 +77,23 @@ export default function ProfileSettings() {
 
     setSaving(true);
     try {
+      const updateData: Record<string, unknown> = {
+        full_name: profile.full_name,
+        phone: profile.phone,
+        whatsapp_number: profile.whatsapp_number,
+        whatsapp_opted_in: profile.whatsapp_opted_in,
+      };
+      
+      // Set opt-in timestamp when opting in
+      if (profile.whatsapp_opted_in && !profile.whatsapp_opted_in_at) {
+        updateData.whatsapp_opted_in_at = new Date().toISOString();
+      } else if (!profile.whatsapp_opted_in) {
+        updateData.whatsapp_opted_in_at = null;
+      }
+
       const { error } = await supabase
         .from("profiles")
-        .update({
-          full_name: profile.full_name,
-          phone: profile.phone,
-        })
+        .update(updateData)
         .eq("id", user?.id);
 
       if (error) throw error;
@@ -275,6 +305,68 @@ export default function ProfileSettings() {
           </div>
         </CardContent>
       </Card>
+
+      {/* WhatsApp Opt-In Section */}
+      {orgWhatsappEnabled && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-green-600" />
+              WhatsApp Notifications
+            </CardTitle>
+            <CardDescription>
+              Receive safety alerts and document requests via WhatsApp
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="whatsappNumber">WhatsApp Number</Label>
+              <div className="relative">
+                <MessageSquare className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="whatsappNumber"
+                  value={profile?.whatsapp_number || profile?.phone || ""}
+                  onChange={(e) => setProfile((prev) => prev ? { ...prev, whatsapp_number: e.target.value } : null)}
+                  className="pl-10"
+                  placeholder="+44 7700 900000"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Include country code (e.g., +44 for UK)
+              </p>
+            </div>
+
+            <div className="flex items-start gap-4 p-4 rounded-lg border bg-muted/50">
+              <Switch
+                id="whatsapp-optin"
+                checked={profile?.whatsapp_opted_in || false}
+                onCheckedChange={(checked) => 
+                  setProfile((prev) => prev ? { 
+                    ...prev, 
+                    whatsapp_opted_in: checked,
+                    whatsapp_number: prev.whatsapp_number || prev.phone 
+                  } : null)
+                }
+              />
+              <div className="space-y-1">
+                <Label htmlFor="whatsapp-optin" className="font-medium cursor-pointer">
+                  I agree to receive WhatsApp notifications
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  You'll receive safety alerts including document signature requests, corrective action 
+                  assignments, overdue reminders, and permit expiry notifications. You can opt out at any time.
+                </p>
+              </div>
+            </div>
+
+            {profile?.whatsapp_opted_in && profile?.whatsapp_opted_in_at && (
+              <p className="text-xs text-muted-foreground">
+                Opted in on {new Date(profile.whatsapp_opted_in_at).toLocaleDateString()}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

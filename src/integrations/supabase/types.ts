@@ -1229,6 +1229,93 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          action_assigned_email: boolean | null
+          action_assigned_push: boolean | null
+          action_assigned_whatsapp: boolean | null
+          action_overdue_email: boolean | null
+          action_overdue_push: boolean | null
+          action_overdue_whatsapp: boolean | null
+          created_at: string
+          document_ack_email: boolean | null
+          document_ack_push: boolean | null
+          document_ack_whatsapp: boolean | null
+          id: string
+          induction_reminder_email: boolean | null
+          induction_reminder_whatsapp: boolean | null
+          organisation_id: string
+          permit_expiring_email: boolean | null
+          permit_expiring_push: boolean | null
+          permit_expiring_whatsapp: boolean | null
+          profile_id: string
+          rams_issued_email: boolean | null
+          rams_issued_whatsapp: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          action_assigned_email?: boolean | null
+          action_assigned_push?: boolean | null
+          action_assigned_whatsapp?: boolean | null
+          action_overdue_email?: boolean | null
+          action_overdue_push?: boolean | null
+          action_overdue_whatsapp?: boolean | null
+          created_at?: string
+          document_ack_email?: boolean | null
+          document_ack_push?: boolean | null
+          document_ack_whatsapp?: boolean | null
+          id?: string
+          induction_reminder_email?: boolean | null
+          induction_reminder_whatsapp?: boolean | null
+          organisation_id: string
+          permit_expiring_email?: boolean | null
+          permit_expiring_push?: boolean | null
+          permit_expiring_whatsapp?: boolean | null
+          profile_id: string
+          rams_issued_email?: boolean | null
+          rams_issued_whatsapp?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          action_assigned_email?: boolean | null
+          action_assigned_push?: boolean | null
+          action_assigned_whatsapp?: boolean | null
+          action_overdue_email?: boolean | null
+          action_overdue_push?: boolean | null
+          action_overdue_whatsapp?: boolean | null
+          created_at?: string
+          document_ack_email?: boolean | null
+          document_ack_push?: boolean | null
+          document_ack_whatsapp?: boolean | null
+          id?: string
+          induction_reminder_email?: boolean | null
+          induction_reminder_whatsapp?: boolean | null
+          organisation_id?: string
+          permit_expiring_email?: boolean | null
+          permit_expiring_push?: boolean | null
+          permit_expiring_whatsapp?: boolean | null
+          profile_id?: string
+          rams_issued_email?: boolean | null
+          rams_issued_whatsapp?: boolean | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_preferences_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organisation_members: {
         Row: {
           accepted_at: string | null
@@ -1303,6 +1390,8 @@ export type Database = {
             | null
           trial_ends_at: string | null
           updated_at: string
+          whatsapp_daily_limit: number | null
+          whatsapp_enabled: boolean | null
         }
         Insert: {
           address?: string | null
@@ -1326,6 +1415,8 @@ export type Database = {
             | null
           trial_ends_at?: string | null
           updated_at?: string
+          whatsapp_daily_limit?: number | null
+          whatsapp_enabled?: boolean | null
         }
         Update: {
           address?: string | null
@@ -1349,6 +1440,8 @@ export type Database = {
             | null
           trial_ends_at?: string | null
           updated_at?: string
+          whatsapp_daily_limit?: number | null
+          whatsapp_enabled?: boolean | null
         }
         Relationships: [
           {
@@ -1547,6 +1640,9 @@ export type Database = {
           id: string
           phone: string | null
           updated_at: string
+          whatsapp_number: string | null
+          whatsapp_opted_in: boolean | null
+          whatsapp_opted_in_at: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -1556,6 +1652,9 @@ export type Database = {
           id: string
           phone?: string | null
           updated_at?: string
+          whatsapp_number?: string | null
+          whatsapp_opted_in?: boolean | null
+          whatsapp_opted_in_at?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -1565,6 +1664,9 @@ export type Database = {
           id?: string
           phone?: string | null
           updated_at?: string
+          whatsapp_number?: string | null
+          whatsapp_opted_in?: boolean | null
+          whatsapp_opted_in_at?: string | null
         }
         Relationships: []
       }
@@ -2723,6 +2825,78 @@ export type Database = {
           },
         ]
       }
+      whatsapp_messages: {
+        Row: {
+          delivered_at: string | null
+          error_message: string | null
+          id: string
+          message_id: string | null
+          organisation_id: string
+          read_at: string | null
+          recipient_number: string
+          recipient_profile_id: string | null
+          reply_received_at: string | null
+          reply_text: string | null
+          sent_at: string
+          status: string | null
+          template_name: string
+          template_params: Json | null
+          trigger_reference_id: string | null
+          trigger_type: string | null
+        }
+        Insert: {
+          delivered_at?: string | null
+          error_message?: string | null
+          id?: string
+          message_id?: string | null
+          organisation_id: string
+          read_at?: string | null
+          recipient_number: string
+          recipient_profile_id?: string | null
+          reply_received_at?: string | null
+          reply_text?: string | null
+          sent_at?: string
+          status?: string | null
+          template_name: string
+          template_params?: Json | null
+          trigger_reference_id?: string | null
+          trigger_type?: string | null
+        }
+        Update: {
+          delivered_at?: string | null
+          error_message?: string | null
+          id?: string
+          message_id?: string | null
+          organisation_id?: string
+          read_at?: string | null
+          recipient_number?: string
+          recipient_profile_id?: string | null
+          reply_received_at?: string | null
+          reply_text?: string | null
+          sent_at?: string
+          status?: string | null
+          template_name?: string
+          template_params?: Json | null
+          trigger_reference_id?: string | null
+          trigger_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_messages_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_messages_recipient_profile_id_fkey"
+            columns: ["recipient_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       actions_with_status: {
@@ -2799,6 +2973,22 @@ export type Database = {
       }
     }
     Functions: {
+      check_whatsapp_duplicate: {
+        Args: {
+          p_recipient_number: string
+          p_template_name: string
+          p_trigger_reference_id: string
+        }
+        Returns: boolean
+      }
+      check_whatsapp_rate_limit: {
+        Args: {
+          p_daily_org_limit?: number
+          p_org_id: string
+          p_recipient_number: string
+        }
+        Returns: boolean
+      }
       generate_unique_slug: { Args: { base_name: string }; Returns: string }
       get_client_org_id: { Args: { _user_id: string }; Returns: string }
       get_user_org_id: { Args: never; Returns: string }
