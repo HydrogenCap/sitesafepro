@@ -8,6 +8,8 @@ import {
   LayoutDashboard,
   FolderOpen,
   FileText,
+  FileCheck,
+  CheckSquare,
   QrCode,
   Users,
   Activity,
