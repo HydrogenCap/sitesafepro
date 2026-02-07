@@ -40,6 +40,8 @@ import Install from "./pages/Install";
 import RamsList from "./pages/RamsList";
 import RamsBuilder from "./pages/RamsBuilder";
 import RamsDetail from "./pages/RamsDetail";
+import SiteDiary from "./pages/SiteDiary";
+import DiaryEntry from "./pages/DiaryEntry";
 
 const queryClient = new QueryClient();
 
@@ -73,6 +75,8 @@ const App = () => (
             <Route path="/rams/new" element={<ProtectedRoute><RamsBuilder /></ProtectedRoute>} />
             <Route path="/rams/:id" element={<ProtectedRoute><RamsDetail /></ProtectedRoute>} />
             <Route path="/rams/:id/edit" element={<ProtectedRoute><RamsBuilder /></ProtectedRoute>} />
+            <Route path="/projects/:id/diary" element={<ProtectedRoute><SiteDiary /></ProtectedRoute>} />
+            <Route path="/projects/:id/diary/:date" element={<ProtectedRoute><DiaryEntry /></ProtectedRoute>} />
             <Route path="/site-access" element={<ProtectedRoute><SiteAccess /></ProtectedRoute>} />
             <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />

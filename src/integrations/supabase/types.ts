@@ -1828,6 +1828,137 @@ export type Database = {
           },
         ]
       }
+      site_diary_entries: {
+        Row: {
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          created_by: string | null
+          delays: Json
+          deliveries: Json
+          entry_date: string
+          id: string
+          instructions: Json
+          notes: string | null
+          organisation_id: string
+          photos: Json
+          plant_equipment: Json
+          project_id: string
+          safety_incidents: Json
+          safety_observations: string | null
+          status: string
+          temperature_high: number | null
+          temperature_low: number | null
+          toolbox_talk_delivered: boolean | null
+          toolbox_talk_topic: string | null
+          updated_at: string
+          visitors: Json
+          weather_afternoon: string | null
+          weather_conditions: string[] | null
+          weather_impact: string | null
+          weather_morning: string | null
+          work_completed: Json
+          work_planned_tomorrow: Json
+          workforce_entries: Json
+          workforce_total: number | null
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          delays?: Json
+          deliveries?: Json
+          entry_date: string
+          id?: string
+          instructions?: Json
+          notes?: string | null
+          organisation_id: string
+          photos?: Json
+          plant_equipment?: Json
+          project_id: string
+          safety_incidents?: Json
+          safety_observations?: string | null
+          status?: string
+          temperature_high?: number | null
+          temperature_low?: number | null
+          toolbox_talk_delivered?: boolean | null
+          toolbox_talk_topic?: string | null
+          updated_at?: string
+          visitors?: Json
+          weather_afternoon?: string | null
+          weather_conditions?: string[] | null
+          weather_impact?: string | null
+          weather_morning?: string | null
+          work_completed?: Json
+          work_planned_tomorrow?: Json
+          workforce_entries?: Json
+          workforce_total?: number | null
+        }
+        Update: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          delays?: Json
+          deliveries?: Json
+          entry_date?: string
+          id?: string
+          instructions?: Json
+          notes?: string | null
+          organisation_id?: string
+          photos?: Json
+          plant_equipment?: Json
+          project_id?: string
+          safety_incidents?: Json
+          safety_observations?: string | null
+          status?: string
+          temperature_high?: number | null
+          temperature_low?: number | null
+          toolbox_talk_delivered?: boolean | null
+          toolbox_talk_topic?: string | null
+          updated_at?: string
+          visitors?: Json
+          weather_afternoon?: string | null
+          weather_conditions?: string[] | null
+          weather_impact?: string | null
+          weather_morning?: string | null
+          work_completed?: Json
+          work_planned_tomorrow?: Json
+          workforce_entries?: Json
+          workforce_total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_diary_entries_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_diary_entries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_diary_entries_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_diary_entries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_induction_completions: {
         Row: {
           completed_at: string
