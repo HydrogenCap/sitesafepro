@@ -11,6 +11,7 @@ import { GeneratedDocumentsList } from "@/components/projects/GeneratedDocuments
 import { ProjectActionsTab } from "@/components/projects/ProjectActionsTab";
 import { InviteClientDialog } from "@/components/client/InviteClientDialog";
 import { COSHHTab } from "@/components/coshh";
+import { ProjectContractorsTab } from "@/components/projects/ProjectContractorsTab";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -447,25 +448,7 @@ const ProjectDetail = () => {
           </TabsContent>
 
           <TabsContent value="contractors">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-card rounded-xl border-2 border-dashed border-border p-12 text-center"
-            >
-              <div className="h-16 w-16 rounded-2xl bg-muted mx-auto mb-4 flex items-center justify-center">
-                <Users className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                No contractors assigned
-              </h3>
-              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                Add contractors to this project so they can access documents and sign inductions.
-              </p>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Contractor
-              </Button>
-            </motion.div>
+            <ProjectContractorsTab projectId={project.id} />
           </TabsContent>
 
           <TabsContent value="permits">
