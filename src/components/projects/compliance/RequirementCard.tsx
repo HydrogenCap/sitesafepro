@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   CheckCircle2,
@@ -12,7 +13,12 @@ import {
   Info,
   AlertTriangle,
   FileText,
+  Eye,
+  Download,
+  ExternalLink,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 
 export interface RequirementStatus {
   id: string;
@@ -34,6 +40,14 @@ export interface RequirementDefinition {
   }[];
 }
 
+interface DocumentInfo {
+  id: string;
+  name: string;
+  file_path: string;
+  mime_type: string;
+  file_size: number;
+}
+
 interface RequirementCardProps {
   requirement: RequirementDefinition;
   status: RequirementStatus | undefined;
@@ -52,6 +66,89 @@ export const RequirementCard = ({
   onConfirm,
 }: RequirementCardProps) => {
   const [expanded, setExpanded] = useState(false);
+  const [document, setDocument] = useState<DocumentInfo | null>(null);
+  const [loadingDoc, setLoadingDoc] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  // Fetch document info when expanded and has document_id
+  useEffect(() => {
+    if (expanded && status?.document_id && !document) {
+      fetchDocument();
+    }
+  }, [expanded, status?.document_id]);
+
+  const fetchDocument = async () => {
+    if (!status?.document_id) return;
+    
+    setLoadingDoc(true);
+    try {
+      const { data, error } = await supabase
+        .from("documents")
+        .select("id, name, file_path, mime_type, file_size")
+        .eq("id", status.document_id)
+        .single();
+
+      if (error) throw error;
+      setDocument(data);
+    } catch (error) {
+      console.error("Error fetching document:", error);
+    } finally {
+      setLoadingDoc(false);
+    }
+  };
+
+  const handleViewDocument = async () => {
+    if (!document) return;
+
+    try {
+      const { data, error } = await supabase.storage
+        .from("documents")
+        .createSignedUrl(document.file_path, 300); // 5 min expiry
+
+      if (error) throw error;
+      
+      window.open(data.signedUrl, "_blank");
+    } catch (error) {
+      console.error("Error viewing document:", error);
+      toast.error("Failed to open document");
+    }
+  };
+
+  const handleDownloadDocument = async () => {
+    if (!document) return;
+
+    setDownloading(true);
+    try {
+      const { data, error } = await supabase.storage
+        .from("documents")
+        .download(document.file_path);
+
+      if (error) throw error;
+
+      // Create download link
+      const url = URL.createObjectURL(data);
+      const link = window.document.createElement("a");
+      link.href = url;
+      link.download = document.name;
+      window.document.body.appendChild(link);
+      link.click();
+      window.document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success("Document downloaded");
+    } catch (error) {
+      console.error("Error downloading document:", error);
+      toast.error("Failed to download document");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
 
   const isComplete =
     status?.status === "uploaded" ||
@@ -199,10 +296,99 @@ export const RequirementCard = ({
                 </div>
               )}
 
-              {isComplete && status?.status === "uploaded" && (
-                <div className="flex items-center gap-2 text-sm text-success">
-                  <FileText className="h-4 w-4" />
-                  <span>Document uploaded and linked to this requirement</span>
+              {/* Document viewer for uploaded documents */}
+              {isComplete && status?.status === "uploaded" && status?.document_id && (
+                <div className="bg-muted/50 rounded-lg p-3 border border-border">
+                  {loadingDoc ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading document...
+                    </div>
+                  ) : document ? (
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <FileText className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {document.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatFileSize(document.file_size)} • {document.mime_type.split("/")[1]?.toUpperCase() || "File"}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewDocument();
+                          }}
+                          className="h-8 w-8 p-0"
+                          title="View document"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownloadDocument();
+                          }}
+                          className="h-8 w-8 p-0"
+                          title="Download document"
+                          disabled={downloading}
+                        >
+                          {downloading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Download className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-sm text-success">
+                      <FileText className="h-4 w-4" />
+                      <span>Document uploaded and linked to this requirement</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Confirmed status display */}
+              {isComplete && status?.status === "confirmed" && (
+                <div className="flex items-center gap-2 text-sm text-success bg-success/10 rounded-lg p-3">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>{status.not_required_reason || "Confirmed"}</span>
+                </div>
+              )}
+
+              {/* Not required status display */}
+              {isComplete && status?.status === "not_required" && (
+                <div className="flex items-center gap-2 text-sm text-primary bg-primary/10 rounded-lg p-3">
+                  <Info className="h-4 w-4" />
+                  <span>{status.not_required_reason || "Marked as not required"}</span>
+                </div>
+              )}
+
+              {/* Allow re-upload for completed items */}
+              {isComplete && (
+                <div className="mt-3 pt-3 border-t border-border/50">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUpload();
+                    }}
+                    className="text-xs"
+                  >
+                    <Upload className="h-3 w-3 mr-1.5" />
+                    Replace / Upload New
+                  </Button>
                 </div>
               )}
             </div>
