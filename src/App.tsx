@@ -37,6 +37,7 @@ import NotFound from "./pages/NotFound";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Install from "./pages/Install";
+import RamsList from "./pages/RamsList";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +67,7 @@ const App = () => (
             <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
             <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
             <Route path="/documents/:id" element={<ProtectedRoute><DocumentView /></ProtectedRoute>} />
+            <Route path="/rams" element={<ProtectedRoute><RamsList /></ProtectedRoute>} />
             <Route path="/site-access" element={<ProtectedRoute><SiteAccess /></ProtectedRoute>} />
             <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
