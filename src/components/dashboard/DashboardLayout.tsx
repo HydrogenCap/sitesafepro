@@ -30,10 +30,13 @@ interface DashboardLayoutProps {
   children: ReactNode;
 }
 
+import { CheckSquare } from "lucide-react";
+
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   { icon: FolderOpen, label: "Projects", href: "/projects" },
   { icon: FileText, label: "Documents", href: "/documents" },
+  { icon: CheckSquare, label: "Actions", href: "/actions" },
   { icon: QrCode, label: "Site Access", href: "/site-access" },
   { icon: ClipboardCheck, label: "Inductions", href: "/inductions" },
   { icon: MessageSquare, label: "Toolbox Talks", href: "/toolbox-talks" },
