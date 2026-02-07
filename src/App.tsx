@@ -36,6 +36,7 @@ import ActionDetail from "./pages/ActionDetail";
 import NotFound from "./pages/NotFound";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
+import Install from "./pages/Install";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +54,7 @@ const App = () => (
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
+            <Route path="/install" element={<Install />} />
             <Route path="/check-in/:code" element={<CheckIn />} />
             <Route path="/accept-invite" element={<AcceptInvite />} />
             
