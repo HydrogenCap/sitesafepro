@@ -479,8 +479,10 @@ Deno.serve(async (req) => {
     throw new Error(`Unknown action: ${action}`);
   } catch (error) {
     console.error("Error in team-invite function:", error);
+    // Sanitize error message - only return safe, user-friendly messages
+    const safeMessage = sanitizeErrorMessage(error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: safeMessage }),
       { 
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
@@ -488,3 +490,37 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+// Helper function to sanitize error messages
+function sanitizeErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    // Map known safe errors to user-friendly messages
+    if (message.includes("authentication required")) {
+      return "Authentication required";
+    }
+    if (message.includes("invalid authentication")) {
+      return "Invalid authentication";
+    }
+    if (message.includes("token and password are required")) {
+      return "Token and password are required";
+    }
+    if (message.includes("invalid or expired invitation")) {
+      return "Invalid or expired invitation";
+    }
+    if (message.includes("already a member")) {
+      return "This user is already a member of your organisation";
+    }
+    if (message.includes("don't have access")) {
+      return "You don't have access to this organisation";
+    }
+    if (message.includes("only owners and admins")) {
+      return "Only owners and admins can invite members";
+    }
+    if (message.includes("unknown action")) {
+      return "Invalid request";
+    }
+  }
+  // Default safe message
+  return "Unable to process invitation. Please try again or contact support.";
+}

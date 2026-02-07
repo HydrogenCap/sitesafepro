@@ -310,8 +310,10 @@ Deno.serve(async (req) => {
     throw new Error(`Unknown action: ${action}`);
   } catch (error) {
     console.error("Error in client-invite function:", error);
+    // Sanitize error message - only return safe, user-friendly messages
+    const safeMessage = sanitizeErrorMessage(error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: safeMessage }),
       { 
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
@@ -319,3 +321,25 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+// Helper function to sanitize error messages
+function sanitizeErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    // Map known safe errors to user-friendly messages
+    if (message.includes("authentication required")) {
+      return "Authentication required";
+    }
+    if (message.includes("missing required fields")) {
+      return "Please fill in all required fields";
+    }
+    if (message.includes("client user not found")) {
+      return "Client user not found";
+    }
+    if (message.includes("unknown action")) {
+      return "Invalid request";
+    }
+  }
+  // Default safe message
+  return "Unable to process invitation. Please try again or contact support.";
+}

@@ -416,7 +416,8 @@ Do not include any markdown formatting.`;
 
   } catch (error) {
     console.error("generate-document error:", error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
+    // Sanitize error message - don't expose internal details
+    return new Response(JSON.stringify({ error: "Failed to generate document. Please try again or contact support." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
