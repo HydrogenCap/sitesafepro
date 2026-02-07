@@ -8,6 +8,7 @@ import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { EditProjectDialog } from "@/components/projects/EditProjectDialog";
 import { ProjectComplianceChecklist } from "@/components/projects/ProjectComplianceChecklist";
 import { GeneratedDocumentsList } from "@/components/projects/GeneratedDocumentsList";
+import { ProjectDocumentsTab } from "@/components/projects/ProjectDocumentsTab";
 import { ProjectActionsTab } from "@/components/projects/ProjectActionsTab";
 import { InviteClientDialog } from "@/components/client/InviteClientDialog";
 import { COSHHTab } from "@/components/coshh";
@@ -455,25 +456,7 @@ const ProjectDetail = () => {
           </TabsList>
 
           <TabsContent value="documents">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-card rounded-xl border-2 border-dashed border-border p-12 text-center"
-            >
-              <div className="h-16 w-16 rounded-2xl bg-muted mx-auto mb-4 flex items-center justify-center">
-                <FileText className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                No documents yet
-              </h3>
-              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                Upload RAMS, method statements, and other safety documents for this project.
-              </p>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Upload Document
-              </Button>
-            </motion.div>
+            <ProjectDocumentsTab projectId={project.id} />
           </TabsContent>
 
           <TabsContent value="actions">
