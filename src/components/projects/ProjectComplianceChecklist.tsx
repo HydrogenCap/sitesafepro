@@ -49,6 +49,18 @@ const REQUIREMENTS = [
     allowExemption: false,
   },
   {
+    type: "asbestos_cleanliness",
+    label: "Schedule of Cleanliness",
+    description: "Documented schedule of cleanliness for asbestos removal works",
+    allowExemption: false,
+  },
+  {
+    type: "consignment_note",
+    label: "Consignment Note for Asbestos Removal",
+    description: "Waste transfer consignment note for asbestos removal and disposal",
+    allowExemption: false,
+  },
+  {
     type: "pci",
     label: "Pre-Construction Information (PCI)",
     description: "Health & safety information for the project from the client",
