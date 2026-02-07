@@ -2290,12 +2290,22 @@ export type Database = {
           created_at: string
           created_by: string | null
           estimated_end_date: string | null
+          fire_warden_name: string | null
+          first_aider_name: string | null
           id: string
           image_url: string | null
           is_live: boolean | null
           name: string
+          nearest_ae_address: string | null
+          nearest_ae_distance: string | null
+          nearest_ae_name: string | null
+          nearest_fire_station_address: string | null
+          nearest_fire_station_name: string | null
+          nearest_police_station_address: string | null
+          nearest_police_station_name: string | null
           organisation_id: string
           principal_designer: string | null
+          site_emergency_number: string | null
           start_date: string | null
           status: Database["public"]["Enums"]["project_status"] | null
           updated_at: string
@@ -2308,12 +2318,22 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           estimated_end_date?: string | null
+          fire_warden_name?: string | null
+          first_aider_name?: string | null
           id?: string
           image_url?: string | null
           is_live?: boolean | null
           name: string
+          nearest_ae_address?: string | null
+          nearest_ae_distance?: string | null
+          nearest_ae_name?: string | null
+          nearest_fire_station_address?: string | null
+          nearest_fire_station_name?: string | null
+          nearest_police_station_address?: string | null
+          nearest_police_station_name?: string | null
           organisation_id: string
           principal_designer?: string | null
+          site_emergency_number?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["project_status"] | null
           updated_at?: string
@@ -2326,12 +2346,22 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           estimated_end_date?: string | null
+          fire_warden_name?: string | null
+          first_aider_name?: string | null
           id?: string
           image_url?: string | null
           is_live?: boolean | null
           name?: string
+          nearest_ae_address?: string | null
+          nearest_ae_distance?: string | null
+          nearest_ae_name?: string | null
+          nearest_fire_station_address?: string | null
+          nearest_fire_station_name?: string | null
+          nearest_police_station_address?: string | null
+          nearest_police_station_name?: string | null
           organisation_id?: string
           principal_designer?: string | null
+          site_emergency_number?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["project_status"] | null
           updated_at?: string
