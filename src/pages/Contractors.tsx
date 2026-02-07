@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useContractors, useContractorStats } from "@/hooks/useContractors";
+import { useSubscription } from "@/hooks/useSubscription";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -25,15 +26,81 @@ import {
   Phone,
   Mail,
   Star,
+  FileBarChart,
 } from "lucide-react";
 import { TRADES } from "@/types/contractor";
+import { BulkReminderDialog } from "@/components/contractors/BulkReminderDialog";
+import { generateContractorComplianceReport, type ContractorComplianceReportData } from "@/lib/report-generators";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Contractors = () => {
   const { data: contractors = [], isLoading } = useContractors();
   const stats = useContractorStats();
+  const { organisation } = useSubscription();
   const [searchQuery, setSearchQuery] = useState("");
   const [tradeFilter, setTradeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [generatingReport, setGeneratingReport] = useState(false);
+
+  const handleGenerateReport = async () => {
+    setGeneratingReport(true);
+    try {
+      // Fetch all compliance docs
+      const { data: complianceDocs } = await supabase
+        .from("contractor_compliance_docs")
+        .select("contractor_company_id, doc_type, expiry_date, verified");
+
+      const { data: operatives } = await supabase
+        .from("contractor_operatives")
+        .select("contractor_company_id");
+
+      const today = new Date();
+      const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+      const reportData: ContractorComplianceReportData[] = contractors.map(c => {
+        const docs = complianceDocs?.filter(d => d.contractor_company_id === c.id) || [];
+        const operativesCount = operatives?.filter(o => o.contractor_company_id === c.id).length || 0;
+
+        return {
+          company_name: c.company_name,
+          primary_trade: c.primary_trade,
+          compliance_status: c.compliance_status,
+          compliance_score: c.compliance_score || 0,
+          primary_contact_name: c.primary_contact_name,
+          primary_contact_email: c.primary_contact_email,
+          operatives_count: operativesCount,
+          documents: docs.map(d => {
+            let status: "valid" | "expiring" | "expired" | "missing" = "valid";
+            if (!d.expiry_date) {
+              status = "missing";
+            } else {
+              const expiryDate = new Date(d.expiry_date);
+              if (expiryDate < today) {
+                status = "expired";
+              } else if (expiryDate <= thirtyDaysFromNow) {
+                status = "expiring";
+              }
+            }
+            return {
+              doc_type: d.doc_type,
+              expiry_date: d.expiry_date,
+              verified: d.verified || false,
+              status,
+            };
+          }),
+        };
+      });
+
+      generateContractorComplianceReport(reportData, organisation?.name);
+      toast.success("Report generated successfully");
+    } catch (error) {
+      console.error("Error generating report:", error);
+      toast.error("Failed to generate report");
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
 
   const filteredContractors = contractors.filter((contractor) => {
     const matchesSearch =
@@ -107,6 +174,18 @@ const Contractors = () => {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={handleGenerateReport}
+              disabled={generatingReport || contractors.length === 0}
+            >
+              <FileBarChart className="h-4 w-4 mr-2" />
+              {generatingReport ? "Generating..." : "Export Report"}
+            </Button>
+            <BulkReminderDialog 
+              expiringCount={stats.expiringSoon} 
+              expiredCount={stats.nonCompliant} 
+            />
             <Button asChild>
               <Link to="/contractors/new">
                 <Plus className="h-4 w-4 mr-2" />
