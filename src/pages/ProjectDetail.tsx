@@ -9,6 +9,7 @@ import { EditProjectDialog } from "@/components/projects/EditProjectDialog";
 import { ProjectComplianceChecklist } from "@/components/projects/ProjectComplianceChecklist";
 import { GeneratedDocumentsList } from "@/components/projects/GeneratedDocumentsList";
 import { ProjectActionsTab } from "@/components/projects/ProjectActionsTab";
+import { InviteClientDialog } from "@/components/client/InviteClientDialog";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -27,6 +28,7 @@ import {
   CheckCircle,
   AlertTriangle,
   BookOpen,
+  UserPlus,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -72,6 +74,7 @@ const ProjectDetail = () => {
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [inviteClientDialogOpen, setInviteClientDialogOpen] = useState(false);
   const [generatedDocs, setGeneratedDocs] = useState<GeneratedDocument[]>([]);
 
   useEffect(() => {
@@ -255,6 +258,10 @@ const ProjectDetail = () => {
               <Button variant="outline" onClick={() => setEditDialogOpen(true)}>
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Project
+              </Button>
+              <Button variant="outline" onClick={() => setInviteClientDialogOpen(true)}>
+                <UserPlus className="h-4 w-4 mr-2" />
+                Invite Client
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -468,6 +475,13 @@ const ProjectDetail = () => {
             onProjectUpdated={(updatedProject) => setProject(updatedProject as Project)}
           />
         )}
+
+        {/* Invite Client Dialog */}
+        <InviteClientDialog
+          open={inviteClientDialogOpen}
+          onOpenChange={setInviteClientDialogOpen}
+          preselectedProjectId={project?.id}
+        />
       </div>
     </DashboardLayout>
   );
