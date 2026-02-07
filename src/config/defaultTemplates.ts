@@ -89,4 +89,12 @@ export const DEFAULT_TEMPLATES: DefaultTemplate[] = [
     requiresAcknowledgement: false,
     autoGenerateOnGoLive: true,
   },
+  {
+    name: "Welfare Facilities Checklist",
+    description: "Checklist for site welfare facilities compliance",
+    category: "safety",
+    fileName: "Welfare_Facilities_Checklist.docx",
+    requiresAcknowledgement: false,
+    autoGenerateOnGoLive: true,
+  },
 ];
