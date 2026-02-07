@@ -74,6 +74,34 @@ serve(async (req) => {
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    // Authentication check
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      console.error("[SEND-NOTIFICATION] Missing authorization header");
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Verify the caller's identity
+    const authSupabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claims, error: authError } = await authSupabase.auth.getClaims(token);
+    if (authError || !claims?.claims) {
+      console.error("[SEND-NOTIFICATION] Invalid token:", authError);
+      return new Response(
+        JSON.stringify({ error: "Invalid authentication" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const callerId = claims.claims.sub;
 
     const {
       organisationId,
@@ -84,9 +112,27 @@ serve(async (req) => {
       triggerReferenceId,
     }: NotificationRequest = await req.json();
 
-    console.log(`[SEND-NOTIFICATION] Type: ${type}, Recipient: ${recipientProfileId}`);
+    console.log(`[SEND-NOTIFICATION] Type: ${type}, Recipient: ${recipientProfileId}, Caller: ${callerId}`);
 
+    // Use service role client for privileged operations
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Verify caller belongs to the organisation
+    const { data: membership, error: memberError } = await supabase
+      .from("organisation_members")
+      .select("organisation_id")
+      .eq("profile_id", callerId)
+      .eq("organisation_id", organisationId)
+      .eq("status", "active")
+      .single();
+
+    if (memberError || !membership) {
+      console.error("[SEND-NOTIFICATION] Unauthorized access to organisation:", memberError);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized access to organisation" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const config = NOTIFICATION_CONFIG[type];
     if (!config) {
