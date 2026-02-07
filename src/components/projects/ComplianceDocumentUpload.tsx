@@ -25,12 +25,16 @@ interface ComplianceDocumentUploadProps {
 const REQUIREMENT_LABELS: Record<string, string> = {
   f10: "F10 Notification",
   asbestos_survey: "Asbestos R&D Survey",
+  asbestos_cleanliness: "Schedule of Cleanliness",
+  consignment_note: "Consignment Note",
   pci: "Pre-Construction Information",
 };
 
 const REQUIREMENT_CATEGORIES: Record<string, "permit" | "certificate" | "safety_plan" | "other"> = {
   f10: "permit",
   asbestos_survey: "certificate",
+  asbestos_cleanliness: "certificate",
+  consignment_note: "certificate",
   pci: "safety_plan",
 };
 
