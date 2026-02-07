@@ -30,6 +30,9 @@ import Reports from "./pages/Reports";
 import Permits from "./pages/Permits";
 import Inspections from "./pages/Inspections";
 import Incidents from "./pages/Incidents";
+import Actions from "./pages/Actions";
+import NewAction from "./pages/NewAction";
+import ActionDetail from "./pages/ActionDetail";
 import NotFound from "./pages/NotFound";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
@@ -74,6 +77,9 @@ const App = () => (
             <Route path="/permits" element={<ProtectedRoute><Permits /></ProtectedRoute>} />
             <Route path="/inspections" element={<ProtectedRoute><Inspections /></ProtectedRoute>} />
             <Route path="/incidents" element={<ProtectedRoute><Incidents /></ProtectedRoute>} />
+            <Route path="/actions" element={<ProtectedRoute><Actions /></ProtectedRoute>} />
+            <Route path="/actions/new" element={<ProtectedRoute><NewAction /></ProtectedRoute>} />
+            <Route path="/actions/:id" element={<ProtectedRoute><ActionDetail /></ProtectedRoute>} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
