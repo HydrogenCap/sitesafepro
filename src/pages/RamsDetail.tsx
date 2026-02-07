@@ -16,14 +16,19 @@ import {
   Building2,
   AlertTriangle,
   ClipboardList,
-  Shield
+  Shield,
+  Loader2
 } from "lucide-react";
 import { format } from "date-fns";
 import { RiskAssessment, MethodStatement, calculateRiskRating, getRiskColor } from "@/components/rams/types";
+import { downloadRamsPdf } from "@/lib/rams-pdf";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export default function RamsDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [downloading, setDownloading] = useState(false);
 
   const { data: rams, isLoading, error } = useQuery({
     queryKey: ['rams', id],
@@ -107,8 +112,60 @@ export default function RamsDetail() {
               <Edit className="h-4 w-4 mr-2" />
               Edit
             </Button>
-            <Button>
-              <Download className="h-4 w-4 mr-2" />
+            <Button 
+              onClick={() => {
+                setDownloading(true);
+                try {
+                  // Extract signatures from the related table
+                  const signatures = (rams.signatures || []) as Array<{
+                    signer_role: string;
+                    signature_data: string;
+                  }>;
+                  const preparedSig = signatures.find(s => s.signer_role === "prepared_by");
+                  const reviewedSig = signatures.find(s => s.signer_role === "reviewed_by");
+                  const approvedSig = signatures.find(s => s.signer_role === "approved_by");
+
+                  downloadRamsPdf({
+                    title: rams.title,
+                    ramsReference: rams.rams_reference,
+                    revisionNumber: rams.revision_number,
+                    siteName: rams.site_name,
+                    siteAddress: rams.project?.address,
+                    clientName: rams.client_name,
+                    principalContractor: rams.principal_contractor,
+                    workDescription: rams.work_description,
+                    workLocation: rams.work_location,
+                    workDuration: rams.work_duration,
+                    assessmentDate: rams.assessment_date,
+                    reviewDate: rams.review_date,
+                    preparedByName: rams.prepared_by_name,
+                    reviewedByName: rams.reviewed_by_name,
+                    approvedByName: rams.approved_by_name,
+                    riskAssessments,
+                    methodStatements,
+                    ppeRequirements,
+                    emergencyProcedures: rams.emergency_procedures,
+                    nearestHospital: rams.nearest_hospital,
+                    siteEmergencyContact: rams.site_emergency_contact,
+                    preparedBySignature: preparedSig?.signature_data || null,
+                    reviewedBySignature: reviewedSig?.signature_data || null,
+                    approvedBySignature: approvedSig?.signature_data || null,
+                  });
+                  toast.success("RAMS PDF downloaded successfully");
+                } catch (error) {
+                  console.error("PDF generation error:", error);
+                  toast.error("Failed to generate PDF");
+                } finally {
+                  setDownloading(false);
+                }
+              }}
+              disabled={downloading}
+            >
+              {downloading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4 mr-2" />
+              )}
               Download PDF
             </Button>
           </div>
