@@ -506,6 +506,128 @@ export type Database = {
           },
         ]
       }
+      coshh_substances: {
+        Row: {
+          added_by: string
+          control_measures: string[]
+          created_at: string
+          fire_fighting_measures: string | null
+          first_aid_measures: string | null
+          hazard_pictograms: string[] | null
+          hazard_statements: string[] | null
+          health_effects: string | null
+          health_surveillance_details: string | null
+          health_surveillance_required: boolean | null
+          id: string
+          is_active: boolean | null
+          manufacturer: string | null
+          organisation_id: string
+          ppe_required: string[] | null
+          precautionary_statements: string[] | null
+          product_name: string
+          project_id: string
+          quantity_on_site: string | null
+          route_of_exposure: string[] | null
+          sds_available: boolean | null
+          sds_document_id: string | null
+          spill_procedure: string | null
+          storage_location: string | null
+          storage_requirements: string | null
+          substance_type: string
+          updated_at: string
+          workplace_exposure_limit: string | null
+        }
+        Insert: {
+          added_by: string
+          control_measures?: string[]
+          created_at?: string
+          fire_fighting_measures?: string | null
+          first_aid_measures?: string | null
+          hazard_pictograms?: string[] | null
+          hazard_statements?: string[] | null
+          health_effects?: string | null
+          health_surveillance_details?: string | null
+          health_surveillance_required?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          manufacturer?: string | null
+          organisation_id: string
+          ppe_required?: string[] | null
+          precautionary_statements?: string[] | null
+          product_name: string
+          project_id: string
+          quantity_on_site?: string | null
+          route_of_exposure?: string[] | null
+          sds_available?: boolean | null
+          sds_document_id?: string | null
+          spill_procedure?: string | null
+          storage_location?: string | null
+          storage_requirements?: string | null
+          substance_type: string
+          updated_at?: string
+          workplace_exposure_limit?: string | null
+        }
+        Update: {
+          added_by?: string
+          control_measures?: string[]
+          created_at?: string
+          fire_fighting_measures?: string | null
+          first_aid_measures?: string | null
+          hazard_pictograms?: string[] | null
+          hazard_statements?: string[] | null
+          health_effects?: string | null
+          health_surveillance_details?: string | null
+          health_surveillance_required?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          manufacturer?: string | null
+          organisation_id?: string
+          ppe_required?: string[] | null
+          precautionary_statements?: string[] | null
+          product_name?: string
+          project_id?: string
+          quantity_on_site?: string | null
+          route_of_exposure?: string[] | null
+          sds_available?: boolean | null
+          sds_document_id?: string | null
+          spill_procedure?: string | null
+          storage_location?: string | null
+          storage_requirements?: string | null
+          substance_type?: string
+          updated_at?: string
+          workplace_exposure_limit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coshh_substances_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coshh_substances_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coshh_substances_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coshh_substances_sds_document_id_fkey"
+            columns: ["sds_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_acknowledgements: {
         Row: {
           acknowledged_at: string

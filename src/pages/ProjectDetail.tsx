@@ -10,6 +10,7 @@ import { ProjectComplianceChecklist } from "@/components/projects/ProjectComplia
 import { GeneratedDocumentsList } from "@/components/projects/GeneratedDocumentsList";
 import { ProjectActionsTab } from "@/components/projects/ProjectActionsTab";
 import { InviteClientDialog } from "@/components/client/InviteClientDialog";
+import { COSHHTab } from "@/components/coshh";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -29,6 +30,7 @@ import {
   AlertTriangle,
   BookOpen,
   UserPlus,
+  FlaskConical,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -76,6 +78,7 @@ const ProjectDetail = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [inviteClientDialogOpen, setInviteClientDialogOpen] = useState(false);
   const [generatedDocs, setGeneratedDocs] = useState<GeneratedDocument[]>([]);
+  const [organisationName, setOrganisationName] = useState<string>("");
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -102,18 +105,39 @@ const ProjectDetail = () => {
     fetchProject();
   }, [id, navigate]);
 
-  // Fetch generated documents
+  // Fetch generated documents and organisation name
   useEffect(() => {
-    const fetchGeneratedDocs = async () => {
-      if (!id) return;
-      const { data } = await supabase
+    const fetchAdditionalData = async () => {
+      if (!id || !user) return;
+      
+      // Fetch generated docs
+      const { data: docsData } = await supabase
         .from("project_generated_documents")
         .select("*")
         .eq("project_id", id);
-      setGeneratedDocs(data || []);
+      setGeneratedDocs(docsData || []);
+
+      // Fetch organisation name
+      const { data: memberData } = await supabase
+        .from("organisation_members")
+        .select("organisation_id")
+        .eq("profile_id", user.id)
+        .eq("status", "active")
+        .single();
+
+      if (memberData) {
+        const { data: orgData } = await supabase
+          .from("organisations")
+          .select("name")
+          .eq("id", memberData.organisation_id)
+          .single();
+        if (orgData) {
+          setOrganisationName(orgData.name);
+        }
+      }
     };
-    fetchGeneratedDocs();
-  }, [id]);
+    fetchAdditionalData();
+  }, [id, user]);
 
   const handleGoLive = () => {
     // Refresh generated docs and project
@@ -372,11 +396,15 @@ const ProjectDetail = () => {
 
         {/* Tabs for different sections */}
         <Tabs defaultValue="documents" className="w-full">
-          <TabsList className="mb-6">
+          <TabsList className="mb-6 flex-wrap">
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="actions" className="flex items-center gap-1.5">
               <AlertTriangle className="h-3.5 w-3.5" />
               Actions
+            </TabsTrigger>
+            <TabsTrigger value="coshh" className="flex items-center gap-1.5">
+              <FlaskConical className="h-3.5 w-3.5" />
+              COSHH
             </TabsTrigger>
             <TabsTrigger value="contractors">Contractors</TabsTrigger>
             <TabsTrigger value="permits">Permits</TabsTrigger>
@@ -407,6 +435,15 @@ const ProjectDetail = () => {
 
           <TabsContent value="actions">
             <ProjectActionsTab projectId={project.id} projectName={project.name} />
+          </TabsContent>
+
+          <TabsContent value="coshh">
+            <COSHHTab
+              projectId={project.id}
+              projectName={project.name}
+              organisationName={organisationName}
+              projectAddress={project.address || undefined}
+            />
           </TabsContent>
 
           <TabsContent value="contractors">
