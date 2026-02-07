@@ -125,6 +125,38 @@ serve(async (req) => {
         .eq('id', userId);
     }
 
+    // Seed default document templates for the new organisation
+    try {
+      // Get the base URL from the request or use a default
+      const url = new URL(req.url);
+      const baseUrl = url.origin.replace('supabase.co/functions', 'lovable.app');
+      
+      // Call the seed-default-templates function
+      const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+      const seedResponse = await fetch(`${supabaseUrl}/functions/v1/seed-default-templates`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+        body: JSON.stringify({
+          organisationId: orgData.id,
+          userId: userId,
+          baseUrl: 'https://sitesafepro.lovable.app', // Use published app URL for templates
+        }),
+      });
+
+      if (seedResponse.ok) {
+        const seedResult = await seedResponse.json();
+        console.log(`Default templates seeded: ${seedResult.templatesCreated} created`);
+      } else {
+        console.error("Failed to seed default templates:", await seedResponse.text());
+      }
+    } catch (seedError) {
+      // Log but don't fail org creation if template seeding fails
+      console.error("Error seeding default templates:", seedError);
+    }
+
     console.log(`Organisation setup complete for user ${userId}`);
 
     return new Response(
