@@ -26,7 +26,6 @@ import {
   Mail,
   MapPin,
   Globe,
-  Building2,
   Star,
   Edit,
   MoreVertical,
@@ -37,10 +36,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { TRADES, COMPLIANCE_DOC_LABELS, ComplianceDocType } from "@/types/contractor";
+import { TRADES } from "@/types/contractor";
 import { ContractorComplianceTab } from "@/components/contractors/ContractorComplianceTab";
 import { ContractorOperativesTab } from "@/components/contractors/ContractorOperativesTab";
 import { ContractorProjectsTab } from "@/components/contractors/ContractorProjectsTab";
+import { RequestDocumentsDialog } from "@/components/contractors/RequestDocumentsDialog";
 
 const ContractorDetail = () => {
   const { id } = useParams();
@@ -159,6 +159,12 @@ const ContractorDetail = () => {
             </div>
 
             <div className="flex items-center gap-3">
+              <RequestDocumentsDialog
+                contractorId={id!}
+                contractorName={contractor.company_name}
+                contactEmail={contractor.primary_contact_email || undefined}
+                contactName={contractor.primary_contact_name || undefined}
+              />
               <Button variant="outline" onClick={handleApprove}>
                 {contractor.is_approved ? "Revoke Approval" : "Approve Contractor"}
               </Button>
@@ -176,7 +182,6 @@ const ContractorDetail = () => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem>Assign to Project</DropdownMenuItem>
-                  <DropdownMenuItem>Send Document Request</DropdownMenuItem>
                   <DropdownMenuItem className="text-destructive">
                     Deactivate
                   </DropdownMenuItem>

@@ -410,6 +410,8 @@ export type Database = {
           tax_status: string | null
           trading_name: string | null
           updated_at: string
+          upload_token: string | null
+          upload_token_expires_at: string | null
           utr_number: string | null
           vat_number: string | null
           website: string | null
@@ -437,6 +439,8 @@ export type Database = {
           tax_status?: string | null
           trading_name?: string | null
           updated_at?: string
+          upload_token?: string | null
+          upload_token_expires_at?: string | null
           utr_number?: string | null
           vat_number?: string | null
           website?: string | null
@@ -464,6 +468,8 @@ export type Database = {
           tax_status?: string | null
           trading_name?: string | null
           updated_at?: string
+          upload_token?: string | null
+          upload_token_expires_at?: string | null
           utr_number?: string | null
           vat_number?: string | null
           website?: string | null
@@ -597,6 +603,70 @@ export type Database = {
           {
             foreignKeyName: "contractor_compliance_docs_verified_by_fkey"
             columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contractor_document_requests: {
+        Row: {
+          completed_at: string | null
+          contractor_company_id: string
+          doc_types: string[]
+          id: string
+          message: string | null
+          opened_at: string | null
+          organisation_id: string
+          recipient_email: string
+          sent_at: string
+          sent_by: string
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          contractor_company_id: string
+          doc_types?: string[]
+          id?: string
+          message?: string | null
+          opened_at?: string | null
+          organisation_id: string
+          recipient_email: string
+          sent_at?: string
+          sent_by: string
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          contractor_company_id?: string
+          doc_types?: string[]
+          id?: string
+          message?: string | null
+          opened_at?: string | null
+          organisation_id?: string
+          recipient_email?: string
+          sent_at?: string
+          sent_by?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contractor_document_requests_contractor_company_id_fkey"
+            columns: ["contractor_company_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_document_requests_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_document_requests_sent_by_fkey"
+            columns: ["sent_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]

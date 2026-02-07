@@ -50,6 +50,7 @@ import ClientProjectView from "./pages/ClientProjectView";
 import Contractors from "./pages/Contractors";
 import NewContractor from "./pages/NewContractor";
 import ContractorDetail from "./pages/ContractorDetail";
+import ContractorUpload from "./pages/ContractorUpload";
 
 const queryClient = new QueryClient();
 
@@ -89,6 +90,7 @@ const App = () => {
               <Route path="/install" element={<Install />} />
               <Route path="/check-in/:code" element={<CheckIn />} />
               <Route path="/accept-invite" element={<AcceptInvite />} />
+              <Route path="/contractor-upload/:token" element={<ContractorUpload />} />
               
               {/* Client Portal routes */}
               <Route path="/client" element={<ClientProtectedRoute><ClientDashboard /></ClientProtectedRoute>} />
