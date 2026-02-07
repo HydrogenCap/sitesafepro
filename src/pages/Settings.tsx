@@ -3,13 +3,14 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Building2, CreditCard, Bell, FileText, Users } from "lucide-react";
+import { User, Building2, CreditCard, Bell, FileText, Users, Plug } from "lucide-react";
 import ProfileSettings from "@/components/settings/ProfileSettings";
 import OrganisationSettings from "@/components/settings/OrganisationSettings";
 import SubscriptionSettings from "@/components/settings/SubscriptionSettings";
 import NotificationSettings from "@/components/settings/NotificationSettings";
 import TemplateSettings from "@/components/settings/TemplateSettings";
 import ClientPortalSettings from "@/components/settings/ClientPortalSettings";
+import WhatsAppSettings from "@/components/settings/WhatsAppSettings";
 
 export default function Settings() {
   const { user } = useAuth();
@@ -41,7 +42,7 @@ export default function Settings() {
 
         {/* Settings Tabs */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">Profile</span>
@@ -57,6 +58,10 @@ export default function Settings() {
             <TabsTrigger value="clients" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Client Portal</span>
+            </TabsTrigger>
+            <TabsTrigger value="integrations" className="flex items-center gap-2">
+              <Plug className="h-4 w-4" />
+              <span className="hidden sm:inline">Integrations</span>
             </TabsTrigger>
             <TabsTrigger value="subscription" className="flex items-center gap-2">
               <CreditCard className="h-4 w-4" />
@@ -82,6 +87,10 @@ export default function Settings() {
 
           <TabsContent value="clients">
             <ClientPortalSettings />
+          </TabsContent>
+
+          <TabsContent value="integrations">
+            <WhatsAppSettings />
           </TabsContent>
 
           <TabsContent value="subscription">
