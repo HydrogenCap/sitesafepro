@@ -85,19 +85,50 @@ const NewProject = () => {
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.from("projects").insert({
-        organisation_id: organisation?.id,
-        name: formData.name,
-        address: formData.address || null,
-        client_name: formData.clientName || null,
-        principal_designer: formData.principalDesigner || null,
-        start_date: formData.startDate || null,
-        estimated_end_date: formData.estimatedEndDate || null,
-        created_by: user?.id,
-        image_url: imageUrl,
-      });
+      // Create project with 'setup' status
+      const { data: newProject, error } = await supabase
+        .from("projects")
+        .insert({
+          organisation_id: organisation?.id,
+          name: formData.name,
+          address: formData.address || null,
+          client_name: formData.clientName || null,
+          principal_designer: formData.principalDesigner || null,
+          start_date: formData.startDate || null,
+          estimated_end_date: formData.estimatedEndDate || null,
+          created_by: user?.id,
+          image_url: imageUrl,
+          status: "setup", // Start in setup mode
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Auto-create the 5 compliance requirement items
+      const complianceRequirements = [
+        "f10",
+        "asbestos_survey",
+        "asbestos_cleanliness",
+        "consignment_note",
+        "pci",
+      ];
+
+      const { error: complianceError } = await supabase
+        .from("project_compliance_requirements")
+        .insert(
+          complianceRequirements.map((type) => ({
+            organisation_id: organisation?.id,
+            project_id: newProject.id,
+            requirement_type: type,
+            status: "pending",
+          }))
+        );
+
+      if (complianceError) {
+        console.error("Error creating compliance items:", complianceError);
+        // Don't fail the whole operation, the items will be created on first view
+      }
 
       // Log activity
       logActivity({
@@ -107,8 +138,8 @@ const NewProject = () => {
         description: activityDescriptions.project_created(formData.name),
       });
 
-      toast.success("Project created successfully!");
-      navigate("/projects");
+      toast.success("Project created. Complete the pre-construction checklist to go live.");
+      navigate(`/projects/${newProject.id}`);
     } catch (error) {
       console.error("Error creating project:", error);
       toast.error("Failed to create project");

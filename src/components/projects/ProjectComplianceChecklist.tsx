@@ -212,10 +212,15 @@ export const ProjectComplianceChecklist = ({
 
     setGoingLive(true);
     try {
-      // Update project to live status
+      // Update project to live status with tracking
       const { error: projectError } = await supabase
         .from("projects")
-        .update({ is_live: true })
+        .update({ 
+          is_live: true,
+          status: "active",
+          went_live_at: new Date().toISOString(),
+          went_live_by: user?.id,
+        })
         .eq("id", projectId);
 
       if (projectError) throw projectError;
