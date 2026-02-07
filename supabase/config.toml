@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.contractor-document-request]
 verify_jwt = false
+
+[functions.bulk-contractor-reminder]
+verify_jwt = false

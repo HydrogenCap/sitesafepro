@@ -29,11 +29,13 @@ import {
   generateToolboxTalksReport,
   generateDocumentsReport,
   generateComplianceSummaryReport,
+  generateContractorComplianceReport,
   type SiteVisitReportData,
   type InductionReportData,
   type ToolboxTalkReportData,
   type DocumentReportData,
   type ProjectComplianceData,
+  type ContractorComplianceReportData,
 } from "@/lib/report-generators";
 
 interface Project {
@@ -41,7 +43,7 @@ interface Project {
   name: string;
 }
 
-type ReportType = "site-visits" | "inductions" | "toolbox-talks" | "documents" | "compliance";
+type ReportType = "site-visits" | "inductions" | "toolbox-talks" | "documents" | "compliance" | "contractor-compliance";
 
 const REPORT_TYPES = [
   {
@@ -78,6 +80,13 @@ const REPORT_TYPES = [
     description: "Project compliance overview across all metrics",
     icon: FileBarChart,
     color: "bg-primary/10 text-primary",
+  },
+  {
+    id: "contractor-compliance" as ReportType,
+    title: "Contractor Compliance",
+    description: "All contractor document status and expiry dates",
+    icon: Users,
+    color: "bg-indigo-500/10 text-indigo-500",
   },
 ];
 
@@ -148,6 +157,9 @@ export default function Reports() {
           break;
         case "compliance":
           await generateComplianceSummaryData();
+          break;
+        case "contractor-compliance":
+          await generateContractorComplianceData();
           break;
       }
       
@@ -386,6 +398,65 @@ export default function Reports() {
     generateComplianceSummaryReport(projectComplianceData, dateRange, organisation?.name);
   };
 
+  const generateContractorComplianceData = async () => {
+    // Fetch all contractors
+    const { data: contractorsData, error: contractorsError } = await supabase
+      .from("contractor_companies")
+      .select("id, company_name, primary_trade, compliance_status, compliance_score, primary_contact_name, primary_contact_email")
+      .eq("is_active", true);
+
+    if (contractorsError) throw contractorsError;
+
+    // Fetch all compliance docs
+    const { data: complianceDocs } = await supabase
+      .from("contractor_compliance_docs")
+      .select("contractor_company_id, doc_type, expiry_date, verified");
+
+    // Fetch operative counts
+    const { data: operatives } = await supabase
+      .from("contractor_operatives")
+      .select("contractor_company_id");
+
+    const today = new Date();
+    const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    const reportData: ContractorComplianceReportData[] = (contractorsData || []).map(c => {
+      const docs = complianceDocs?.filter(d => d.contractor_company_id === c.id) || [];
+      const operativesCount = operatives?.filter(o => o.contractor_company_id === c.id).length || 0;
+
+      return {
+        company_name: c.company_name,
+        primary_trade: c.primary_trade,
+        compliance_status: c.compliance_status || "incomplete",
+        compliance_score: c.compliance_score || 0,
+        primary_contact_name: c.primary_contact_name,
+        primary_contact_email: c.primary_contact_email,
+        operatives_count: operativesCount,
+        documents: docs.map(d => {
+          let status: "valid" | "expiring" | "expired" | "missing" = "valid";
+          if (!d.expiry_date) {
+            status = "missing";
+          } else {
+            const expiryDate = new Date(d.expiry_date);
+            if (expiryDate < today) {
+              status = "expired";
+            } else if (expiryDate <= thirtyDaysFromNow) {
+              status = "expiring";
+            }
+          }
+          return {
+            doc_type: d.doc_type,
+            expiry_date: d.expiry_date,
+            verified: d.verified || false,
+            status,
+          };
+        }),
+      };
+    });
+
+    generateContractorComplianceReport(reportData, organisation?.name);
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -452,7 +523,7 @@ export default function Reports() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Project Filter */}
-                {selectedReportType !== "toolbox-talks" && selectedReportType !== "compliance" && (
+                {selectedReportType !== "toolbox-talks" && selectedReportType !== "compliance" && selectedReportType !== "contractor-compliance" && (
                   <div className="space-y-2">
                     <Label>Project</Label>
                     <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
@@ -568,7 +639,7 @@ export default function Reports() {
                   <p>
                     <strong>Period:</strong> {format(dateRange.start, "dd MMM yyyy")} - {format(dateRange.end, "dd MMM yyyy")}
                   </p>
-                  {selectedProjectId !== "all" && selectedReportType !== "toolbox-talks" && selectedReportType !== "compliance" && (
+                  {selectedProjectId !== "all" && selectedReportType !== "toolbox-talks" && selectedReportType !== "compliance" && selectedReportType !== "contractor-compliance" && (
                     <p>
                       <strong>Project:</strong> {projects.find(p => p.id === selectedProjectId)?.name}
                     </p>

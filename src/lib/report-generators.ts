@@ -429,3 +429,157 @@ export const generateComplianceSummaryReport = (
   doc.save(filename);
   return filename;
 };
+
+// Contractor Compliance Report
+export interface ContractorComplianceReportData {
+  company_name: string;
+  primary_trade: string;
+  compliance_status: string;
+  compliance_score: number;
+  primary_contact_name: string | null;
+  primary_contact_email: string | null;
+  documents: {
+    doc_type: string;
+    expiry_date: string | null;
+    verified: boolean;
+    status: "valid" | "expiring" | "expired" | "missing";
+  }[];
+  operatives_count: number;
+}
+
+export const generateContractorComplianceReport = (
+  contractors: ContractorComplianceReportData[],
+  orgName?: string
+) => {
+  const doc = createPdfDocument();
+  
+  let yPos = addHeader(
+    doc,
+    "Contractor Compliance Report",
+    `Generated: ${format(new Date(), "dd MMM yyyy HH:mm")}`
+  );
+
+  // Summary
+  yPos = addSectionTitle(doc, "Summary", yPos);
+  
+  const compliant = contractors.filter(c => c.compliance_status === "compliant").length;
+  const expiring = contractors.filter(c => c.compliance_status === "expiring_soon").length;
+  const expired = contractors.filter(c => c.compliance_status === "expired").length;
+  const incomplete = contractors.filter(c => c.compliance_status === "incomplete").length;
+  
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...PDF_COLORS.text);
+  doc.text(`Total Contractors: ${contractors.length}`, 20, yPos);
+  yPos += 6;
+  doc.setTextColor(22, 163, 74);
+  doc.text(`Compliant: ${compliant}`, 20, yPos);
+  doc.setTextColor(234, 179, 8);
+  doc.text(`Expiring: ${expiring}`, 70, yPos);
+  doc.setTextColor(220, 38, 38);
+  doc.text(`Expired: ${expired}`, 120, yPos);
+  doc.setTextColor(...PDF_COLORS.muted);
+  doc.text(`Incomplete: ${incomplete}`, 170, yPos);
+  yPos += 15;
+
+  // Contractors table
+  yPos = addSectionTitle(doc, "Contractor Status", yPos);
+  
+  const headers = [
+    { label: "Company", x: 20 },
+    { label: "Trade", x: 75 },
+    { label: "Status", x: 115 },
+    { label: "Score", x: 150 },
+    { label: "Operatives", x: 175 },
+  ];
+  
+  yPos = addTableHeader(doc, headers, yPos);
+
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  
+  contractors.forEach(contractor => {
+    yPos = checkPageBreak(doc, yPos, 10);
+    
+    doc.setTextColor(...PDF_COLORS.text);
+    doc.text(truncateText(contractor.company_name, 28), 20, yPos);
+    doc.text(truncateText(contractor.primary_trade.replace(/_/g, " "), 18), 75, yPos);
+    
+    // Color-coded status
+    if (contractor.compliance_status === "compliant") {
+      doc.setTextColor(22, 163, 74);
+    } else if (contractor.compliance_status === "expiring_soon") {
+      doc.setTextColor(234, 179, 8);
+    } else if (contractor.compliance_status === "expired") {
+      doc.setTextColor(220, 38, 38);
+    } else {
+      doc.setTextColor(...PDF_COLORS.muted);
+    }
+    doc.text(contractor.compliance_status.replace(/_/g, " "), 115, yPos);
+    
+    doc.setTextColor(...PDF_COLORS.text);
+    doc.text(`${contractor.compliance_score}%`, 150, yPos);
+    doc.text(contractor.operatives_count.toString(), 180, yPos);
+    
+    yPos += 7;
+  });
+
+  // Document details section
+  yPos = checkPageBreak(doc, yPos, 30);
+  yPos += 10;
+  yPos = addSectionTitle(doc, "Document Expiry Details", yPos);
+  
+  const expiringDocs = contractors.flatMap(c => 
+    c.documents
+      .filter(d => d.status === "expiring" || d.status === "expired")
+      .map(d => ({
+        company: c.company_name,
+        doc_type: d.doc_type,
+        expiry_date: d.expiry_date,
+        status: d.status,
+      }))
+  ).sort((a, b) => {
+    if (!a.expiry_date) return 1;
+    if (!b.expiry_date) return -1;
+    return new Date(a.expiry_date).getTime() - new Date(b.expiry_date).getTime();
+  });
+
+  if (expiringDocs.length > 0) {
+    const docHeaders = [
+      { label: "Company", x: 20 },
+      { label: "Document Type", x: 75 },
+      { label: "Expiry Date", x: 135 },
+      { label: "Status", x: 175 },
+    ];
+    
+    yPos = addTableHeader(doc, docHeaders, yPos);
+
+    expiringDocs.slice(0, 30).forEach(item => {
+      yPos = checkPageBreak(doc, yPos, 10);
+      
+      doc.setTextColor(...PDF_COLORS.text);
+      doc.text(truncateText(item.company, 28), 20, yPos);
+      doc.text(truncateText(item.doc_type.replace(/_/g, " "), 28), 75, yPos);
+      doc.text(item.expiry_date ? format(new Date(item.expiry_date), "dd/MM/yyyy") : "-", 135, yPos);
+      
+      if (item.status === "expired") {
+        doc.setTextColor(220, 38, 38);
+      } else {
+        doc.setTextColor(234, 179, 8);
+      }
+      doc.text(item.status, 175, yPos);
+      
+      yPos += 7;
+    });
+  } else {
+    doc.setFontSize(10);
+    doc.setTextColor(...PDF_COLORS.muted);
+    doc.text("No expiring or expired documents.", 20, yPos);
+  }
+
+  addFooter(doc, orgName);
+  
+  const filename = `contractor-compliance-${format(new Date(), "yyyy-MM-dd")}.pdf`;
+  doc.save(filename);
+  return filename;
+};
