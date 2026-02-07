@@ -476,12 +476,15 @@ const NewAction = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="assignedTo">Assign to</Label>
-                  <Select value={assignedTo} onValueChange={setAssignedTo}>
+                  <Select 
+                    value={assignedTo || "unassigned"} 
+                    onValueChange={(v) => setAssignedTo(v === "unassigned" ? "" : v)}
+                  >
                     <SelectTrigger className="mt-1.5">
                       <SelectValue placeholder="Select team member" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Unassigned</SelectItem>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
                       {teamMembers.map((member) => (
                         <SelectItem key={member.id} value={member.id}>
                           {member.full_name}
