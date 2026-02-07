@@ -1508,6 +1508,271 @@ export type Database = {
           },
         ]
       }
+      rams_activity_library: {
+        Row: {
+          category: string
+          created_at: string
+          default_hazards: Json
+          default_method_steps: Json
+          default_ppe: Json
+          description: string | null
+          id: string
+          is_active: boolean | null
+          legislation_refs: string[] | null
+          name: string
+          organisation_id: string | null
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          default_hazards?: Json
+          default_method_steps?: Json
+          default_ppe?: Json
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          legislation_refs?: string[] | null
+          name: string
+          organisation_id?: string | null
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          default_hazards?: Json
+          default_method_steps?: Json
+          default_ppe?: Json
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          legislation_refs?: string[] | null
+          name?: string
+          organisation_id?: string | null
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rams_activity_library_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rams_records: {
+        Row: {
+          ai_assisted: boolean | null
+          approved_by: string | null
+          approved_by_name: string | null
+          assessment_date: string
+          client_name: string | null
+          created_at: string
+          document_id: string | null
+          emergency_procedures: string | null
+          id: string
+          method_statements: Json
+          nearest_hospital: string | null
+          organisation_id: string
+          ppe_requirements: Json
+          prepared_by: string
+          prepared_by_name: string
+          principal_contractor: string | null
+          project_id: string
+          rams_reference: string
+          review_date: string | null
+          reviewed_by: string | null
+          reviewed_by_name: string | null
+          revision_number: number
+          risk_assessments: Json
+          site_address: string
+          site_emergency_contact: string | null
+          site_name: string
+          source_activity_ids: string[] | null
+          status: string
+          title: string
+          updated_at: string
+          work_description: string
+          work_duration: string | null
+          work_location: string | null
+        }
+        Insert: {
+          ai_assisted?: boolean | null
+          approved_by?: string | null
+          approved_by_name?: string | null
+          assessment_date?: string
+          client_name?: string | null
+          created_at?: string
+          document_id?: string | null
+          emergency_procedures?: string | null
+          id?: string
+          method_statements?: Json
+          nearest_hospital?: string | null
+          organisation_id: string
+          ppe_requirements?: Json
+          prepared_by: string
+          prepared_by_name: string
+          principal_contractor?: string | null
+          project_id: string
+          rams_reference: string
+          review_date?: string | null
+          reviewed_by?: string | null
+          reviewed_by_name?: string | null
+          revision_number?: number
+          risk_assessments?: Json
+          site_address: string
+          site_emergency_contact?: string | null
+          site_name: string
+          source_activity_ids?: string[] | null
+          status?: string
+          title: string
+          updated_at?: string
+          work_description: string
+          work_duration?: string | null
+          work_location?: string | null
+        }
+        Update: {
+          ai_assisted?: boolean | null
+          approved_by?: string | null
+          approved_by_name?: string | null
+          assessment_date?: string
+          client_name?: string | null
+          created_at?: string
+          document_id?: string | null
+          emergency_procedures?: string | null
+          id?: string
+          method_statements?: Json
+          nearest_hospital?: string | null
+          organisation_id?: string
+          ppe_requirements?: Json
+          prepared_by?: string
+          prepared_by_name?: string
+          principal_contractor?: string | null
+          project_id?: string
+          rams_reference?: string
+          review_date?: string | null
+          reviewed_by?: string | null
+          reviewed_by_name?: string | null
+          revision_number?: number
+          risk_assessments?: Json
+          site_address?: string
+          site_emergency_contact?: string | null
+          site_name?: string
+          source_activity_ids?: string[] | null
+          status?: string
+          title?: string
+          updated_at?: string
+          work_description?: string
+          work_duration?: string | null
+          work_location?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rams_records_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rams_records_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rams_records_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rams_records_prepared_by_fkey"
+            columns: ["prepared_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rams_records_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rams_records_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rams_signatures: {
+        Row: {
+          id: string
+          organisation_id: string
+          rams_id: string
+          signature_data: string
+          signed_at: string
+          signer_company: string | null
+          signer_id: string | null
+          signer_name: string
+          signer_role: string
+        }
+        Insert: {
+          id?: string
+          organisation_id: string
+          rams_id: string
+          signature_data: string
+          signed_at?: string
+          signer_company?: string | null
+          signer_id?: string | null
+          signer_name: string
+          signer_role: string
+        }
+        Update: {
+          id?: string
+          organisation_id?: string
+          rams_id?: string
+          signature_data?: string
+          signed_at?: string
+          signer_company?: string | null
+          signer_id?: string | null
+          signer_name?: string
+          signer_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rams_signatures_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rams_signatures_rams_id_fkey"
+            columns: ["rams_id"]
+            isOneToOne: false
+            referencedRelation: "rams_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rams_signatures_signer_id_fkey"
+            columns: ["signer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_access_codes: {
         Row: {
           code: string
