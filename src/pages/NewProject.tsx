@@ -106,22 +106,24 @@ const NewProject = () => {
       if (error) throw error;
 
       // Auto-create the 5 compliance requirement items
+      // Core items (F10, Asbestos Survey, PCI) start as "pending"
+      // Waste-related items (cleanliness, consignment) default to "exempt" for simpler projects
       const complianceRequirements = [
-        "f10",
-        "asbestos_survey",
-        "asbestos_cleanliness",
-        "consignment_note",
-        "pci",
+        { type: "f10", status: "pending" },
+        { type: "asbestos_survey", status: "pending" },
+        { type: "asbestos_cleanliness", status: "exempt" }, // Default exempt - only for asbestos removal
+        { type: "consignment_note", status: "exempt" }, // Default exempt - only for asbestos removal
+        { type: "pci", status: "pending" },
       ];
 
       const { error: complianceError } = await supabase
         .from("project_compliance_requirements")
         .insert(
-          complianceRequirements.map((type) => ({
+          complianceRequirements.map((req) => ({
             organisation_id: organisation?.id,
             project_id: newProject.id,
-            requirement_type: type,
-            status: "pending",
+            requirement_type: req.type,
+            status: req.status,
           }))
         );
 
