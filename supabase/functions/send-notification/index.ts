@@ -227,10 +227,44 @@ serve(async (req) => {
       });
     }
 
-    // TODO: Send email notification (integrate with Resend when ready)
-    if (emailEnabled) {
-      console.log("[SEND-NOTIFICATION] Email notification would be sent here");
-      // results.email.sent = true;
+    // Send email notification via Resend
+    if (emailEnabled && profile.email) {
+      const resendApiKey = Deno.env.get("RESEND_API_KEY");
+      if (resendApiKey) {
+        try {
+          const emailSubject = buildEmailSubject(type, data, org?.name || "Site Safe");
+          const emailHtml = buildEmailHtml(type, data, profile.full_name, org?.name || "Site Safe", link);
+
+          const emailResponse = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${resendApiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              from: "Site Safe <noreply@sitesafe.cloud>",
+              to: [profile.email],
+              subject: emailSubject,
+              html: emailHtml,
+            }),
+          });
+
+          if (emailResponse.ok) {
+            results.email.sent = true;
+            console.log(`[SEND-NOTIFICATION] Email sent to ${profile.email}`);
+          } else {
+            const errorText = await emailResponse.text();
+            results.email.error = `Resend API error: ${emailResponse.status}`;
+            console.error("[SEND-NOTIFICATION] Resend error:", errorText);
+          }
+        } catch (emailErr) {
+          results.email.error = emailErr.message;
+          console.error("[SEND-NOTIFICATION] Email send error:", emailErr);
+        }
+      } else {
+        console.log("[SEND-NOTIFICATION] RESEND_API_KEY not configured, skipping email");
+        results.email.error = "RESEND_API_KEY not configured";
+      }
     }
 
     // Create in-app activity log
@@ -357,4 +391,79 @@ function buildTemplateParams(
     default:
       return [];
   }
+}
+
+function buildEmailSubject(type: NotificationType, data: Record<string, string>, orgName: string): string {
+  switch (type) {
+    case "document_acknowledgement":
+      return `Action Required: Document "${data.documentName || "Document"}" needs your signature`;
+    case "action_assigned":
+      return `Action Assigned: ${data.actionTitle || "New action"} — ${orgName}`;
+    case "action_overdue":
+      return `⚠️ Overdue Action: ${data.actionTitle || "Action"} — ${data.daysOverdue || ""}d overdue`;
+    case "rams_acknowledgement":
+      return `RAMS Issued: ${data.ramsTitle || "RAMS"} requires your signature`;
+    case "permit_expiring":
+      return `Permit Expiring: "${data.permitTitle || "Permit"}" expires ${data.expiresIn || "soon"}`;
+    case "site_induction_reminder":
+      return `Site Induction Required — ${data.projectName || orgName}`;
+    default:
+      return `Notification from ${orgName}`;
+  }
+}
+
+function buildEmailHtml(
+  type: NotificationType,
+  data: Record<string, string>,
+  recipientName: string,
+  orgName: string,
+  link: string
+): string {
+  const greeting = `Hi ${recipientName || "there"},`;
+  let body = "";
+  let ctaLabel = "View Details";
+
+  switch (type) {
+    case "document_acknowledgement":
+      body = `A new document requires your signature for <strong>${data.projectName || orgName}</strong>.<br><br><strong>Document:</strong> ${data.documentName || "Document"}<br><strong>Deadline:</strong> ${data.deadline || "As soon as possible"}`;
+      ctaLabel = "Sign Document";
+      break;
+    case "action_assigned":
+      body = `A corrective action has been assigned to you at <strong>${data.projectName || orgName}</strong>.<br><br><strong>Action:</strong> ${data.actionTitle || "Action"}<br><strong>Priority:</strong> ${data.priority || "Medium"}<br><strong>Due:</strong> ${data.dueDate || "Not set"}`;
+      ctaLabel = "View Action";
+      break;
+    case "action_overdue":
+      body = `Your corrective action is <strong style="color:#dc2626;">overdue</strong>.<br><br><strong>Action:</strong> ${data.actionTitle || "Action"}<br><strong>Project:</strong> ${data.projectName || orgName}<br><strong>Was due:</strong> ${data.dueDate || "Unknown"} (${data.daysOverdue || "1"} days overdue)<br><br>Please resolve this urgently.`;
+      ctaLabel = "Resolve Now";
+      break;
+    case "rams_acknowledgement":
+      body = `New RAMS have been issued for <strong>${data.projectName || orgName}</strong> and require your signature.<br><br><strong>RAMS:</strong> ${data.ramsTitle || "RAMS"}`;
+      ctaLabel = "Sign RAMS";
+      break;
+    case "permit_expiring":
+      body = `Permit to Work <strong>"${data.permitTitle || "Permit"}"</strong> at <strong>${data.projectName || orgName}</strong> expires in <strong>${data.expiresIn || "soon"}</strong>.<br><br>Please take action to renew or close this permit.`;
+      ctaLabel = "View Permit";
+      break;
+    case "site_induction_reminder":
+      body = `You need to complete your site induction for <strong>${data.projectName || orgName}</strong> before starting work.`;
+      ctaLabel = "Complete Induction";
+      break;
+  }
+
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:#1a1a1a;max-width:600px;margin:0 auto;padding:20px;background:#ffffff;">
+  <div style="text-align:center;margin-bottom:24px;">
+    <h1 style="color:#0F766E;margin:0;font-size:24px;">Site Safe</h1>
+  </div>
+  <div style="background:#f8fafc;border-radius:12px;padding:24px;margin-bottom:20px;">
+    <p style="margin:0 0 16px;">${greeting}</p>
+    <p style="margin:0;">${body}</p>
+  </div>
+  <div style="text-align:center;margin:24px 0;">
+    <a href="${link}" style="display:inline-block;background:#0F766E;color:white;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:15px;">${ctaLabel}</a>
+  </div>
+  <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;">
+  <p style="color:#94a3b8;font-size:12px;text-align:center;margin:0;">© ${new Date().getFullYear()} ${orgName}. Sent via Site Safe.</p>
+</body></html>`;
 }

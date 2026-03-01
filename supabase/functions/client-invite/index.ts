@@ -98,7 +98,7 @@ async function sendClientInviteEmail(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "SiteSafe Pro <noreply@resend.dev>",
+        from: "Site Safe <noreply@sitesafe.cloud>",
         to: [to],
         subject: `Client Portal Invitation from ${organisationName}`,
         html: emailHtml,

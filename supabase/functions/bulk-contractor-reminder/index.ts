@@ -171,7 +171,7 @@ Deno.serve(async (req) => {
             Authorization: `Bearer ${resendApiKey}`,
           },
           body: JSON.stringify({
-            from: `${orgName} <noreply@sitesafepro.co.uk>`,
+            from: `Site Safe <noreply@sitesafe.cloud>`,
             to: [reminder.contact_email],
             subject: `Compliance Reminder - Documents Need Attention`,
             html: `
