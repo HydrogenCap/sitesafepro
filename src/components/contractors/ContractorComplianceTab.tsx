@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { COMPLIANCE_DOC_LABELS, ContractorComplianceDoc, ComplianceDocType } from "@/types/contractor";
-import { CheckCircle2, AlertTriangle, XCircle, Shield, Circle } from "lucide-react";
+import { CheckCircle2, AlertTriangle, XCircle, Shield, Circle, Pencil } from "lucide-react";
 import { differenceInDays, format } from "date-fns";
 import { UploadComplianceDocDialog } from "./UploadComplianceDocDialog";
 import { EditRequiredDocsDialog } from "./EditRequiredDocsDialog";
+import { EditComplianceDocDialog } from "./EditComplianceDocDialog";
 
 interface Props {
   contractorId: string;
@@ -13,6 +15,8 @@ interface Props {
 }
 
 export const ContractorComplianceTab = ({ contractorId, complianceDocs, requiredDocTypes = [] }: Props) => {
+  const [editingDoc, setEditingDoc] = useState<ContractorComplianceDoc | null>(null);
+
   // Parse date string as local to avoid UTC timezone shift
   const parseLocalDate = (dateStr: string) => {
     const [year, month, day] = dateStr.split("-").map(Number);
@@ -131,7 +135,12 @@ export const ContractorComplianceTab = ({ contractorId, complianceDocs, required
                   <div key={doc.id} className="border border-border rounded-lg p-4">
                     <div className="flex items-start justify-between mb-2">
                       <span className="font-medium text-sm">{label}</span>
-                      {getStatusBadge(status)}
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingDoc(doc)}>
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        {getStatusBadge(status)}
+                      </div>
                     </div>
                     {doc.reference_number && (
                       <p className="text-xs text-muted-foreground">Ref: {doc.reference_number}</p>
@@ -187,6 +196,13 @@ export const ContractorComplianceTab = ({ contractorId, complianceDocs, required
           </div>
         );
       })}
+      {editingDoc && (
+        <EditComplianceDocDialog
+          doc={editingDoc}
+          open={!!editingDoc}
+          onOpenChange={(open) => { if (!open) setEditingDoc(null); }}
+        />
+      )}
     </div>
   );
 };
