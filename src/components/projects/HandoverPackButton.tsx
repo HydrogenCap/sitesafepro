@@ -67,6 +67,8 @@ export const HandoverPackButton = ({
         setExistingExportId(data.export_id);
         toast.success("Handover pack generated successfully");
         setDialogOpen(false);
+        // Auto-download after generation
+        await downloadExport(data.export_id);
       } else {
         throw new Error(data?.error || "Generation failed");
       }
@@ -78,14 +80,14 @@ export const HandoverPackButton = ({
     }
   };
 
-  const handleDownload = async () => {
-    if (!existingExportId || !orgId) return;
+  const downloadExport = async (exportId: string) => {
+    if (!orgId) return;
     setDownloading(true);
     try {
       const { data: exportData } = await supabase
         .from("document_exports")
         .select("storage_path")
-        .eq("id", existingExportId)
+        .eq("id", exportId)
         .single();
 
       if (!exportData?.storage_path) throw new Error("No file path");
@@ -103,6 +105,10 @@ export const HandoverPackButton = ({
     } finally {
       setDownloading(false);
     }
+  };
+
+  const handleDownload = () => {
+    if (existingExportId) downloadExport(existingExportId);
   };
 
   // Only show for completed projects or admin roles
