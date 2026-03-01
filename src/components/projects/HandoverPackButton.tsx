@@ -89,7 +89,16 @@ export const HandoverPackButton = ({
       });
       if (error) throw error;
       if (data?.signed_url) {
-        window.open(data.signed_url, "_blank");
+        const response = await fetch(data.signed_url);
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${projectName.replace(/[^a-zA-Z0-9]/g, "_")}_Handover_Pack.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       }
     } catch (err) {
       console.error("Download error:", err);
