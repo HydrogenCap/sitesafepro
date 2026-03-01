@@ -28,7 +28,15 @@ export const DocumentPreview = ({
 
   const isPdf = mimeType === "application/pdf";
   const isImage = mimeType.startsWith("image/");
-  const canPreview = isPdf || isImage;
+  const isOffice = [
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/msword",
+    "application/vnd.ms-excel",
+    "application/vnd.ms-powerpoint",
+  ].includes(mimeType);
+  const canPreview = isPdf || isImage || isOffice;
 
   const handleZoomIn = () => setZoom((z) => Math.min(z + 25, 200));
   const handleZoomOut = () => setZoom((z) => Math.max(z - 25, 50));
@@ -124,6 +132,12 @@ export const DocumentPreview = ({
         {isPdf ? (
           <iframe
             src={`${signedUrl}#toolbar=0&navpanes=0`}
+            className="w-full h-[600px] border-0"
+            title={fileName}
+          />
+        ) : isOffice ? (
+          <iframe
+            src={`https://docs.google.com/gview?url=${encodeURIComponent(signedUrl)}&embedded=true`}
             className="w-full h-[600px] border-0"
             title={fileName}
           />

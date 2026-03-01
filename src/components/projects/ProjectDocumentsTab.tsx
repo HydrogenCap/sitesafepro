@@ -159,7 +159,8 @@ export const ProjectDocumentsTab = ({ projectId }: ProjectDocumentsTabProps) => 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className="p-4 hover:bg-muted/50 transition-colors"
+              className="p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+              onClick={() => navigate(`/documents/${doc.id}`)}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -207,7 +208,7 @@ export const ProjectDocumentsTab = ({ projectId }: ProjectDocumentsTabProps) => 
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleDownload(doc)}
+                    onClick={(e) => { e.stopPropagation(); handleDownload(doc); }}
                   >
                     <Download className="h-4 w-4" />
                   </Button>

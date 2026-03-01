@@ -19,7 +19,12 @@ import {
   CheckCircle,
   Clock,
   XCircle,
+  Pencil,
+  Check,
+  X,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 interface DocumentData {
   id: string;
@@ -91,6 +96,10 @@ const DocumentView = () => {
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [hasAcknowledged, setHasAcknowledged] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [editingDescription, setEditingDescription] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
 
   const fetchDocument = useCallback(async () => {
     if (!id || !user) return;
@@ -286,6 +295,40 @@ const DocumentView = () => {
     }
   };
 
+  const handleSaveName = async () => {
+    if (!document || !editName.trim()) return;
+    try {
+      const { error } = await supabase
+        .from("documents")
+        .update({ name: editName.trim() })
+        .eq("id", document.id);
+      if (error) throw error;
+      toast.success("Document name updated");
+      setEditingName(false);
+      fetchDocument();
+    } catch (error) {
+      console.error("Error updating name:", error);
+      toast.error("Failed to update name");
+    }
+  };
+
+  const handleSaveDescription = async () => {
+    if (!document) return;
+    try {
+      const { error } = await supabase
+        .from("documents")
+        .update({ description: editDescription.trim() || null })
+        .eq("id", document.id);
+      if (error) throw error;
+      toast.success("Description updated");
+      setEditingDescription(false);
+      fetchDocument();
+    } catch (error) {
+      console.error("Error updating description:", error);
+      toast.error("Failed to update description");
+    }
+  };
+
   const handleDelete = async () => {
     if (!document) return;
 
@@ -399,14 +442,93 @@ const DocumentView = () => {
         </motion.div>
 
         {/* Title */}
-        <motion.h1
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-2xl font-bold text-foreground mb-6 flex items-center gap-3"
+          className="mb-6"
         >
-          <FileText className="h-6 w-6 text-primary" />
-          {document.name}
-        </motion.h1>
+          {editingName ? (
+            <div className="flex items-center gap-2">
+              <FileText className="h-6 w-6 text-primary flex-shrink-0" />
+              <Input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="text-2xl font-bold h-auto py-1"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveName();
+                  if (e.key === "Escape") setEditingName(false);
+                }}
+              />
+              <Button size="icon" variant="ghost" onClick={handleSaveName}>
+                <Check className="h-4 w-4 text-success" />
+              </Button>
+              <Button size="icon" variant="ghost" onClick={() => setEditingName(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-3 group">
+              <FileText className="h-6 w-6 text-primary" />
+              {document.name}
+              {isAdmin && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => { setEditName(document.name); setEditingName(true); }}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              )}
+            </h1>
+          )}
+
+          {/* Description */}
+          {editingDescription ? (
+            <div className="mt-2 flex items-start gap-2 ml-9">
+              <Textarea
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                className="text-sm"
+                rows={2}
+                autoFocus
+                placeholder="Add a description..."
+              />
+              <div className="flex flex-col gap-1">
+                <Button size="icon" variant="ghost" onClick={handleSaveDescription}>
+                  <Check className="h-4 w-4 text-success" />
+                </Button>
+                <Button size="icon" variant="ghost" onClick={() => setEditingDescription(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-1 ml-9 group/desc">
+              {document.description ? (
+                <p className="text-sm text-muted-foreground inline">
+                  {document.description}
+                </p>
+              ) : isAdmin ? (
+                <p className="text-sm text-muted-foreground/50 inline italic">
+                  No description
+                </p>
+              ) : null}
+              {isAdmin && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="opacity-0 group-hover/desc:opacity-100 transition-opacity h-6 px-2 ml-1 text-xs"
+                  onClick={() => { setEditDescription(document.description || ""); setEditingDescription(true); }}
+                >
+                  <Pencil className="h-3 w-3 mr-1" />
+                  Edit
+                </Button>
+              )}
+            </div>
+          )}
+        </motion.div>
 
         {/* Main content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
