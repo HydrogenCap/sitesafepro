@@ -35,7 +35,7 @@ import {
   Crown, Mail, Phone, Calendar, CreditCard, TrendingUp, Activity,
   Eye, Megaphone, PlusCircle, Zap, HardHat, FileText, BarChart2,
   AlertCircle, ExternalLink, Info, Send, Loader2, Ban,
-  FileWarning, ShieldAlert, History, Building,
+  FileWarning, ShieldAlert, History, Building, TrendingDown, Sparkles,
 } from "lucide-react";
 import { STRIPE_PRODUCTS } from "@/config/stripe";
 
@@ -124,6 +124,27 @@ interface AdminLogEntry {
   action: string;
   target: string;
   created_at: string;
+}
+
+interface ChurnOrg {
+  id: string; name: string; slug: string;
+  subscription_tier: SubTier | null; subscription_status: SubStatus | null;
+  trial_ends_at: string | null; stripe_customer_id: string | null;
+  mrr: number; risk: "critical" | "high" | "medium";
+  reasons: string[]; ownerEmail: string | null;
+  lastActivityAt: string | null; liveProjects: number;
+}
+
+interface OnboardingOrg {
+  id: string; name: string; slug: string;
+  subscription_tier: SubTier | null; subscription_status: SubStatus | null;
+  created_at: string;
+  steps: {
+    profileComplete: boolean; firstProject: boolean; firstDocument: boolean;
+    firstRams: boolean; teamMemberInvited: boolean; firstInspection: boolean;
+    firstToolboxTalk: boolean; firstInduction: boolean;
+  };
+  completedSteps: number; totalSteps: number;
 }
 
 interface PlatformStats {
@@ -272,6 +293,15 @@ export default function AdminPanel() {
   const [auditEntityFilter, setAuditEntityFilter] = useState("all");
   const [adminLog, setAdminLog] = useState<AdminLogEntry[]>([]);
 
+  // Churn + onboarding state
+  const [churnOrgs, setChurnOrgs] = useState<ChurnOrg[]>([]);
+  const [onboardingOrgs, setOnboardingOrgs] = useState<OnboardingOrg[]>([]);
+
+  // Subscription override dialog
+  const [subOverrideOrg, setSubOverrideOrg] = useState<Organisation | null>(null);
+  const [subOverride, setSubOverride] = useState<{ tier: SubTier; status: SubStatus; trialDays: string }>({ tier: 'starter', status: 'trialing', trialDays: '14' });
+  const [savingSubOverride, setSavingSubOverride] = useState(false);
+
   // Modals
   const [detailMember, setDetailMember] = useState<OrgMember | null>(null);
   const [detailOrgName, setDetailOrgName] = useState("");
@@ -299,8 +329,9 @@ export default function AdminPanel() {
       const thirtyDaysFromNow = addDays(new Date(), 30).toISOString();
 
       const [orgsRes, membersRes, projectsRes, docsRes, incidentsRes, ramsRes,
-        activityRes, riddorRes, complianceRes, auditRes] = await Promise.all([
-        supabase.from("organisations").select("id,name,slug,created_at,subscription_tier,subscription_status,trial_ends_at,stripe_customer_id,storage_used_bytes,max_projects").order("created_at", { ascending: false }),
+        activityRes, riddorRes, complianceRes, auditRes,
+        allDocsRes, inspectionsRes, toolboxRes, inductionsRes] = await Promise.all([
+        supabase.from("organisations").select("id,name,slug,created_at,subscription_tier,subscription_status,trial_ends_at,stripe_customer_id,storage_used_bytes,max_projects,address,phone").order("created_at", { ascending: false }),
         supabase.from("organisation_members").select(`id,organisation_id,role,status,invited_at,accepted_at,profile:profiles!organisation_members_profile_id_fkey(id,full_name,email,phone,avatar_url,created_at)`).order("invited_at", { ascending: false }),
         supabase.from("projects").select("id,organisation_id,status,is_live"),
         supabase.from("documents").select("id,organisation_id,created_at").gte("created_at", thirtyDaysAgo),
@@ -310,6 +341,10 @@ export default function AdminPanel() {
         supabase.from("incidents").select(`id,incident_number,title,severity,status,incident_date,riddor_reported_at,organisation_id,project:projects(name)`).eq("is_riddor_reportable", true).neq("status", "closed").order("incident_date", { ascending: false }),
         supabase.from("contractor_compliance_docs").select(`id,doc_type,expiry_date,organisation_id,contractor:contractor_companies(company_name)`).not("expiry_date", "is", null).lte("expiry_date", thirtyDaysFromNow).order("expiry_date", { ascending: true }),
         supabase.from("audit_events").select("*").order("created_at", { ascending: false }).limit(300),
+        supabase.from("documents").select("id,organisation_id"),
+        supabase.from("inspections").select("id,organisation_id"),
+        supabase.from("toolbox_talks").select("id,organisation_id"),
+        supabase.from("site_induction_completions").select("id,organisation_id"),
       ]);
 
       const orgsData = orgsRes.data ?? [];
@@ -364,6 +399,107 @@ export default function AdminPanel() {
       const allAudit = (auditRes.data ?? []).map((e: any) => ({ ...e, orgName: orgNameMap[e.organisation_id] ?? "—", metadata: (e.metadata as Record<string, unknown>) ?? {} }));
       setAuditEvents(allAudit);
       setAdminLog(allAudit.filter((e: any) => e.metadata?._admin_action).map((e: any) => ({ id: e.id, action: e.action, target: `${e.entity_type}${e.entity_id ? ` · ${e.entity_id.slice(0, 8)}…` : ""}`, created_at: e.created_at })));
+
+      // ── Churn computation ──
+      const thirtyDaysAgoMs = Date.now() - 30 * 24 * 60 * 60 * 1000;
+      const sevenDaysFromNow = addDays(new Date(), 7).getTime();
+      const ownerEmailByOrg: Record<string, string | null> = {};
+      membersData.forEach((m: any) => {
+        if (m.role === "owner" && m.profile?.email) ownerEmailByOrg[m.organisation_id] = m.profile.email;
+      });
+
+      const builtChurn: ChurnOrg[] = [];
+      orgsData.forEach((o: any) => {
+        const reasons: string[] = [];
+        let risk: "critical" | "high" | "medium" = "medium";
+        const liveProjects = projectsByOrg[o.id]?.live ?? 0;
+        const lastAct = lastActivityByOrg[o.id] ? new Date(lastActivityByOrg[o.id]).getTime() : null;
+        const mrr = (o.subscription_status === "active" || o.subscription_status === "past_due") ? tierPrice(o.subscription_tier) : 0;
+
+        // Trial ending <7 days with no live project
+        if (o.subscription_status === "trialing" && o.trial_ends_at) {
+          const trialEnd = new Date(o.trial_ends_at).getTime();
+          if (trialEnd <= sevenDaysFromNow) {
+            reasons.push(`Trial ends ${differenceInDays(new Date(o.trial_ends_at), new Date())}d`);
+            if (liveProjects === 0) reasons.push("No live projects");
+            risk = "critical";
+          }
+        }
+        // Past due
+        if (o.subscription_status === "past_due") {
+          reasons.push("Payment past due");
+          risk = "critical";
+        }
+        // Active but no activity in 30+ days
+        if (o.subscription_status === "active" && lastAct && lastAct < thirtyDaysAgoMs) {
+          const daysInactive = Math.floor((Date.now() - lastAct) / (1000 * 60 * 60 * 24));
+          reasons.push(`${daysInactive}d inactive`);
+          if (risk !== "critical") risk = "high";
+        }
+        // Active but no activity ever
+        if (o.subscription_status === "active" && !lastAct) {
+          reasons.push("No activity recorded");
+          if (risk !== "critical") risk = "high";
+        }
+        // Active with no live projects
+        if (o.subscription_status === "active" && liveProjects === 0 && (projectsByOrg[o.id]?.total ?? 0) === 0) {
+          reasons.push("No projects created");
+          if (risk === "medium") risk = "medium";
+        }
+
+        if (reasons.length > 0) {
+          builtChurn.push({
+            id: o.id, name: o.name, slug: o.slug,
+            subscription_tier: o.subscription_tier, subscription_status: o.subscription_status,
+            trial_ends_at: o.trial_ends_at, stripe_customer_id: o.stripe_customer_id,
+            mrr, risk, reasons, ownerEmail: ownerEmailByOrg[o.id] ?? null,
+            lastActivityAt: lastActivityByOrg[o.id] ?? null, liveProjects,
+          });
+        }
+      });
+      // Sort: critical first, then by MRR desc
+      builtChurn.sort((a, b) => {
+        const riskOrder = { critical: 0, high: 1, medium: 2 };
+        if (riskOrder[a.risk] !== riskOrder[b.risk]) return riskOrder[a.risk] - riskOrder[b.risk];
+        return b.mrr - a.mrr;
+      });
+      setChurnOrgs(builtChurn);
+
+      // ── Onboarding progress computation ──
+      const allDocsData = allDocsRes.data ?? [];
+      const inspData = inspectionsRes.data ?? [];
+      const toolboxData = toolboxRes.data ?? [];
+      const inductionData = inductionsRes.data ?? [];
+
+      const allDocsByOrg: Record<string, number> = {};
+      allDocsData.forEach((d: any) => { allDocsByOrg[d.organisation_id] = (allDocsByOrg[d.organisation_id] ?? 0) + 1; });
+      const inspByOrg: Record<string, number> = {};
+      inspData.forEach((i: any) => { inspByOrg[i.organisation_id] = (inspByOrg[i.organisation_id] ?? 0) + 1; });
+      const toolboxByOrg: Record<string, number> = {};
+      toolboxData.forEach((t: any) => { toolboxByOrg[t.organisation_id] = (toolboxByOrg[t.organisation_id] ?? 0) + 1; });
+      const inductionByOrg: Record<string, number> = {};
+      inductionData.forEach((i: any) => { inductionByOrg[i.organisation_id] = (inductionByOrg[i.organisation_id] ?? 0) + 1; });
+
+      const builtOnboarding: OnboardingOrg[] = orgsData.map((o: any) => {
+        const memberCount = (membersByOrg[o.id] ?? []).length;
+        const steps = {
+          profileComplete: !!(o.address && o.phone),
+          firstProject: (projectsByOrg[o.id]?.total ?? 0) > 0,
+          firstDocument: (allDocsByOrg[o.id] ?? 0) > 0,
+          firstRams: (ramsByOrg[o.id] ?? 0) > 0,
+          teamMemberInvited: memberCount > 1,
+          firstInspection: (inspByOrg[o.id] ?? 0) > 0,
+          firstToolboxTalk: (toolboxByOrg[o.id] ?? 0) > 0,
+          firstInduction: (inductionByOrg[o.id] ?? 0) > 0,
+        };
+        const completedSteps = Object.values(steps).filter(Boolean).length;
+        return {
+          id: o.id, name: o.name, slug: o.slug,
+          subscription_tier: o.subscription_tier, subscription_status: o.subscription_status,
+          created_at: o.created_at, steps, completedSteps, totalSteps: 8,
+        };
+      }).sort((a, b) => a.completedSteps - b.completedSteps); // stuck orgs first
+      setOnboardingOrgs(builtOnboarding);
 
     } catch (err: any) {
       toast({ title: "Failed to load admin data", description: err.message, variant: "destructive" });
@@ -434,6 +570,43 @@ export default function AdminPanel() {
       toast({ title: "Failed to create org", description: err.message, variant: "destructive" });
     } finally {
       setCreatingOrg(false);
+    }
+  };
+
+  const handleSubOverride = async () => {
+    if (!subOverrideOrg) return;
+    setSavingSubOverride(true);
+    try {
+      const updates: Record<string, unknown> = {
+        subscription_tier: subOverride.tier,
+        subscription_status: subOverride.status,
+      };
+      if (subOverride.status === "trialing") {
+        updates.trial_ends_at = addDays(new Date(), parseInt(subOverride.trialDays) || 14).toISOString();
+      } else {
+        updates.trial_ends_at = null;
+      }
+      const { error } = await supabase.from("organisations").update(updates as any).eq("id", subOverrideOrg.id);
+      if (error) throw error;
+      await logAdminAction(user!.id, "SUB_OVERRIDE", "organisation", subOverrideOrg.id, subOverrideOrg.id, {
+        org_name: subOverrideOrg.name,
+        prev_tier: subOverrideOrg.subscription_tier,
+        prev_status: subOverrideOrg.subscription_status,
+        new_tier: subOverride.tier,
+        new_status: subOverride.status,
+      });
+      setOrgs((prev) => prev.map((o) => o.id === subOverrideOrg.id ? {
+        ...o,
+        subscription_tier: subOverride.tier,
+        subscription_status: subOverride.status,
+        trial_ends_at: updates.trial_ends_at as string | null,
+      } : o));
+      toast({ title: "Subscription updated", description: `${subOverrideOrg.name} → ${subOverride.tier} / ${subOverride.status}` });
+      setSubOverrideOrg(null);
+    } catch (err: any) {
+      toast({ title: "Failed to update subscription", description: err.message, variant: "destructive" });
+    } finally {
+      setSavingSubOverride(false);
     }
   };
 
@@ -585,6 +758,13 @@ export default function AdminPanel() {
             </TabsTrigger>
             <TabsTrigger value="admin-log" className="gap-1.5 text-xs h-8">
               <Shield className="h-3.5 w-3.5" />Admin Actions
+            </TabsTrigger>
+            <TabsTrigger value="churn" className="gap-1.5 text-xs h-8 relative">
+              <TrendingDown className="h-3.5 w-3.5" />Churn Risk
+              {churnOrgs.filter(o => o.risk === "critical").length > 0 && <span className="ml-1 bg-destructive text-destructive-foreground text-[9px] rounded-full px-1 leading-4">{churnOrgs.filter(o => o.risk === "critical").length}</span>}
+            </TabsTrigger>
+            <TabsTrigger value="onboarding" className="gap-1.5 text-xs h-8">
+              <Sparkles className="h-3.5 w-3.5" />Onboarding
             </TabsTrigger>
           </TabsList>
 
@@ -799,9 +979,14 @@ export default function AdminPanel() {
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">{formatBytes(org.storage_used_bytes)}</TableCell>
                         <TableCell>
+                          <div className="flex items-center gap-2">
                           {org.stripe_customer_id
-                            ? <a href={`https://dashboard.stripe.com/customers/${org.stripe_customer_id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline"><ExternalLink className="h-3 w-3" />View</a>
+                            ? <a href={`https://dashboard.stripe.com/customers/${org.stripe_customer_id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline"><ExternalLink className="h-3 w-3" />Stripe</a>
                             : <span className="text-xs text-muted-foreground">—</span>}
+                          <Button variant="ghost" size="sm" className="h-6 text-xs px-2 text-muted-foreground hover:text-primary" onClick={() => { setSubOverrideOrg(org); setSubOverride({ tier: org.subscription_tier ?? "starter", status: org.subscription_status ?? "trialing", trialDays: "14" }); }}>
+                            <CreditCard className="h-3 w-3 mr-1" />Override
+                          </Button>
+                        </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -1011,6 +1196,152 @@ export default function AdminPanel() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* ════ CHURN DASHBOARD ════ */}
+          <TabsContent value="churn" className="mt-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-semibold flex items-center gap-2">
+                  <TrendingDown className="h-4 w-4 text-destructive" />Churn Risk Dashboard
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">{churnOrgs.length} organisation{churnOrgs.length !== 1 ? "s" : ""} flagged · Sorted by risk then MRR</p>
+              </div>
+              <div className="flex gap-2 text-xs">
+                <Badge variant="destructive" className="gap-1"><AlertTriangle className="h-3 w-3" />Critical: {churnOrgs.filter(o => o.risk === "critical").length}</Badge>
+                <Badge variant="secondary" className="gap-1 bg-amber-500/10 text-amber-700"><AlertCircle className="h-3 w-3" />High: {churnOrgs.filter(o => o.risk === "high").length}</Badge>
+                <Badge variant="secondary" className="gap-1">Medium: {churnOrgs.filter(o => o.risk === "medium").length}</Badge>
+              </div>
+            </div>
+
+            {churnOrgs.length === 0 ? (
+              <Card><CardContent className="py-12 text-center">
+                <CheckCircle className="h-10 w-10 text-emerald-500 mx-auto mb-3" />
+                <p className="text-sm font-medium">No churn signals detected</p>
+                <p className="text-xs text-muted-foreground mt-1">All active organisations look healthy.</p>
+              </CardContent></Card>
+            ) : (
+              <div className="space-y-2">
+                {churnOrgs.map((org) => (
+                  <Card key={org.id} className={`border-l-4 ${org.risk === "critical" ? "border-l-destructive" : org.risk === "high" ? "border-l-amber-500" : "border-l-slate-300"}`}>
+                    <CardContent className="py-4">
+                      <div className="flex items-start justify-between gap-4 flex-wrap">
+                        <div className="flex items-start gap-3">
+                          <div className={`mt-0.5 p-1.5 rounded-lg flex-shrink-0 ${org.risk === "critical" ? "bg-destructive/10" : org.risk === "high" ? "bg-amber-500/10" : "bg-muted"}`}>
+                            {org.risk === "critical" ? <AlertTriangle className="h-4 w-4 text-destructive" /> : org.risk === "high" ? <AlertCircle className="h-4 w-4 text-amber-600" /> : <Info className="h-4 w-4 text-muted-foreground" />}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-semibold text-sm">{org.name}</p>
+                              {org.subscription_tier && <Badge variant="secondary" className={`text-xs ${tierColors[org.subscription_tier]}`}>{org.subscription_tier}</Badge>}
+                              {org.subscription_status && <Badge variant="secondary" className={`text-xs ${subStatusColors[org.subscription_status]}`}>{org.subscription_status}</Badge>}
+                              {org.mrr > 0 && <Badge variant="secondary" className="text-xs font-mono">£{org.mrr}/mo</Badge>}
+                            </div>
+                            <div className="flex flex-wrap gap-1.5 mt-1.5">
+                              {org.reasons.map((r, i) => (
+                                <span key={i} className={`text-xs px-2 py-0.5 rounded-full ${org.risk === "critical" ? "bg-destructive/10 text-destructive" : org.risk === "high" ? "bg-amber-500/10 text-amber-700" : "bg-muted text-muted-foreground"}`}>{r}</span>
+                              ))}
+                            </div>
+                            {org.lastActivityAt && (
+                              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                <Activity className="h-3 w-3" />Last active {format(new Date(org.lastActivityAt), "dd MMM yyyy")}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {org.ownerEmail && (
+                            <Button variant="outline" size="sm" className="h-7 text-xs gap-1" asChild>
+                              <a href={`mailto:${org.ownerEmail}?subject=Your SiteSafe Cloud account&body=Hi,%0A%0AI wanted to reach out about your SiteSafe Cloud account...`}>
+                                <Mail className="h-3.5 w-3.5" />Contact Owner
+                              </a>
+                            </Button>
+                          )}
+                          <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => {
+                            const fullOrg = orgs.find(o => o.id === org.id);
+                            if (fullOrg) { setSubOverrideOrg(fullOrg); setSubOverride({ tier: fullOrg.subscription_tier ?? "starter", status: fullOrg.subscription_status ?? "trialing", trialDays: "14" }); }
+                          }}>
+                            <CreditCard className="h-3.5 w-3.5" />Override Sub
+                          </Button>
+                          {org.stripe_customer_id && (
+                            <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" asChild>
+                              <a href={`https://dashboard.stripe.com/customers/${org.stripe_customer_id}`} target="_blank" rel="noopener noreferrer">
+                                <ExternalLink className="h-3.5 w-3.5" />Stripe
+                              </a>
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* ════ ONBOARDING TRACKER ════ */}
+          <TabsContent value="onboarding" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />Onboarding Progress Tracker
+                </CardTitle>
+                <CardDescription>
+                  Where each organisation is in their activation journey — sorted by least progress first.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/20">
+                      <TableHead className="text-xs pl-6">Organisation</TableHead>
+                      <TableHead className="text-xs">Progress</TableHead>
+                      <TableHead className="text-xs text-center" title="Profile complete">Profile</TableHead>
+                      <TableHead className="text-xs text-center" title="First project created">Project</TableHead>
+                      <TableHead className="text-xs text-center" title="First document uploaded">Doc</TableHead>
+                      <TableHead className="text-xs text-center" title="First RAMS created">RAMS</TableHead>
+                      <TableHead className="text-xs text-center" title="Team member invited">Team</TableHead>
+                      <TableHead className="text-xs text-center" title="First inspection">Inspect</TableHead>
+                      <TableHead className="text-xs text-center" title="First toolbox talk">Talk</TableHead>
+                      <TableHead className="text-xs text-center" title="First induction completed">Induct</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {onboardingOrgs.map((org) => {
+                      const pct = Math.round((org.completedSteps / org.totalSteps) * 100);
+                      const stepEntries = Object.entries(org.steps) as [string, boolean][];
+                      return (
+                        <TableRow key={org.id} className="hover:bg-muted/20">
+                          <TableCell className="pl-6">
+                            <p className="font-medium text-xs">{org.name}</p>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              {org.subscription_tier && <Badge variant="secondary" className={`text-xs ${tierColors[org.subscription_tier]}`}>{org.subscription_tier}</Badge>}
+                              <span className="text-xs text-muted-foreground">since {format(new Date(org.created_at), "dd MMM yy")}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2 min-w-[100px]">
+                              <div className="flex-1 bg-muted rounded-full h-1.5 overflow-hidden">
+                                <div className={`h-full rounded-full transition-all ${pct === 100 ? "bg-emerald-500" : pct >= 60 ? "bg-blue-500" : pct >= 30 ? "bg-amber-500" : "bg-red-500"}`} style={{ width: `${pct}%` }} />
+                              </div>
+                              <span className="text-xs text-muted-foreground tabular-nums">{org.completedSteps}/{org.totalSteps}</span>
+                            </div>
+                          </TableCell>
+                          {stepEntries.map(([key, done]) => (
+                            <TableCell key={key} className="text-center">
+                              {done
+                                ? <CheckCircle className="h-4 w-4 text-emerald-500 mx-auto" />
+                                : <XCircle className="h-4 w-4 text-muted-foreground/40 mx-auto" />}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
         </Tabs>
       </div>
 
@@ -1177,6 +1508,71 @@ export default function AdminPanel() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Subscription Override */}
+      <Dialog open={!!subOverrideOrg} onOpenChange={(o) => !o && setSubOverrideOrg(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-primary" />Override Subscription
+            </DialogTitle>
+            <DialogDescription>
+              Manually set plan and status for <strong>{subOverrideOrg?.name}</strong>. Changes take effect immediately and are logged. Does not affect Stripe billing.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Plan Tier</Label>
+                <Select value={subOverride.tier} onValueChange={(v) => setSubOverride({ ...subOverride, tier: v as SubTier })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="starter">Starter — £49/mo</SelectItem>
+                    <SelectItem value="professional">Professional — £99/mo</SelectItem>
+                    <SelectItem value="enterprise">Enterprise — £199/mo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Status</Label>
+                <Select value={subOverride.status} onValueChange={(v) => setSubOverride({ ...subOverride, status: v as SubStatus })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="trialing">Trialing</SelectItem>
+                    <SelectItem value="past_due">Past Due</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {subOverride.status === "trialing" && (
+              <div className="space-y-1.5">
+                <Label className="text-xs">Trial Length (days from now)</Label>
+                <Input
+                  type="number" min="1" max="365"
+                  value={subOverride.trialDays}
+                  onChange={(e) => setSubOverride({ ...subOverride, trialDays: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Trial will end {addDays(new Date(), parseInt(subOverride.trialDays) || 14).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                </p>
+              </div>
+            )}
+            <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground flex gap-2">
+              <Info className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+              <span>This updates the database directly. To also change Stripe billing, update the subscription in <a href={subOverrideOrg?.stripe_customer_id ? `https://dashboard.stripe.com/customers/${subOverrideOrg.stripe_customer_id}` : "https://dashboard.stripe.com"} target="_blank" rel="noopener noreferrer" className="underline">Stripe Dashboard</a>.</span>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setSubOverrideOrg(null)}>Cancel</Button>
+            <Button onClick={handleSubOverride} disabled={savingSubOverride}>
+              {savingSubOverride ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CreditCard className="h-4 w-4 mr-2" />}
+              Apply Override
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
