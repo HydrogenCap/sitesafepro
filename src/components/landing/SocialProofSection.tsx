@@ -1,37 +1,31 @@
 import { motion } from "framer-motion";
-import { Star, Quote } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 const stats = [
-  { value: "500+", label: "Active Companies" },
-  { value: "15,000+", label: "Documents Managed" },
-  { value: "99.9%", label: "Uptime" },
-  { value: "4.9/5", label: "Customer Rating" },
+  { value: "UK Built", label: "For Construction" },
+  { value: "CDM 2015", label: "Fully Compliant" },
+  { value: "14 Days", label: "Free Trial" },
+  { value: "No Card", label: "Required to Start" },
 ];
 
-const testimonials = [
+const highlights = [
   {
     quote:
-      "Site Safe has transformed how we manage compliance across our sites. What used to take hours of paperwork now takes minutes.",
-    author: "James Richardson",
-    role: "Managing Director",
-    company: "Richardson Construction Ltd",
-    rating: 5,
+      "Built specifically for UK construction — covering CDM 2015, RAMS, COSHH, and contractor compliance out of the box.",
+    title: "CDM 2015 Ready",
+    subtitle: "Full regulatory compliance built in",
   },
   {
     quote:
-      "The QR site access feature is brilliant. We can see exactly who's on site at any moment. Perfect for emergency roll calls.",
-    author: "Sarah Mitchell",
-    role: "H&S Manager",
-    company: "BuildRight Projects",
-    rating: 5,
+      "QR-based site access, offline capture, and digital toolbox talks — everything your site team needs, on any device.",
+    title: "Mobile-First",
+    subtitle: "Designed for site, not just the office",
   },
   {
     quote:
-      "Finally, a safety management system that doesn't cost a fortune. The contractor portal is a game-changer for us.",
-    author: "David Thompson",
-    role: "Site Manager",
-    company: "Thompson Developments",
-    rating: 5,
+      "From contractor onboarding to document expiry tracking — automate the admin that slows your projects down.",
+    title: "Automated Compliance",
+    subtitle: "Less paperwork, more building",
   },
 ];
 
@@ -71,7 +65,7 @@ export const SocialProofSection = () => {
             viewport={{ once: true }}
             className="text-3xl sm:text-4xl font-bold text-foreground mb-4"
           >
-            Trusted by UK contractors
+            Why construction teams choose Site Safe
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -80,47 +74,28 @@ export const SocialProofSection = () => {
             transition={{ delay: 0.1 }}
             className="text-lg text-muted-foreground"
           >
-            See why hundreds of construction companies choose Site Safe
+            Purpose-built for UK construction health &amp; safety
           </motion.p>
         </div>
 
-        {/* Testimonials */}
+        {/* Highlights */}
         <div className="grid md:grid-cols-3 gap-6">
-          {testimonials.map((testimonial, index) => (
+          {highlights.map((item, index) => (
             <motion.div
-              key={testimonial.author}
+              key={item.title}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
               className="bg-card rounded-2xl p-8 shadow-md border border-border/50"
             >
-              {/* Quote icon */}
-              <Quote className="w-10 h-10 text-primary/20 mb-4" />
-
-              {/* Rating */}
-              <div className="flex gap-1 mb-4">
-                {[...Array(testimonial.rating)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className="w-5 h-5 fill-accent text-accent"
-                  />
-                ))}
-              </div>
-
-              {/* Quote */}
+              <ShieldCheck className="w-10 h-10 text-primary/40 mb-4" />
               <p className="text-foreground mb-6 leading-relaxed">
-                "{testimonial.quote}"
+                {item.quote}
               </p>
-
-              {/* Author */}
               <div>
-                <div className="font-semibold text-foreground">
-                  {testimonial.author}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {testimonial.role}, {testimonial.company}
-                </div>
+                <div className="font-semibold text-foreground">{item.title}</div>
+                <div className="text-sm text-muted-foreground">{item.subtitle}</div>
               </div>
             </motion.div>
           ))}
