@@ -293,7 +293,7 @@ Deno.serve(async (req) => {
       // Check contractor_invitations first
       const { data: invite } = await supabaseAdmin
         .from("contractor_invitations")
-        .select("id, company_name, email, status, expires_at, organisation_id, organisations(name)")
+        .select("id, company_name, email, status, expires_at, organisation_id, required_doc_types, organisations(name)")
         .eq("invite_token", token)
         .maybeSingle();
 
@@ -319,6 +319,7 @@ Deno.serve(async (req) => {
               role: "contractor",
               email: invite.email,
               companyName: invite.company_name,
+              requiredDocs: invite.required_doc_types || [],
             },
           }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
