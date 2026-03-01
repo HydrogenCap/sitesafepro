@@ -121,6 +121,29 @@ serve(async (req) => {
       </tr>
     `).join('');
 
+    // Generate signed URLs for photos
+    let photosHtml = '';
+    const photosPaths: string[] = inspection.photos ?? [];
+    if (photosPaths.length > 0) {
+      const signedUrls: string[] = [];
+      for (const photoPath of photosPaths) {
+        const { data: signedData } = await supabase.storage
+          .from("documents")
+          .createSignedUrl(photoPath, 3600);
+        if (signedData?.signedUrl) {
+          signedUrls.push(signedData.signedUrl);
+        }
+      }
+      if (signedUrls.length > 0) {
+        photosHtml = `
+          <div class="section-title">Photos</div>
+          <div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:10px;">
+            ${signedUrls.map(url => `<img src="${url}" style="max-width:280px;max-height:220px;border-radius:8px;border:1px solid #e2e8f0;object-fit:cover;" />`).join('')}
+          </div>
+        `;
+      }
+    }
+
     const html = `
     <!DOCTYPE html>
     <html>
@@ -188,6 +211,8 @@ serve(async (req) => {
         <div class="section-title">Corrective Actions</div>
         <div class="notes-box">${inspection.corrective_actions}</div>
       ` : ''}
+
+      ${photosHtml}
 
       <div class="footer">
         Generated on ${new Date().toLocaleDateString('en-GB')} at ${new Date().toLocaleTimeString('en-GB')} by <a href="https://sitesafe.cloud" style="color:#0F766E;text-decoration:none;">sitesafe.cloud</a>${org?.name ? ` • ${org.name}` : ''}
