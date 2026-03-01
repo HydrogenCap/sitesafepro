@@ -67,6 +67,7 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Templates from "./pages/Templates";
 import AuditLog from "./pages/AuditLog";
+import AdminPanel from "./pages/AdminPanel";
 import IncidentCapture from "./pages/site-mode/IncidentCapture";
 import SiteMode from "./pages/site-mode/SiteMode";
 import PhotoCapture from "./pages/site-mode/PhotoCapture";
@@ -171,6 +172,7 @@ const App = () => {
               <Route path="/site-mode/action" element={<ProtectedRoute><SyncProvider><ActionCapture /></SyncProvider></ProtectedRoute>} />
               <Route path="/site-mode/signature" element={<ProtectedRoute><SyncProvider><SignatureCapture /></SyncProvider></ProtectedRoute>} />
               <Route path="/site-mode/queue" element={<ProtectedRoute><SyncProvider><QueueManager /></SyncProvider></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute><RequireRole role="owner" fallback={<AccessDenied />}><AdminPanel /></RequireRole></ProtectedRoute>} />
 
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

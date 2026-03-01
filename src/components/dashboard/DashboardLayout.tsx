@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useOrg } from "@/hooks/useOrg";
 import { Logo } from "@/components/landing/Logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +37,7 @@ import {
   HelpCircle,
   Upload,
   LucideIcon,
+  Crown,
 } from "lucide-react";
 
 interface DashboardLayoutProps {
@@ -143,6 +145,7 @@ const NavSection = ({ group, isActive, onItemClick, defaultOpen = true }: NavSec
 export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { user, signOut, loading: authLoading } = useAuth();
   const { isTrialing, trialDaysRemaining, loading: subLoading } = useSubscription();
+  const { hasRole } = useOrg();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -206,6 +209,19 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <Settings className="h-4 w-4" />
             Settings
           </Link>
+          {hasRole("owner") && (
+            <Link
+              to="/admin"
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                isActive("/admin")
+                  ? "bg-purple-600 text-white"
+                  : "text-purple-600 hover:bg-purple-500/10 hover:text-purple-700"
+              }`}
+            >
+              <Crown className="h-4 w-4" />
+              Admin Panel
+            </Link>
+          )}
           <button
             onClick={() => signOut()}
             className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground w-full transition-colors"
@@ -275,6 +291,20 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <Settings className="h-4 w-4" />
             Settings
           </Link>
+          {hasRole("owner") && (
+            <Link
+              to="/admin"
+              onClick={() => setMobileMenuOpen(false)}
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                isActive("/admin")
+                  ? "bg-purple-600 text-white"
+                  : "text-purple-600 hover:bg-purple-500/10 hover:text-purple-700"
+              }`}
+            >
+              <Crown className="h-4 w-4" />
+              Admin Panel
+            </Link>
+          )}
           <button
             onClick={() => {
               signOut();
