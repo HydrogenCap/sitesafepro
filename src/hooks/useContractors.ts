@@ -203,6 +203,56 @@ export const useCreateOperative = () => {
   });
 };
 
+export const useUpdateOperative = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<ContractorOperative> }) => {
+      const { data: result, error } = await supabase
+        .from("contractor_operatives")
+        .update(data as any)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["contractor-operatives", (result as any).contractor_company_id] });
+      toast.success("Operative updated");
+    },
+    onError: (error) => {
+      console.error("Error updating operative:", error);
+      toast.error("Failed to update operative");
+    },
+  });
+};
+
+export const useDeleteOperative = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, contractorCompanyId }: { id: string; contractorCompanyId: string }) => {
+      const { error } = await supabase
+        .from("contractor_operatives")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+      return contractorCompanyId;
+    },
+    onSuccess: (contractorCompanyId) => {
+      queryClient.invalidateQueries({ queryKey: ["contractor-operatives", contractorCompanyId] });
+      toast.success("Operative removed");
+    },
+    onError: (error) => {
+      console.error("Error deleting operative:", error);
+      toast.error("Failed to remove operative");
+    },
+  });
+};
+
 export const useContractorStats = () => {
   const { data: contractors } = useContractors();
 
