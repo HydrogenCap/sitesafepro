@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FolderOpen, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
+import { TRADES } from "@/types/contractor";
 
 interface Props {
   contractorId: string;
@@ -32,7 +33,7 @@ export const ContractorProjectsTab = ({ contractorId, projects, onAssign }: Prop
           <Link key={pc.id} to={`/projects/${pc.project_id}`} className="p-4 flex items-center justify-between hover:bg-muted/50 block">
             <div>
               <p className="font-medium">{pc.projects?.name}</p>
-              <p className="text-sm text-muted-foreground">{pc.scope_of_works || pc.trade}</p>
+              <p className="text-sm text-muted-foreground">{pc.scope_of_works || (TRADES.find(t => t.value === pc.trade)?.label ?? pc.trade)}</p>
             </div>
             <Badge variant={pc.status === "active" ? "default" : "secondary"}>{pc.status}</Badge>
           </Link>
