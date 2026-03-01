@@ -69,6 +69,7 @@ import Contact from "./pages/Contact";
 import Templates from "./pages/Templates";
 import AuditLog from "./pages/AuditLog";
 import AdminPanel from "./pages/AdminPanel";
+import ToolboxAttendance from "./pages/ToolboxAttendance";
 import IncidentCapture from "./pages/site-mode/IncidentCapture";
 import SiteMode from "./pages/site-mode/SiteMode";
 import PhotoCapture from "./pages/site-mode/PhotoCapture";
@@ -124,6 +125,7 @@ const App = () => {
               <Route path="/check-in/:code" element={<CheckIn />} />
               <Route path="/accept-invite" element={<AcceptInvite />} />
               <Route path="/contractor-upload/:token" element={<ContractorUpload />} />
+              <Route path="/toolbox-attendance/:token" element={<ToolboxAttendance />} />
               
               {/* Client Portal routes */}
               <Route path="/client" element={<ClientProtectedRoute><ClientDashboard /></ClientProtectedRoute>} />

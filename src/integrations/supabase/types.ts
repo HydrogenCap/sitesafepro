@@ -3771,6 +3771,7 @@ export type Database = {
       }
       toolbox_talks: {
         Row: {
+          attendance_token: string | null
           category: Database["public"]["Enums"]["toolbox_talk_category"]
           completed_at: string | null
           content: string
@@ -3788,6 +3789,7 @@ export type Database = {
           weather_conditions: string | null
         }
         Insert: {
+          attendance_token?: string | null
           category?: Database["public"]["Enums"]["toolbox_talk_category"]
           completed_at?: string | null
           content: string
@@ -3805,6 +3807,7 @@ export type Database = {
           weather_conditions?: string | null
         }
         Update: {
+          attendance_token?: string | null
           category?: Database["public"]["Enums"]["toolbox_talk_category"]
           completed_at?: string | null
           content?: string

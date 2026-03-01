@@ -19,7 +19,10 @@ import {
   CheckCircle,
   Download,
   FileText,
-  User
+  User,
+  QrCode,
+  Copy,
+  ExternalLink,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -34,6 +37,7 @@ interface TalkDetail {
   location: string | null;
   weather_conditions: string | null;
   notes: string | null;
+  attendance_token: string | null;
   deliverer?: { full_name: string; email: string } | null;
   project?: { name: string; address: string } | null;
 }
@@ -487,6 +491,51 @@ export default function TalkDetail() {
                 <CardContent>
                   <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                     {talk.notes}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Attendance QR Link */}
+            {talk.attendance_token && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <QrCode className="h-5 w-5" />
+                    Attendance Link
+                  </CardTitle>
+                  <CardDescription>
+                    Share this link or scan the QR code for attendees to sign in
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        const url = `${window.location.origin}/toolbox-attendance/${talk.attendance_token}`;
+                        navigator.clipboard.writeText(url);
+                        toast.success("Attendance link copied!");
+                      }}
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copy Link
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const url = `${window.location.origin}/toolbox-attendance/${talk.attendance_token}`;
+                        window.open(url, "_blank");
+                      }}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Attendees can sign the register without needing an account.
                   </p>
                 </CardContent>
               </Card>
