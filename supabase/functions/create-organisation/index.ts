@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireString, requireUUID, optionalString, ValidationError, validationErrorResponse } from "../_shared/validation.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -26,14 +27,12 @@ serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    const { userId, companyName, phone, email, fullName }: CreateOrgRequest = await req.json();
-
-    if (!userId || !companyName) {
-      return new Response(
-        JSON.stringify({ error: "Missing userId or companyName" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const body = await req.json();
+    const userId = requireUUID(body.userId, "userId");
+    const companyName = requireString(body.companyName, "companyName", { maxLength: 200 });
+    const phone = optionalString(body.phone, "phone", { maxLength: 30 });
+    const email = optionalString(body.email, "email", { maxLength: 255 });
+    const fullName = optionalString(body.fullName, "fullName", { maxLength: 100 });
 
     console.log(`Creating organisation for user ${userId}, company: ${companyName}`);
 
@@ -164,9 +163,12 @@ serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return validationErrorResponse(error, corsHeaders);
+    }
     console.error("Unexpected error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "An error occurred creating your organisation" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

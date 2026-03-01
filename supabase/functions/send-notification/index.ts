@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireString, requireUUID, requireEnum, optionalUUID, ValidationError, validationErrorResponse } from "../_shared/validation.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -103,14 +104,16 @@ serve(async (req) => {
 
     const callerId = claims.claims.sub;
 
-    const {
-      organisationId,
-      recipientProfileId,
-      type,
-      data,
-      link,
-      triggerReferenceId,
-    }: NotificationRequest = await req.json();
+    const body = await req.json();
+    const organisationId = requireUUID(body.organisationId, "organisationId");
+    const recipientProfileId = requireUUID(body.recipientProfileId, "recipientProfileId");
+    const type = requireEnum(body.type, "type", [
+      "document_acknowledgement", "action_assigned", "action_overdue",
+      "rams_acknowledgement", "permit_expiring", "site_induction_reminder",
+    ] as const) as NotificationType;
+    const data = body.data ?? {};
+    const link = requireString(body.link, "link", { maxLength: 500 });
+    const triggerReferenceId = body.triggerReferenceId;
 
     console.log(`[SEND-NOTIFICATION] Type: ${type}, Recipient: ${recipientProfileId}, Caller: ${callerId}`);
 
@@ -253,9 +256,12 @@ serve(async (req) => {
     );
 
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return validationErrorResponse(error, corsHeaders);
+    }
     console.error("[SEND-NOTIFICATION] Error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "An error occurred sending the notification" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

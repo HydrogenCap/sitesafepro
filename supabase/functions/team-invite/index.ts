@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireString, requireEmail, requireUUID, requireEnum, ValidationError, validationErrorResponse } from "../_shared/validation.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -308,11 +309,15 @@ Deno.serve(async (req) => {
         throw new Error("Invalid authentication");
       }
 
-      const { email, fullName, role, organisationId } = body;
+      const validatedEmail = requireEmail(body.email, "email");
+      const validatedName = requireString(body.fullName, "fullName", { maxLength: 100 });
+      const validatedRole = requireEnum(body.role, "role", ["admin", "site_manager", "contractor", "client_viewer"] as const);
+      const validatedOrgId = requireUUID(body.organisationId, "organisationId");
 
-      if (!email || !fullName || !role || !organisationId) {
-        throw new Error("Email, name, role, and organisation are required");
-      }
+      const email = validatedEmail;
+      const fullName = validatedName;
+      const role = validatedRole;
+      const organisationId = validatedOrgId;
 
       // Verify the inviter has permission (is owner or admin)
       const { data: inviterMember, error: inviterError } = await supabaseAdmin
@@ -478,8 +483,10 @@ Deno.serve(async (req) => {
 
     throw new Error(`Unknown action: ${action}`);
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return validationErrorResponse(error, corsHeaders);
+    }
     console.error("Error in team-invite function:", error);
-    // Sanitize error message - only return safe, user-friendly messages
     const safeMessage = sanitizeErrorMessage(error);
     return new Response(
       JSON.stringify({ error: safeMessage }),
