@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
@@ -42,6 +42,7 @@ import { ContractorOperativesTab } from "@/components/contractors/ContractorOper
 import { ContractorProjectsTab } from "@/components/contractors/ContractorProjectsTab";
 import { RequestDocumentsDialog } from "@/components/contractors/RequestDocumentsDialog";
 import { EditContractorDialog } from "@/components/contractors/EditContractorDialog";
+import { AssignToProjectDialog } from "@/components/contractors/AssignToProjectDialog";
 
 const ContractorDetail = () => {
   const { id } = useParams();
@@ -52,6 +53,7 @@ const ContractorDetail = () => {
   const { data: projects = [] } = useContractorProjects(id);
   const updateContractor = useUpdateContractor();
   const [activeTab, setActiveTab] = useState("compliance");
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -177,8 +179,19 @@ const ContractorDetail = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem>Assign to Project</DropdownMenuItem>
-                  <DropdownMenuItem className="text-destructive">
+                  <DropdownMenuItem onClick={() => setAssignDialogOpen(true)}>
+                    Assign to Project
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    onClick={() => {
+                      if (!id) return;
+                      updateContractor.mutate({
+                        id,
+                        data: { is_active: false },
+                      });
+                    }}
+                  >
                     Deactivate
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -360,6 +373,14 @@ const ContractorDetail = () => {
             </div>
           </TabsContent>
         </Tabs>
+
+        <AssignToProjectDialog
+          contractorId={id!}
+          contractorName={contractor.company_name}
+          primaryTrade={contractor.primary_trade}
+          open={assignDialogOpen}
+          onOpenChange={setAssignDialogOpen}
+        />
       </div>
     </DashboardLayout>
   );
