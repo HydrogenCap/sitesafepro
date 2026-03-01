@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,7 +26,9 @@ import {
   MapPin,
   Cloud,
   PenLine,
-  Loader2
+  QrCode,
+  Smartphone,
+  ExternalLink,
 } from "lucide-react";
 
 interface Template {
@@ -44,17 +45,8 @@ interface Project {
   name: string;
 }
 
-interface Operative {
-  id: string;
-  full_name: string;
-  trade: string;
-  contractor_company_id: string;
-  company_name: string;
-}
-
 interface Attendee {
   id?: string;
-  operative_id?: string;
   attendee_name: string;
   attendee_company: string;
   attendee_trade: string;
@@ -99,7 +91,6 @@ export default function DeliverTalk() {
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState<"setup" | "deliver" | "attendance">("setup");
   const [submitting, setSubmitting] = useState(false);
-  const [isFetchingWeather, setIsFetchingWeather] = useState(false);
 
   // Talk setup
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
@@ -107,12 +98,8 @@ export default function DeliverTalk() {
   const [weatherConditions, setWeatherConditions] = useState("");
   const [notes, setNotes] = useState("");
   const [talkId, setTalkId] = useState<string | null>(null);
+  const [qrToken, setQrToken] = useState<string | null>(null);
   const [orgId, setOrgId] = useState<string | null>(null);
-
-  // Operatives
-  const [operatives, setOperatives] = useState<Operative[]>([]);
-  const [loadingOperatives, setLoadingOperatives] = useState(false);
-  const [showManualAdd, setShowManualAdd] = useState(false);
 
   // Attendees
   const [attendees, setAttendees] = useState<Attendee[]>([]);
@@ -129,15 +116,6 @@ export default function DeliverTalk() {
   useEffect(() => {
     fetchData();
   }, [templateId]);
-
-  // Fetch operatives when project changes
-  useEffect(() => {
-    if (selectedProjectId) {
-      fetchProjectOperatives(selectedProjectId);
-    } else {
-      setOperatives([]);
-    }
-  }, [selectedProjectId]);
 
   const fetchData = async () => {
     if (!templateId) return;
@@ -184,94 +162,14 @@ export default function DeliverTalk() {
     }
   };
 
-  const fetchProjectOperatives = async (projectId: string) => {
-    setLoadingOperatives(true);
-    try {
-      // Get contractors assigned to this project
-      const { data: projectContractors, error: pcError } = await supabase
-        .from("project_contractors")
-        .select("contractor_company_id, contractor_companies(company_name)")
-        .eq("project_id", projectId)
-        .eq("status", "active");
-
-      if (pcError) throw pcError;
-      if (!projectContractors || projectContractors.length === 0) {
-        setOperatives([]);
-        return;
-      }
-
-      const contractorIds = projectContractors.map((pc: any) => pc.contractor_company_id);
-      const companyMap: Record<string, string> = {};
-      projectContractors.forEach((pc: any) => {
-        companyMap[pc.contractor_company_id] = pc.contractor_companies?.company_name || "Unknown";
-      });
-
-      // Get operatives for these contractors
-      const { data: ops, error: opsError } = await supabase
-        .from("contractor_operatives")
-        .select("id, full_name, trade, contractor_company_id")
-        .in("contractor_company_id", contractorIds)
-        .eq("is_active", true)
-        .order("full_name");
-
-      if (opsError) throw opsError;
-
-      setOperatives(
-        (ops || []).map((op: any) => ({
-          ...op,
-          company_name: companyMap[op.contractor_company_id] || "Unknown",
-        }))
-      );
-    } catch (error: any) {
-      console.error("Error fetching operatives:", error);
-      setOperatives([]);
-    } finally {
-      setLoadingOperatives(false);
-    }
-  };
-
-  const fetchWeatherWithAI = async () => {
-    // Use project address/name or the location field
-    const project = projects.find(p => p.id === selectedProjectId);
-    const loc = location || (project as any)?.name;
-    if (!loc) {
-      toast.error("Please enter a location or select a project first");
-      return;
-    }
-
-    setIsFetchingWeather(true);
-    try {
-      const now = new Date();
-      const today = now.toISOString().split("T")[0];
-      const time = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-      const { data, error } = await supabase.functions.invoke("get-weather", {
-        body: { location: loc, date: today },
-      });
-
-      if (error) throw error;
-
-      const summary = [
-        `${now.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" })} ${time}`,
-        data.conditions?.join(", "),
-        data.temperature_high != null ? `${data.temperature_low}–${data.temperature_high}°C` : null,
-        data.weather_impact && data.weather_impact !== "No significant impact expected" ? data.weather_impact : null,
-      ].filter(Boolean).join(". ");
-
-      setWeatherConditions(summary || `${data.weather_morning} / ${data.weather_afternoon}`);
-      toast.success("Weather auto-filled");
-    } catch (error: any) {
-      console.error("Error fetching weather:", error);
-      toast.error("Failed to fetch weather. Enter manually.");
-    } finally {
-      setIsFetchingWeather(false);
-    }
-  };
-
   const startTalk = async () => {
     if (!template || !orgId || !user) return;
 
     setSubmitting(true);
     try {
+      // Generate a unique QR token
+      const token = crypto.randomUUID().replace(/-/g, "").substring(0, 24);
+
       const { data, error } = await supabase
         .from("toolbox_talks")
         .insert({
@@ -286,13 +184,15 @@ export default function DeliverTalk() {
           weather_conditions: weatherConditions || null,
           notes: notes || null,
           status: "in_progress",
-        })
+          qr_token: token,
+        } as any)
         .select()
         .single();
 
       if (error) throw error;
 
       setTalkId(data.id);
+      setQrToken(token);
       setStep("deliver");
       toast.success("Talk started");
     } catch (error: any) {
@@ -556,20 +456,6 @@ export default function DeliverTalk() {
                   onChange={(e) => setWeatherConditions(e.target.value)}
                   placeholder="e.g., Clear, 15°C, light breeze"
                 />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={fetchWeatherWithAI}
-                  disabled={isFetchingWeather}
-                  className="w-full"
-                >
-                  {isFetchingWeather ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Cloud className="h-4 w-4 mr-2" />
-                  )}
-                  {isFetchingWeather ? "Fetching weather..." : "Auto-fill with AI"}
-                </Button>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="notes">Additional Notes</Label>
@@ -635,114 +521,82 @@ export default function DeliverTalk() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Operative selector */}
-                {operatives.length > 0 && (
-                  <div className="p-4 bg-muted/50 rounded-lg space-y-3">
-                    <Label className="text-sm font-semibold">Select Operatives from Project</Label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-60 overflow-y-auto">
-                      {operatives.map((op) => {
-                        const isAdded = attendees.some(a => a.operative_id === op.id);
-                        return (
-                          <label
-                            key={op.id}
-                            className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
-                              isAdded ? "bg-primary/5 border-primary/30" : "hover:bg-muted"
-                            }`}
-                          >
-                            <Checkbox
-                              checked={isAdded}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  setAttendees(prev => [...prev, {
-                                    operative_id: op.id,
-                                    attendee_name: op.full_name,
-                                    attendee_company: op.company_name,
-                                    attendee_trade: op.trade,
-                                    signature_data: null,
-                                    signed_at: null,
-                                  }]);
-                                } else {
-                                  setAttendees(prev => prev.filter(a => a.operative_id !== op.id));
-                                }
-                              }}
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm truncate">{op.full_name}</p>
-                              <p className="text-xs text-muted-foreground truncate">
-                                {op.company_name} • {op.trade}
-                              </p>
-                            </div>
-                          </label>
-                        );
-                      })}
+                {/* QR code panel */}
+                {qrToken && (
+                  <div className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-primary/5 border border-primary/20 rounded-xl">
+                    <div className="flex-shrink-0 p-2 bg-white rounded-xl shadow-sm">
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(`${window.location.origin}/toolbox-attendance/${qrToken}`)}`}
+                        alt="Attendance QR code"
+                        className="w-[120px] h-[120px] block"
+                      />
                     </div>
-                  </div>
-                )}
-
-                {loadingOperatives && (
-                  <div className="text-center py-4 text-muted-foreground text-sm">
-                    Loading operatives...
-                  </div>
-                )}
-
-                {!selectedProjectId && (
-                  <div className="text-center py-4 text-muted-foreground text-sm">
-                    Select a project in step 1 to see assigned operatives
-                  </div>
-                )}
-
-                {selectedProjectId && !loadingOperatives && operatives.length === 0 && (
-                  <div className="text-center py-4 text-muted-foreground text-sm">
-                    No operatives found for this project's contractors
-                  </div>
-                )}
-
-                {/* Manual add fallback */}
-                <div className="border-t pt-4">
-                  {!showManualAdd ? (
-                    <Button variant="ghost" size="sm" onClick={() => setShowManualAdd(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add attendee manually
-                    </Button>
-                  ) : (
-                    <div className="p-4 bg-muted/50 rounded-lg space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <Label>Name *</Label>
-                          <Input
-                            value={newAttendee.attendee_name}
-                            onChange={(e) => setNewAttendee({ ...newAttendee, attendee_name: e.target.value })}
-                            placeholder="Full name"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Company</Label>
-                          <Input
-                            value={newAttendee.attendee_company}
-                            onChange={(e) => setNewAttendee({ ...newAttendee, attendee_company: e.target.value })}
-                            placeholder="Company name"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Trade</Label>
-                          <Input
-                            value={newAttendee.attendee_trade}
-                            onChange={(e) => setNewAttendee({ ...newAttendee, attendee_trade: e.target.value })}
-                            placeholder="e.g., Electrician"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button onClick={addAttendee} variant="secondary">
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Attendee
+                    <div className="flex-1 text-center sm:text-left">
+                      <p className="font-semibold flex items-center gap-2 justify-center sm:justify-start">
+                        <QrCode className="h-4 w-4 text-primary" />
+                        Worker Self-Registration
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Workers can scan this QR code on their phone to sign the attendance register without passing a device around.
+                      </p>
+                      <div className="flex items-center gap-2 mt-3 flex-wrap justify-center sm:justify-start">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1"
+                          onClick={() => {
+                            const url = `${window.location.origin}/toolbox-attendance/${qrToken}`;
+                            navigator.clipboard.writeText(url);
+                            toast.success("Link copied to clipboard");
+                          }}
+                        >
+                          <ExternalLink className="h-3 w-3" />Copy Link
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setShowManualAdd(false)}>
-                          Cancel
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1"
+                          onClick={() => window.open(`${window.location.origin}/toolbox-attendance/${qrToken}`, "_blank")}
+                        >
+                          <Smartphone className="h-3 w-3" />Preview
                         </Button>
                       </div>
                     </div>
-                  )}
+                  </div>
+                )}
+
+                {/* Add attendee form */}
+                <div className="p-4 bg-muted/50 rounded-lg space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label>Name *</Label>
+                      <Input
+                        value={newAttendee.attendee_name}
+                        onChange={(e) => setNewAttendee({ ...newAttendee, attendee_name: e.target.value })}
+                        placeholder="Full name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Company</Label>
+                      <Input
+                        value={newAttendee.attendee_company}
+                        onChange={(e) => setNewAttendee({ ...newAttendee, attendee_company: e.target.value })}
+                        placeholder="Company name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Trade</Label>
+                      <Input
+                        value={newAttendee.attendee_trade}
+                        onChange={(e) => setNewAttendee({ ...newAttendee, attendee_trade: e.target.value })}
+                        placeholder="e.g., Electrician"
+                      />
+                    </div>
+                  </div>
+                  <Button onClick={addAttendee} variant="secondary">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Attendee
+                  </Button>
                 </div>
 
                 {/* Attendees list */}

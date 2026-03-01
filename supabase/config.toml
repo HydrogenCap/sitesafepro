@@ -47,3 +47,9 @@ verify_jwt = false
 
 [functions.seed-default-templates]
 verify_jwt = false
+
+[functions.toolbox-attendance]
+verify_jwt = false
+
+[functions.coshh-ai-lookup]
+verify_jwt = false

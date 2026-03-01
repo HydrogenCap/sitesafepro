@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import type { Database } from "@/integrations/supabase/types";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,8 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
-import { Plus, FileWarning, Clock, CheckCircle, XCircle, AlertTriangle, Search, Filter, Flame, Construction, Zap, Mountain, HardHat } from "lucide-react";
-import { format } from "date-fns";
+import { Plus, FileWarning, Clock, CheckCircle, XCircle, AlertTriangle, Search, Filter, Flame, Construction, Zap, Mountain, HardHat, CalendarDays, ChevronLeft, ChevronRight, AlertOctagon } from "lucide-react";
+import { format, addDays, startOfWeek, endOfWeek, isWithinInterval, parseISO, differenceInDays, isBefore, isAfter } from "date-fns";
 
 interface Permit {
   id: string;
@@ -32,21 +31,14 @@ interface Permit {
   valid_from: string | null;
   valid_until: string | null;
   created_at: string;
-  contractor_company_id: string | null;
   project: { name: string } | null;
   requester: { full_name: string } | null;
   approver: { full_name: string } | null;
-  contractor: { company_name: string } | null;
 }
 
 interface Project {
   id: string;
   name: string;
-}
-
-interface Contractor {
-  id: string;
-  company_name: string;
 }
 
 const PERMIT_TYPES = [
@@ -90,19 +82,19 @@ export default function Permits() {
   const { toast } = useToast();
   const [permits, setPermits] = useState<Permit[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [contractors, setContractors] = useState<Contractor[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [calendarWeekStart, setCalendarWeekStart] = useState<Date>(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [activeTab, setActiveTab] = useState<string>("list");
   const [organisationId, setOrganisationId] = useState<string | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
     project_id: "",
-    contractor_company_id: "",
-    permit_type: "general" as Database["public"]["Enums"]["permit_type"],
+    permit_type: "general",
     title: "",
     description: "",
     location: "",
@@ -133,16 +125,15 @@ export default function Permits() {
       if (!memberData) return;
       setOrganisationId(memberData.organisation_id);
 
-      // Fetch permits, projects and contractors in parallel
-      const [permitsRes, projectsRes, contractorsRes] = await Promise.all([
+      // Fetch permits and projects in parallel
+      const [permitsRes, projectsRes] = await Promise.all([
         supabase
           .from("permits_to_work")
           .select(`
             *,
             project:projects(name),
             requester:profiles!permits_to_work_requested_by_fkey(full_name),
-            approver:profiles!permits_to_work_approved_by_fkey(full_name),
-            contractor:contractor_companies!permits_to_work_contractor_company_id_fkey(company_name)
+            approver:profiles!permits_to_work_approved_by_fkey(full_name)
           `)
           .eq("organisation_id", memberData.organisation_id)
           .order("created_at", { ascending: false }),
@@ -151,17 +142,10 @@ export default function Permits() {
           .select("id, name")
           .eq("organisation_id", memberData.organisation_id)
           .eq("status", "active"),
-        supabase
-          .from("contractor_companies")
-          .select("id, company_name")
-          .eq("organisation_id", memberData.organisation_id)
-          .eq("is_active", true)
-          .order("company_name"),
       ]);
 
       if (permitsRes.data) setPermits(permitsRes.data as Permit[]);
       if (projectsRes.data) setProjects(projectsRes.data);
-      if (contractorsRes.data) setContractors(contractorsRes.data);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -193,9 +177,8 @@ export default function Permits() {
       const { error } = await supabase.from("permits_to_work").insert({
         organisation_id: organisationId,
         project_id: formData.project_id || null,
-        contractor_company_id: formData.contractor_company_id || null,
         permit_number: generatePermitNumber(),
-        permit_type: formData.permit_type,
+        permit_type: formData.permit_type as any,
         status: "draft",
         title: formData.title,
         description: formData.description || null,
@@ -219,8 +202,7 @@ export default function Permits() {
       setDialogOpen(false);
       setFormData({
         project_id: "",
-        contractor_company_id: "",
-        permit_type: "general" as Database["public"]["Enums"]["permit_type"],
+        permit_type: "general",
         title: "",
         description: "",
         location: "",
@@ -244,19 +226,6 @@ export default function Permits() {
 
   const handleStatusChange = async (permitId: string, newStatus: string) => {
     try {
-      // I6: Prevent self-approval in the UI as well
-      if (newStatus === "approved") {
-        const permit = permits.find(p => p.id === permitId);
-        if (permit && (permit as any).requested_by === user?.id) {
-          toast({
-            title: "Cannot self-approve",
-            description: "Permit approver must be a different person than the requester (safety-critical role separation)",
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-
       const updateData: any = { status: newStatus };
       
       if (newStatus === "approved") {
@@ -274,32 +243,7 @@ export default function Permits() {
         .update(updateData)
         .eq("id", permitId);
 
-      if (error) {
-        // Check if it's the self-approval trigger error
-        if (error.message?.includes('approver must be a different person')) {
-          toast({
-            title: "Cannot self-approve",
-            description: "Permit approver must be a different person than the requester",
-            variant: "destructive",
-          });
-          return;
-        }
-        throw error;
-      }
-
-      // Log audit event for permit approval
-      if (organisationId && user && (newStatus === "approved" || newStatus === "cancelled")) {
-        const permit = permits.find(p => p.id === permitId);
-        await supabase.from("activity_logs").insert({
-          organisation_id: organisationId,
-          actor_id: user.id,
-          activity_type: (newStatus === "approved" ? "permit_approved" : "permit_cancelled") as any,
-          entity_type: "permit",
-          entity_id: permitId,
-          entity_name: permit?.title || "",
-          description: `Permit ${newStatus}: ${permit?.permit_number || ''}`,
-        });
-      }
+      if (error) throw error;
 
       toast({
         title: "Status updated",
@@ -395,30 +339,10 @@ export default function Permits() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Contractor</Label>
-                    <Select
-                      value={formData.contractor_company_id}
-                      onValueChange={(v) => setFormData({ ...formData, contractor_company_id: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select contractor" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {contractors.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.company_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
                     <Label>Permit Type *</Label>
                     <Select
                       value={formData.permit_type}
-                      onValueChange={(v) => setFormData({ ...formData, permit_type: v as Database["public"]["Enums"]["permit_type"] })}
+                      onValueChange={(v) => setFormData({ ...formData, permit_type: v })}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -544,6 +468,18 @@ export default function Permits() {
           </Dialog>
         </div>
 
+        {/* View tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-4">
+            <TabsTrigger value="list" className="gap-1.5">
+              <FileWarning className="h-4 w-4" />Permit List
+            </TabsTrigger>
+            <TabsTrigger value="calendar" className="gap-1.5">
+              <CalendarDays className="h-4 w-4" />Calendar
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="list">
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
@@ -690,11 +626,6 @@ export default function Permits() {
                               Project: {permit.project.name}
                             </p>
                           )}
-                          {permit.contractor && (
-                            <p className="text-sm text-muted-foreground">
-                              Contractor: {permit.contractor.company_name}
-                            </p>
-                          )}
                           <div className="flex gap-4 text-sm text-muted-foreground mt-2">
                             {permit.valid_from && (
                               <span>From: {format(new Date(permit.valid_from), "dd MMM yyyy HH:mm")}</span>
@@ -767,6 +698,152 @@ export default function Permits() {
             })}
           </div>
         )}
+          </TabsContent>
+
+          {/* ── CALENDAR TAB ── */}
+          <TabsContent value="calendar">
+            <div className="space-y-4">
+              {/* Week navigation */}
+              <div className="flex items-center justify-between">
+                <Button variant="outline" size="sm" className="gap-1" onClick={() => setCalendarWeekStart(d => addDays(d, -7))}>
+                  <ChevronLeft className="h-4 w-4" />Previous Week
+                </Button>
+                <p className="text-sm font-medium">
+                  {format(calendarWeekStart, "d MMM")} – {format(addDays(calendarWeekStart, 6), "d MMM yyyy")}
+                </p>
+                <Button variant="outline" size="sm" className="gap-1" onClick={() => setCalendarWeekStart(d => addDays(d, 7))}>
+                  Next Week<ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Clash detection */}
+              {(() => {
+                const weekEnd = addDays(calendarWeekStart, 6);
+                const CLASHING_TYPES = new Set([["hot_work", "confined_space"], ["hot_work", "working_at_height"]].flat());
+                const activeThisWeek = permits.filter(p => {
+                  if (!["active", "approved"].includes(p.status)) return false;
+                  if (!p.valid_from && !p.valid_until) return true; // no dates = always show
+                  const from = p.valid_from ? parseISO(p.valid_from) : calendarWeekStart;
+                  const until = p.valid_until ? parseISO(p.valid_until) : weekEnd;
+                  return !(isAfter(from, weekEnd) || isBefore(until, calendarWeekStart));
+                });
+                const typeGroups: Record<string, typeof activeThisWeek> = {};
+                activeThisWeek.forEach(p => { if (!typeGroups[p.permit_type]) typeGroups[p.permit_type] = []; typeGroups[p.permit_type].push(p); });
+                const clashTypes = Object.keys(typeGroups).filter(t => CLASHING_TYPES.has(t));
+                const hasClash = clashTypes.length > 1;
+                if (hasClash) return (
+                  <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                    <AlertOctagon className="h-4 w-4 text-destructive flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-destructive">
+                      <strong>Potential clash this week:</strong> Active permits include {clashTypes.map(t => PERMIT_TYPES.find(pt => pt.value === t)?.label || t).join(" and ")}. Ensure safe working arrangements are in place.
+                    </p>
+                  </div>
+                );
+                return null;
+              })()}
+
+              {/* 7-day grid */}
+              <div className="overflow-x-auto">
+                <div className="grid grid-cols-7 gap-1 min-w-[600px]">
+                  {Array.from({ length: 7 }, (_, i) => {
+                    const day = addDays(calendarWeekStart, i);
+                    const isToday = format(day, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
+                    const dayPermits = permits.filter(p => {
+                      if (!["active", "approved", "draft"].includes(p.status)) return false;
+                      const from = p.valid_from ? parseISO(p.valid_from) : null;
+                      const until = p.valid_until ? parseISO(p.valid_until) : null;
+                      if (!from && !until) return false;
+                      const dayStart = day;
+                      const dayEnd = addDays(day, 1);
+                      if (from && until) return !(isAfter(from, dayEnd) || isBefore(until, dayStart));
+                      if (from) return !isAfter(from, dayEnd);
+                      if (until) return !isBefore(until, dayStart);
+                      return false;
+                    });
+                    return (
+                      <div key={i} className={`rounded-lg p-2 min-h-[120px] border ${isToday ? "border-primary bg-primary/5" : "border-border bg-card"}`}>
+                        <p className={`text-xs font-medium mb-2 ${isToday ? "text-primary" : "text-muted-foreground"}`}>
+                          <span className="block">{format(day, "EEE")}</span>
+                          <span className={`text-sm font-bold ${isToday ? "text-primary" : "text-foreground"}`}>{format(day, "d")}</span>
+                        </p>
+                        <div className="space-y-1">
+                          {dayPermits.map(p => {
+                            const typeConfig = PERMIT_TYPES.find(t => t.value === p.permit_type);
+                            const isExpiring = p.valid_until && differenceInDays(parseISO(p.valid_until), day) === 0;
+                            return (
+                              <div
+                                key={p.id}
+                                title={`${p.title} (${p.permit_number})`}
+                                className={`text-xs px-1.5 py-1 rounded truncate cursor-default border ${
+                                  isExpiring ? "bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-950/30 dark:border-amber-700 dark:text-amber-300" :
+                                  p.permit_type === "hot_work" ? "bg-orange-100 border-orange-200 text-orange-800 dark:bg-orange-950/30 dark:border-orange-700 dark:text-orange-300" :
+                                  p.permit_type === "confined_space" ? "bg-purple-100 border-purple-200 text-purple-800 dark:bg-purple-950/30 dark:border-purple-700 dark:text-purple-300" :
+                                  p.permit_type === "working_at_height" ? "bg-blue-100 border-blue-200 text-blue-800 dark:bg-blue-950/30 dark:border-blue-700 dark:text-blue-300" :
+                                  "bg-muted border-border text-foreground"
+                                }`}
+                              >
+                                {isExpiring && "⚠ "}
+                                {typeConfig ? typeConfig.label.split(" ").slice(0,2).join(" ") : p.permit_type.replace(/_/g, " ")}
+                              </div>
+                            );
+                          })}
+                          {dayPermits.length === 0 && <p className="text-xs text-muted-foreground/50">—</p>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Expiring soon */}
+              {(() => {
+                const expiringSoon = permits.filter(p => {
+                  if (!["active", "approved"].includes(p.status) || !p.valid_until) return false;
+                  const daysLeft = differenceInDays(parseISO(p.valid_until), new Date());
+                  return daysLeft >= 0 && daysLeft <= 2;
+                });
+                if (expiringSoon.length === 0) return null;
+                return (
+                  <Card className="border-amber-200 dark:border-amber-800">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                        <Clock className="h-4 w-4" />Expiring Soon
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {expiringSoon.map(p => (
+                        <div key={p.id} className="flex items-center justify-between text-sm">
+                          <span className="font-medium">{p.title}</span>
+                          <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300">
+                            Expires {format(parseISO(p.valid_until!), "dd MMM HH:mm")}
+                          </Badge>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                );
+              })()}
+
+              {/* Legend */}
+              <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                {PERMIT_TYPES.filter(t => ["hot_work","confined_space","working_at_height","general"].includes(t.value)).map(t => (
+                  <span key={t.value} className="flex items-center gap-1">
+                    <span className={`w-3 h-3 rounded-sm inline-block ${
+                      t.value === "hot_work" ? "bg-orange-300" :
+                      t.value === "confined_space" ? "bg-purple-300" :
+                      t.value === "working_at_height" ? "bg-blue-300" : "bg-muted-foreground/30"
+                    }`} />
+                    {t.label}
+                  </span>
+                ))}
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-3 rounded-sm inline-block bg-amber-300" />Expiring today
+                </span>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+
       </div>
     </DashboardLayout>
   );
