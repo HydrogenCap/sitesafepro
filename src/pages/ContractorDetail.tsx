@@ -363,6 +363,7 @@ const ContractorDetail = () => {
             <ContractorProjectsTab
               contractorId={id!}
               projects={projects}
+              onAssign={() => setAssignDialogOpen(true)}
             />
           </TabsContent>
 

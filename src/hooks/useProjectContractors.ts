@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useOrg } from "@/hooks/useOrg";
 import { toast } from "sonner";
 
 interface ProjectContractor {
@@ -61,6 +63,8 @@ export const useProjectContractors = (projectId: string | undefined) => {
 
 export const useAssignContractor = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { membership } = useOrg();
 
   return useMutation({
     mutationFn: async (data: {
@@ -72,9 +76,15 @@ export const useAssignContractor = () => {
       estimated_end_date?: string | null;
       purchase_order_number?: string | null;
     }) => {
+      if (!user || !membership?.orgId) throw new Error("Not authenticated");
+
       const { data: result, error } = await supabase
         .from("project_contractors")
-        .insert(data as any)
+        .insert({
+          ...data,
+          organisation_id: membership.orgId,
+          assigned_by: user.id,
+        } as any)
         .select()
         .single();
 
