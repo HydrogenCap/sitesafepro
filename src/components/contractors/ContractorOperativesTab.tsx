@@ -65,7 +65,7 @@ export const ContractorOperativesTab = ({ contractorId, operatives }: Props) => 
                 {getCSCSBadge(op.cscs_card_type)}
                 {op.cscs_expiry_date && (
                   <span className="text-xs text-muted-foreground">
-                    Exp: {format(new Date(op.cscs_expiry_date), "MMM yyyy")}
+                    Exp: {(() => { const [y, m, d] = op.cscs_expiry_date.split('-').map(Number); return format(new Date(y, m - 1, d), "MMM yyyy"); })()}
                   </span>
                 )}
                 <Button variant="ghost" size="icon" onClick={() => setEditingOperative(op)}>
