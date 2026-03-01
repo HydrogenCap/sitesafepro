@@ -25,7 +25,8 @@ import {
   Clock,
   MapPin,
   Cloud,
-  PenLine
+  PenLine,
+  Loader2
 } from "lucide-react";
 
 interface Template {
@@ -88,6 +89,7 @@ export default function DeliverTalk() {
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState<"setup" | "deliver" | "attendance">("setup");
   const [submitting, setSubmitting] = useState(false);
+  const [isFetchingWeather, setIsFetchingWeather] = useState(false);
 
   // Talk setup
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
@@ -155,6 +157,40 @@ export default function DeliverTalk() {
       navigate("/toolbox-talks");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchWeatherWithAI = async () => {
+    // Use project address/name or the location field
+    const project = projects.find(p => p.id === selectedProjectId);
+    const loc = location || (project as any)?.name;
+    if (!loc) {
+      toast.error("Please enter a location or select a project first");
+      return;
+    }
+
+    setIsFetchingWeather(true);
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      const { data, error } = await supabase.functions.invoke("get-weather", {
+        body: { location: loc, date: today },
+      });
+
+      if (error) throw error;
+
+      const summary = [
+        data.conditions?.join(", "),
+        data.temperature_high != null ? `${data.temperature_low}–${data.temperature_high}°C` : null,
+        data.weather_impact && data.weather_impact !== "No significant impact expected" ? data.weather_impact : null,
+      ].filter(Boolean).join(". ");
+
+      setWeatherConditions(summary || `${data.weather_morning} / ${data.weather_afternoon}`);
+      toast.success("Weather auto-filled");
+    } catch (error: any) {
+      console.error("Error fetching weather:", error);
+      toast.error("Failed to fetch weather. Enter manually.");
+    } finally {
+      setIsFetchingWeather(false);
     }
   };
 
@@ -447,6 +483,20 @@ export default function DeliverTalk() {
                   onChange={(e) => setWeatherConditions(e.target.value)}
                   placeholder="e.g., Clear, 15°C, light breeze"
                 />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchWeatherWithAI}
+                  disabled={isFetchingWeather}
+                  className="w-full"
+                >
+                  {isFetchingWeather ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Cloud className="h-4 w-4 mr-2" />
+                  )}
+                  {isFetchingWeather ? "Fetching weather..." : "Auto-fill with AI"}
+                </Button>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="notes">Additional Notes</Label>
