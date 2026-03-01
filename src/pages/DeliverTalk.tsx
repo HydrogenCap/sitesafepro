@@ -171,7 +171,9 @@ export default function DeliverTalk() {
 
     setIsFetchingWeather(true);
     try {
-      const today = new Date().toISOString().split("T")[0];
+      const now = new Date();
+      const today = now.toISOString().split("T")[0];
+      const time = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
       const { data, error } = await supabase.functions.invoke("get-weather", {
         body: { location: loc, date: today },
       });
@@ -179,6 +181,7 @@ export default function DeliverTalk() {
       if (error) throw error;
 
       const summary = [
+        `${now.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" })} ${time}`,
         data.conditions?.join(", "),
         data.temperature_high != null ? `${data.temperature_low}–${data.temperature_high}°C` : null,
         data.weather_impact && data.weather_impact !== "No significant impact expected" ? data.weather_impact : null,
