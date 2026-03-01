@@ -1131,10 +1131,13 @@ export type Database = {
           completed_at: string | null
           created_at: string
           created_by: string
-          document_version_id: string
+          document_version_id: string | null
           error: string | null
+          export_type: string | null
           id: string
+          metadata: Json | null
           organisation_id: string
+          project_id: string | null
           status: string
           storage_path: string | null
         }
@@ -1142,10 +1145,13 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           created_by: string
-          document_version_id: string
+          document_version_id?: string | null
           error?: string | null
+          export_type?: string | null
           id?: string
+          metadata?: Json | null
           organisation_id: string
+          project_id?: string | null
           status?: string
           storage_path?: string | null
         }
@@ -1153,10 +1159,13 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           created_by?: string
-          document_version_id?: string
+          document_version_id?: string | null
           error?: string | null
+          export_type?: string | null
           id?: string
+          metadata?: Json | null
           organisation_id?: string
+          project_id?: string | null
           status?: string
           storage_path?: string | null
         }
@@ -1173,6 +1182,13 @@ export type Database = {
             columns: ["organisation_id"]
             isOneToOne: false
             referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_exports_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
