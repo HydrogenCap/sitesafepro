@@ -9,6 +9,7 @@ import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { ActionsDashboardWidget } from "@/components/dashboard/ActionsDashboardWidget";
 import { ComplianceCalendarWidget } from "@/components/dashboard/ComplianceCalendarWidget";
 import { ContractorComplianceWidget } from "@/components/dashboard/ContractorComplianceWidget";
+import { ActivityFeedWidget } from "@/components/dashboard/ActivityFeedWidget";
 import { UsageBars } from "@/components/dashboard/UsageBars";
 import { toast } from "sonner";
 import {
@@ -182,28 +183,9 @@ const Dashboard = () => {
           <ComplianceCalendarWidget />
         </div>
 
-        {/* Recent activity / empty state */}
+        {/* Live Activity Feed */}
         <div className="mb-8">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Recent Activity</h3>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-xl border-2 border-dashed border-border p-12 text-center"
-          >
-            <div className="h-16 w-16 rounded-2xl bg-muted mx-auto mb-4 flex items-center justify-center">
-              <FileText className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <h4 className="text-lg font-semibold text-foreground mb-2">No activity yet</h4>
-            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              Your recent activity will appear here once you start creating projects, uploading documents, and inviting contractors.
-            </p>
-            <Button asChild>
-              <Link to="/onboarding">
-                <Plus className="h-4 w-4 mr-2" />
-                Get Started
-              </Link>
-            </Button>
-          </motion.div>
+          <ActivityFeedWidget />
         </div>
       </div>
     </DashboardLayout>
