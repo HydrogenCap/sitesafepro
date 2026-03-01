@@ -175,6 +175,12 @@ const Contractors = () => {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <Button variant="outline" asChild>
+              <Link to="/contractors/compliance">
+                <FileBarChart className="h-4 w-4 mr-2" />
+                Compliance Dashboard
+              </Link>
+            </Button>
             <Button
               variant="outline"
               onClick={handleGenerateReport}

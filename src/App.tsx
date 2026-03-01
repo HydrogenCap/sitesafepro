@@ -62,6 +62,7 @@ import ContractorDetail from "./pages/ContractorDetail";
 import ContractorUpload from "./pages/ContractorUpload";
 import ComplianceCalendar from "./pages/ComplianceCalendar";
 import ContractorDashboardPage from "./pages/ContractorDashboard";
+import ContractorCompliance from "./pages/ContractorCompliance";
 import Help from "./pages/Help";
 import Documentation from "./pages/Documentation";
 import CDMGuide from "./pages/CDMGuide";
@@ -157,6 +158,7 @@ const App = () => {
               <Route path="/actions/new" element={<ProtectedRoute><NewAction /></ProtectedRoute>} />
               <Route path="/actions/:id" element={<ProtectedRoute><ActionDetail /></ProtectedRoute>} />
               <Route path="/contractors" element={<ProtectedRoute><Contractors /></ProtectedRoute>} />
+              <Route path="/contractors/compliance" element={<ProtectedRoute><ContractorCompliance /></ProtectedRoute>} />
               <Route path="/contractors/new" element={<ProtectedRoute><NewContractor /></ProtectedRoute>} />
               <Route path="/contractors/:id" element={<ProtectedRoute><ContractorDetail /></ProtectedRoute>} />
               <Route path="/contractor-portal" element={<ProtectedRoute><ContractorDashboardPage /></ProtectedRoute>} />
