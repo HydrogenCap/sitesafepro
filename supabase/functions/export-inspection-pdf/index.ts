@@ -190,7 +190,7 @@ serve(async (req) => {
       ` : ''}
 
       <div class="footer">
-        Generated on ${new Date().toLocaleDateString('en-GB')} at ${new Date().toLocaleTimeString('en-GB')} • ${org?.name || 'SiteSafePro'}
+        Generated on ${new Date().toLocaleDateString('en-GB')} at ${new Date().toLocaleTimeString('en-GB')} by <a href="https://sitesafe.cloud" style="color:#0F766E;text-decoration:none;">sitesafe.cloud</a>${org?.name ? ` • ${org.name}` : ''}
       </div>
     </body>
     </html>`;

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,8 @@ import {
   Minus,
   ImageIcon,
   Loader2,
+  Camera,
+  Upload,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -47,7 +49,11 @@ export default function InspectionDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [exporting, setExporting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const { data: inspection, isLoading } = useQuery({
     queryKey: ["inspection", id],
@@ -108,6 +114,38 @@ export default function InspectionDetail() {
       toast({ title: "Export failed", description: err.message, variant: "destructive" });
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handlePhotoUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !inspection) return;
+    setUploading(true);
+    try {
+      const newPaths: string[] = [];
+      for (const file of Array.from(files)) {
+        const ext = file.name.split(".").pop() || "jpg";
+        const path = `org/${inspection.organisation_id}/inspections/${inspection.id}/${crypto.randomUUID()}.${ext}`;
+        const { error: uploadError } = await supabase.storage.from("documents").upload(path, file);
+        if (uploadError) throw uploadError;
+        newPaths.push(path);
+      }
+
+      const existingPhotos: string[] = inspection.photos ?? [];
+      const { error: updateError } = await supabase
+        .from("inspections")
+        .update({ photos: [...existingPhotos, ...newPaths] } as any)
+        .eq("id", inspection.id);
+
+      if (updateError) throw updateError;
+
+      queryClient.invalidateQueries({ queryKey: ["inspection", id] });
+      toast({ title: "Photos uploaded", description: `${newPaths.length} photo(s) added successfully.` });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
     }
   };
 
@@ -290,23 +328,65 @@ export default function InspectionDetail() {
         )}
 
         {/* Photos */}
-        {photos.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center justify-between">
+              <span className="flex items-center gap-2">
                 <ImageIcon className="h-5 w-5" />
                 Photos ({photos.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+              </span>
+              <div className="flex gap-2">
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => handlePhotoUpload(e.target.files)}
+                />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => handlePhotoUpload(e.target.files)}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => cameraInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  <Camera className="h-4 w-4 mr-1" />
+                  Camera
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  {uploading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Upload className="h-4 w-4 mr-1" />}
+                  Upload
+                </Button>
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {photos.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {photos.map((photoPath, index) => (
                   <PhotoThumbnail key={index} path={photoPath} />
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-6">
+                No photos yet. Use the buttons above to add photos.
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Notes */}
         {inspection.notes && (
