@@ -58,6 +58,10 @@ export const ContractorComplianceTab = ({ contractorId, complianceDocs }: Props)
             {docs.map((doc) => {
               const status = getDocStatus(doc);
               const label = COMPLIANCE_DOC_LABELS[doc.doc_type]?.label || doc.doc_type;
+              const isInsurance = doc.doc_type.includes('insurance') || doc.doc_type.includes('liability');
+              const daysUntilExpiry = doc.expiry_date
+                ? differenceInDays(new Date(doc.expiry_date), new Date())
+                : null;
               return (
                 <div key={doc.id} className="border border-border rounded-lg p-4">
                   <div className="flex items-start justify-between mb-2">
@@ -76,6 +80,23 @@ export const ContractorComplianceTab = ({ contractorId, complianceDocs }: Props)
                     <div className="flex items-center gap-1 mt-2 text-xs text-success">
                       <CheckCircle2 className="h-3 w-3" />
                       Verified
+                    </div>
+                  )}
+                  {/* Insurance verification prompt */}
+                  {isInsurance && status === "expiring_soon" && daysUntilExpiry !== null && (
+                    <div className="mt-2 flex items-start gap-1.5 p-2 rounded bg-warning/10 border border-warning/20">
+                      <AlertTriangle className="h-3.5 w-3.5 text-warning flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-foreground">
+                        Insurance expires in {daysUntilExpiry} day{daysUntilExpiry !== 1 ? 's' : ''}. Request updated certificate before expiry to maintain compliance.
+                      </p>
+                    </div>
+                  )}
+                  {isInsurance && status === "expired" && (
+                    <div className="mt-2 flex items-start gap-1.5 p-2 rounded bg-destructive/10 border border-destructive/20">
+                      <XCircle className="h-3.5 w-3.5 text-destructive flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-foreground">
+                        Insurance has expired. This contractor should not work on site until valid cover is provided.
+                      </p>
                     </div>
                   )}
                 </div>

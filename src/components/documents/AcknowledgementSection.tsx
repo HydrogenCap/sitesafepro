@@ -447,6 +447,9 @@ export const AcknowledgementSection = ({
           <p className="text-xs text-muted-foreground">
             Draw your signature in the box above
           </p>
+          <p className="text-xs text-muted-foreground leading-relaxed mt-1">
+            By signing you confirm intent to be legally bound by this acknowledgement in accordance with the Electronic Communications Act 2000 and eIDAS Regulation (EU) No 910/2014, as retained in UK law.
+          </p>
         </div>
 
         {/* Date */}

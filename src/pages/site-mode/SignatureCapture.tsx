@@ -75,6 +75,9 @@ export default function SignatureCapture() {
             penColor="#1a1a1a"
           />
         </div>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          By signing above you confirm intent to be legally bound by this record in accordance with the Electronic Communications Act 2000 and eIDAS Regulation (EU) No 910/2014, as retained in UK law.
+        </p>
         <div className="flex gap-3">
           <Button variant="outline" className="flex-1" onClick={clear}>
             <RotateCcw className="h-4 w-4 mr-1.5" /> Clear
