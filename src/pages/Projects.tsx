@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -31,6 +32,7 @@ const Projects = () => {
   const archiveProject = useArchiveProject();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const filteredProjects = projects.filter(
     (project) =>
@@ -75,12 +77,7 @@ const Projects = () => {
   const handleDelete = (e: React.MouseEvent, projectId: string) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    if (!confirm("Are you sure you want to delete this project? This action cannot be undone.")) {
-      return;
-    }
-
-    deleteProject.mutate(projectId);
+    setDeleteTarget(projectId);
   };
 
   if (subLoading || isLoading) {
@@ -277,6 +274,22 @@ const Projects = () => {
             )}
           </motion.div>
         )}
+
+        <ConfirmDialog
+          open={!!deleteTarget}
+          onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+          title="Delete this project?"
+          description="This will permanently delete the project and all associated data. This action cannot be undone. For compliance purposes, consider archiving instead."
+          confirmText="DELETE"
+          confirmLabel="Delete Project"
+          variant="destructive"
+          onConfirm={() => {
+            if (deleteTarget) {
+              deleteProject.mutate(deleteTarget);
+              setDeleteTarget(null);
+            }
+          }}
+        />
       </div>
     </DashboardLayout>
   );

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useNavigate } from 'react-router-dom';
 import { RefreshCw, RotateCcw, Trash2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -44,9 +45,11 @@ export default function QueueManager() {
     loadItems();
   };
 
+  const [discardTarget, setDiscardTarget] = useState<QueueItem | null>(null);
+
   const handleDiscard = async (item: QueueItem) => {
-    if (!confirm('Discard this captured item? This cannot be undone.')) return;
     await discardItem(user!.id, item.id);
+    setDiscardTarget(null);
     loadItems();
   };
 
@@ -131,7 +134,7 @@ export default function QueueManager() {
                           </Button>
                         )}
                         <Button size="sm" variant="ghost"
-                          onClick={() => handleDiscard(item)}
+                          onClick={() => setDiscardTarget(item)}
                           className="text-xs h-7 text-destructive hover:text-destructive">
                           <Trash2 className="h-3 w-3" />
                         </Button>
@@ -162,6 +165,18 @@ export default function QueueManager() {
           onClose={() => setConflictItem(null)}
         />
       )}
+
+      <ConfirmDialog
+        open={!!discardTarget}
+        onOpenChange={(open) => { if (!open) setDiscardTarget(null); }}
+        title="Discard this capture?"
+        description="This captured item will be permanently removed from the queue. This cannot be undone."
+        confirmLabel="Discard"
+        variant="destructive"
+        onConfirm={() => {
+          if (discardTarget) handleDiscard(discardTarget);
+        }}
+      />
     </div>
   );
 }
