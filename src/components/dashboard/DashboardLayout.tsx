@@ -34,6 +34,7 @@ import {
   ChevronDown,
   HardHat,
   HelpCircle,
+  Upload,
   LucideIcon,
 } from "lucide-react";
 
@@ -87,6 +88,7 @@ const navGroups: NavGroup[] = [
     items: [
       { icon: Activity, label: "Activity", href: "/activity" },
       { icon: FileBarChart, label: "Reports", href: "/reports" },
+      { icon: Upload, label: "Upload Queue", href: "/site-mode/queue" },
     ],
   },
 ];

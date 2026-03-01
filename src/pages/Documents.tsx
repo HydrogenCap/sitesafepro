@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
@@ -301,8 +302,9 @@ const Documents = () => {
     }
   };
 
-  const handleDelete = async (doc: Document) => {
-    if (!confirm("Are you sure you want to delete this document?")) return;
+  const [deleteTarget, setDeleteTarget] = useState<Document | null>(null);
+
+  const handleDeleteConfirmed = async (doc: Document) => {
 
     try {
       // Delete from storage
@@ -733,7 +735,7 @@ const Documents = () => {
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem
                                     className="text-destructive"
-                                    onClick={() => handleDelete(doc)}
+                                    onClick={() => setDeleteTarget(doc)}
                                   >
                                     <Trash2 className="h-4 w-4 mr-2" />
                                     Delete
@@ -837,6 +839,21 @@ const Documents = () => {
       <DocumentGeneratorDialog
         open={generatorDialogOpen}
         onOpenChange={setGeneratorDialogOpen}
+      />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Archive this document?"
+        description="For compliance purposes, documents should be archived rather than permanently deleted. Are you sure you want to proceed with deletion? This action cannot be undone."
+        confirmLabel="Delete Document"
+        variant="destructive"
+        onConfirm={() => {
+          if (deleteTarget) {
+            handleDeleteConfirmed(deleteTarget);
+            setDeleteTarget(null);
+          }
+        }}
       />
     </DashboardLayout>
   );
