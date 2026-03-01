@@ -86,7 +86,6 @@ const navGroups: NavGroup[] = [
     label: "Reports",
     items: [
       { icon: Activity, label: "Activity", href: "/activity" },
-      { icon: BarChart3, label: "Analytics", href: "/analytics" },
       { icon: FileBarChart, label: "Reports", href: "/reports" },
     ],
   },

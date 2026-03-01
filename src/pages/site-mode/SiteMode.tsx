@@ -5,7 +5,6 @@ import { QueueStatusChip } from '@/components/offline/QueueStatusChip';
 import { OfflineBanner } from '@/components/offline/OfflineBanner';
 import { useSync } from '@/offline/SyncContext';
 import { useNetworkStatus } from '@/offline/useNetworkStatus';
-import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 
 const CAPTURE_ACTIONS = [
   { to: 'incident', icon: ShieldAlert, label: 'Incident', color: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300' },
@@ -22,48 +21,51 @@ export default function SiteMode() {
   const isSyncing = syncState === 'syncing';
 
   return (
-    <DashboardLayout>
+    <div className="min-h-screen bg-background flex flex-col">
       <OfflineBanner />
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/dashboard" className="text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold">Site Mode</h1>
-              <p className="text-sm text-muted-foreground">Capture offline · Sync when ready</p>
-            </div>
-          </div>
-          <Button
-            size="sm" variant="outline"
-            onClick={() => triggerSync()}
-            disabled={isSyncing || !isOnline}
-          >
-            <RefreshCw className={`h-4 w-4 mr-1.5 ${isSyncing ? 'animate-spin' : ''}`} />
-            {isSyncing ? 'Syncing…' : 'Sync Now'}
-          </Button>
-        </div>
 
+      {/* Fullscreen header — no sidebar chrome */}
+      <header className="sticky top-0 z-10 border-b bg-background px-4 py-3 flex items-center justify-between safe-area-inset">
+        <div className="flex items-center gap-3">
+          <Link to="/dashboard" className="text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <div>
+            <h1 className="text-xl font-bold leading-tight">Site Mode</h1>
+            <p className="text-xs text-muted-foreground">Capture offline · Sync when ready</p>
+          </div>
+        </div>
+        <Button
+          size="sm" variant="outline"
+          onClick={() => triggerSync()}
+          disabled={isSyncing || !isOnline}
+        >
+          <RefreshCw className={`h-4 w-4 mr-1.5 ${isSyncing ? 'animate-spin' : ''}`} />
+          {isSyncing ? 'Syncing…' : 'Sync'}
+        </Button>
+      </header>
+
+      <div className="flex-1 p-4 space-y-6 max-w-lg mx-auto w-full">
+        {/* Capture grid — large touch targets for gloved fingers */}
         <section>
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
             Capture
           </h2>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             {CAPTURE_ACTIONS.map(({ to, icon: Icon, label, color }) => (
               <Link
                 key={to}
                 to={`/site-mode/${to}`}
-                className={`flex flex-col items-center justify-center gap-2 rounded-xl p-4 ${color} hover:opacity-80 transition-opacity`}
+                className={`flex flex-col items-center justify-center gap-2 rounded-xl p-5 min-h-[5.5rem] ${color} hover:opacity-80 transition-opacity active:scale-95`}
               >
-                <Icon className="h-7 w-7" />
+                <Icon className="h-8 w-8" />
                 <span className="text-xs font-semibold">{label}</span>
               </Link>
             ))}
           </div>
         </section>
 
-        {/* I3: Persistent failed sync alert */}
+        {/* Failed sync alert */}
         {counts.failed > 0 && (
           <section className="rounded-xl border border-destructive bg-destructive/10 p-4">
             <div className="flex items-center gap-3">
@@ -83,9 +85,10 @@ export default function SiteMode() {
           </section>
         )}
 
+        {/* Queue status */}
         <section>
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               Queue
             </h2>
             <Link to="/site-mode/queue" className="text-xs text-primary font-medium">View all →</Link>
@@ -93,6 +96,6 @@ export default function SiteMode() {
           <QueueStatusChip counts={counts} />
         </section>
       </div>
-    </DashboardLayout>
+    </div>
   );
 }

@@ -166,10 +166,10 @@ export default function Inspections() {
   const handleCreateInspection = async () => {
     if (!organisationId || !user) return;
 
-    if (!formData.title) {
+    if (!formData.title || !formData.project_id) {
       toast({
         title: "Missing required fields",
-        description: "Please provide an inspection title",
+        description: "Please provide a project and inspection title",
         variant: "destructive",
       });
       return;
@@ -314,8 +314,8 @@ export default function Inspections() {
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Project</Label>
+                   <div className="space-y-2">
+                    <Label>Project *</Label>
                     <Select
                       value={formData.project_id}
                       onValueChange={(v) => setFormData({ ...formData, project_id: v })}

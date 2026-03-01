@@ -197,10 +197,10 @@ export default function Incidents() {
   const handleCreateIncident = async () => {
     if (!organisationId || !user) return;
 
-    if (!formData.title || !formData.description) {
+    if (!formData.title || !formData.description || !formData.project_id) {
       toast({
         title: "Missing required fields",
-        description: "Please provide a title and description",
+        description: "Please provide a project, title and description",
         variant: "destructive",
       });
       return;
@@ -437,7 +437,7 @@ export default function Incidents() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Project</Label>
+                      <Label>Project *</Label>
                       <Select
                         value={formData.project_id}
                         onValueChange={(v) => setFormData({ ...formData, project_id: v })}

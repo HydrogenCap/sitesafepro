@@ -68,7 +68,13 @@ import Contact from "./pages/Contact";
 import Templates from "./pages/Templates";
 import AuditLog from "./pages/AuditLog";
 import IncidentCapture from "./pages/site-mode/IncidentCapture";
-
+import SiteMode from "./pages/site-mode/SiteMode";
+import PhotoCapture from "./pages/site-mode/PhotoCapture";
+import NoteCapture from "./pages/site-mode/NoteCapture";
+import HazardCapture from "./pages/site-mode/HazardCapture";
+import ActionCapture from "./pages/site-mode/ActionCapture";
+import SignatureCapture from "./pages/site-mode/SignatureCapture";
+import QueueManager from "./pages/site-mode/QueueManager";
 const queryClient = new QueryClient();
 
 const App = () => {
@@ -157,8 +163,15 @@ const App = () => {
               <Route path="/compliance-calendar" element={<ProtectedRoute><ComplianceCalendar /></ProtectedRoute>} />
               <Route path="/help" element={<ProtectedRoute><Help /></ProtectedRoute>} />
               <Route path="/audit-log" element={<ProtectedRoute><RequireRole role="admin" fallback={<AccessDenied />}><AuditLog /></RequireRole></ProtectedRoute>} />
-              <Route path="/site-mode/incident" element={<ProtectedRoute><IncidentCapture /></ProtectedRoute>} />
-              
+              <Route path="/site-mode" element={<ProtectedRoute><SyncProvider><SiteMode /></SyncProvider></ProtectedRoute>} />
+              <Route path="/site-mode/incident" element={<ProtectedRoute><SyncProvider><IncidentCapture /></SyncProvider></ProtectedRoute>} />
+              <Route path="/site-mode/photo" element={<ProtectedRoute><SyncProvider><PhotoCapture /></SyncProvider></ProtectedRoute>} />
+              <Route path="/site-mode/note" element={<ProtectedRoute><SyncProvider><NoteCapture /></SyncProvider></ProtectedRoute>} />
+              <Route path="/site-mode/hazard" element={<ProtectedRoute><SyncProvider><HazardCapture /></SyncProvider></ProtectedRoute>} />
+              <Route path="/site-mode/action" element={<ProtectedRoute><SyncProvider><ActionCapture /></SyncProvider></ProtectedRoute>} />
+              <Route path="/site-mode/signature" element={<ProtectedRoute><SyncProvider><SignatureCapture /></SyncProvider></ProtectedRoute>} />
+              <Route path="/site-mode/queue" element={<ProtectedRoute><SyncProvider><QueueManager /></SyncProvider></ProtectedRoute>} />
+
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
