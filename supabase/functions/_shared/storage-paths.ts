@@ -19,4 +19,7 @@ export const storagePaths = {
 
   orgLogo: (orgId: string, ext: string) =>
     `org/${orgId}/logo.${ext}`,
+
+  handoverPack: (orgId: string, projectId: string, exportId: string) =>
+    `org/${orgId}/projects/${projectId}/handover/${exportId}.pdf`,
 } as const;
