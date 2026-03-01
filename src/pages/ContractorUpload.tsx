@@ -1,14 +1,15 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect, useCallback } from "react";
+import { useParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { Upload, CheckCircle2, AlertCircle, FileText, Loader2 } from "lucide-react";
+import { Upload, CheckCircle2, AlertCircle, FileText, Loader2, ShieldCheck } from "lucide-react";
 import { Logo } from "@/components/landing/Logo";
+import { COMPLIANCE_DOC_LABELS } from "@/types/contractor";
 
 const DOC_TYPE_OPTIONS = [
   { value: "public_liability", label: "Public Liability Insurance" },
@@ -27,33 +28,34 @@ const DOC_TYPE_OPTIONS = [
 ];
 
 interface ContractorInfo {
-  id: string;
+  contractor_id: string;
   company_name: string;
   organisation_id: string;
-  organisation_name?: string;
+  organisation_name: string | null;
+  required_doc_types: string[];
+  uploaded_docs: UploadedDoc[];
 }
 
 interface UploadedDoc {
+  id: string;
   doc_type: string;
-  file_name: string;
+  status: string;
+  expiry_date: string | null;
+  created_at: string;
 }
 
 export default function ContractorUpload() {
   const { token } = useParams<{ token: string }>();
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [contractor, setContractor] = useState<ContractorInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedDocType, setSelectedDocType] = useState<string>("");
   const [uploading, setUploading] = useState(false);
-  const [uploadedDocs, setUploadedDocs] = useState<UploadedDoc[]>([]);
   const [expiryDate, setExpiryDate] = useState<string>("");
 
-  useEffect(() => {
-    validateToken();
-  }, [token]);
+  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
 
-  const validateToken = async () => {
+  const fetchContractorInfo = useCallback(async () => {
     if (!token) {
       setError("Invalid upload link");
       setLoading(false);
@@ -61,49 +63,29 @@ export default function ContractorUpload() {
     }
 
     try {
-      // Fetch contractor by upload token
-      const { data: contractorData, error: fetchError } = await supabase
-        .from("contractor_companies")
-        .select("id, company_name, organisation_id, upload_token_expires_at")
-        .eq("upload_token", token)
-        .single();
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/contractor-upload?token=${encodeURIComponent(token)}`
+      );
+      const data = await res.json();
 
-      if (fetchError || !contractorData) {
-        setError("Invalid or expired upload link. Please contact your site contact for a new link.");
+      if (!res.ok) {
+        setError(data.error || "Invalid or expired upload link. Please contact your site contact for a new link.");
         setLoading(false);
         return;
       }
 
-      // Check if token has expired
-      if (contractorData.upload_token_expires_at) {
-        const expiresAt = new Date(contractorData.upload_token_expires_at);
-        if (expiresAt < new Date()) {
-          setError("This upload link has expired. Please contact your site contact for a new link.");
-          setLoading(false);
-          return;
-        }
-      }
-
-      // Fetch organisation name
-      const { data: orgData } = await supabase
-        .from("organisations")
-        .select("name")
-        .eq("id", contractorData.organisation_id)
-        .single();
-
-      setContractor({
-        id: contractorData.id,
-        company_name: contractorData.company_name,
-        organisation_id: contractorData.organisation_id,
-        organisation_name: orgData?.name,
-      });
+      setContractor(data);
     } catch (err) {
       console.error("Error validating token:", err);
       setError("An error occurred. Please try again later.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, projectId]);
+
+  useEffect(() => {
+    fetchContractorInfo();
+  }, [fetchContractorInfo]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -112,9 +94,7 @@ export default function ContractorUpload() {
       return;
     }
 
-    // Validate file
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
+    if (file.size > 10 * 1024 * 1024) {
       toast.error("File size must be less than 10MB");
       return;
     }
@@ -128,31 +108,33 @@ export default function ContractorUpload() {
     setUploading(true);
 
     try {
-      // Upload to storage
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${contractor.id}/${selectedDocType}_${Date.now()}.${fileExt}`;
+      const formData = new FormData();
+      formData.append("token", token!);
+      formData.append("doc_type", selectedDocType);
+      formData.append("file", file);
+      if (expiryDate) formData.append("expiry_date", expiryDate);
 
-      const { error: uploadError } = await supabase.storage
-        .from("documents")
-        .upload(fileName, file);
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/contractor-upload`,
+        { method: "POST", body: formData }
+      );
 
-      if (uploadError) throw uploadError;
+      const data = await res.json();
 
-      // Note: We skip creating the compliance doc record here since the contractor
-      // doesn't have an authenticated user ID. The document is uploaded and can be 
-      // linked by an admin later, or we could use a service function.
-      // For now, just track the upload was successful.
+      if (!res.ok) {
+        throw new Error(data.error || "Upload failed");
+      }
 
-      setUploadedDocs((prev) => [...prev, { doc_type: selectedDocType, file_name: file.name }]);
       toast.success("Document uploaded successfully!");
       setSelectedDocType("");
       setExpiryDate("");
-      
-      // Reset file input
       event.target.value = "";
-    } catch (err) {
+
+      // Refresh contractor info to update checklist
+      await fetchContractorInfo();
+    } catch (err: any) {
       console.error("Upload error:", err);
-      toast.error("Failed to upload document. Please try again.");
+      toast.error(err.message || "Failed to upload document. Please try again.");
     } finally {
       setUploading(false);
     }
@@ -182,6 +164,12 @@ export default function ContractorUpload() {
     );
   }
 
+  const requiredTypes = contractor?.required_doc_types || [];
+  const uploadedTypes = new Set((contractor?.uploaded_docs || []).map((d) => d.doc_type));
+  const completedCount = requiredTypes.filter((dt) => uploadedTypes.has(dt)).length;
+  const progressPercent = requiredTypes.length > 0 ? Math.round((completedCount / requiredTypes.length) * 100) : 0;
+  const allComplete = requiredTypes.length > 0 && completedCount === requiredTypes.length;
+
   return (
     <div className="min-h-screen bg-muted/30">
       <header className="bg-card border-b border-border px-6 py-4">
@@ -207,7 +195,74 @@ export default function ContractorUpload() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="space-y-4">
+            {/* Progress Tracker */}
+            {requiredTypes.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    {completedCount} of {requiredTypes.length} required documents uploaded
+                  </span>
+                  <span className={`font-semibold ${allComplete ? "text-green-600" : "text-foreground"}`}>
+                    {progressPercent}%
+                  </span>
+                </div>
+                <Progress value={progressPercent} className="h-2" />
+              </div>
+            )}
+
+            {/* Required Docs Checklist */}
+            {requiredTypes.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Required Documents</Label>
+                <div className="grid gap-2">
+                  {requiredTypes.map((dt) => {
+                    const uploaded = uploadedTypes.has(dt);
+                    const docLabel =
+                      DOC_TYPE_OPTIONS.find((o) => o.value === dt)?.label ||
+                      (COMPLIANCE_DOC_LABELS as any)[dt]?.label ||
+                      dt.replace(/_/g, " ");
+                    const uploadedDoc = contractor?.uploaded_docs.find((d) => d.doc_type === dt);
+
+                    return (
+                      <div
+                        key={dt}
+                        className={`flex items-center justify-between p-3 rounded-lg border ${
+                          uploaded ? "border-green-500/30 bg-green-500/5" : "border-border"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          {uploaded ? (
+                            <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+                          ) : (
+                            <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 shrink-0" />
+                          )}
+                          <span className="text-sm font-medium">{docLabel}</span>
+                        </div>
+                        {uploaded && uploadedDoc && (
+                          <Badge variant="outline" className="text-xs capitalize">
+                            {uploadedDoc.status.replace(/_/g, " ")}
+                          </Badge>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* All Complete Banner */}
+            {allComplete && (
+              <div className="flex items-center gap-3 p-4 rounded-lg bg-green-500/10 border border-green-500/30">
+                <ShieldCheck className="h-6 w-6 text-green-600 shrink-0" />
+                <div>
+                  <p className="font-semibold text-sm text-green-700">All required documents uploaded!</p>
+                  <p className="text-xs text-green-600/80">Your documents are being reviewed.</p>
+                </div>
+              </div>
+            )}
+
+            {/* Upload Form */}
+            <div className="space-y-4 pt-2 border-t border-border">
               <div className="space-y-2">
                 <Label htmlFor="doc-type">Document Type *</Label>
                 <Select value={selectedDocType} onValueChange={setSelectedDocType}>
@@ -272,27 +327,40 @@ export default function ContractorUpload() {
           </CardContent>
         </Card>
 
-        {uploadedDocs.length > 0 && (
+        {/* Previously Uploaded Documents */}
+        {(contractor?.uploaded_docs || []).length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                <FileText className="h-5 w-5 text-muted-foreground" />
                 Uploaded Documents
               </CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2">
-                {uploadedDocs.map((doc, index) => (
-                  <li key={index} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                    <FileText className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium text-sm">{doc.file_name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {DOC_TYPE_OPTIONS.find((o) => o.value === doc.doc_type)?.label || doc.doc_type}
-                      </p>
-                    </div>
-                  </li>
-                ))}
+                {contractor!.uploaded_docs.map((doc) => {
+                  const docLabel =
+                    DOC_TYPE_OPTIONS.find((o) => o.value === doc.doc_type)?.label ||
+                    doc.doc_type.replace(/_/g, " ");
+                  return (
+                    <li key={doc.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                        <div>
+                          <p className="font-medium text-sm">{docLabel}</p>
+                          {doc.expiry_date && (
+                            <p className="text-xs text-muted-foreground">
+                              Expires: {new Date(doc.expiry_date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <Badge variant="outline" className="text-xs capitalize">
+                        {doc.status.replace(/_/g, " ")}
+                      </Badge>
+                    </li>
+                  );
+                })}
               </ul>
             </CardContent>
           </Card>
