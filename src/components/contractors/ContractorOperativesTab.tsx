@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ContractorOperative, CSCS_CARD_TYPES } from "@/types/contractor";
+import { ContractorOperative, CSCS_CARD_TYPES, TRADES } from "@/types/contractor";
 import { Users, Mail, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { AddOperativeDialog } from "./AddOperativeDialog";
@@ -57,7 +57,7 @@ export const ContractorOperativesTab = ({ contractorId, operatives }: Props) => 
               <div>
                 <p className="font-medium">{op.full_name}</p>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                  <span>{op.trade}</span>
+                  <span>{TRADES.find(t => t.value === op.trade)?.label ?? op.trade}</span>
                   {op.email && <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{op.email}</span>}
                 </div>
               </div>
