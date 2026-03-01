@@ -8,6 +8,7 @@ import {
   Maximize2,
   FileText,
   Image as ImageIcon,
+  ExternalLink,
 } from "lucide-react";
 
 interface DocumentPreviewProps {
@@ -17,6 +18,24 @@ interface DocumentPreviewProps {
   onDownload: () => void;
 }
 
+const OFFICE_MIME_TYPES = [
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/msword",
+  "application/vnd.ms-excel",
+  "application/vnd.ms-powerpoint",
+];
+
+const OFFICE_LABELS: Record<string, { label: string; extension: string }> = {
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": { label: "Word Document", extension: "DOCX" },
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": { label: "Excel Spreadsheet", extension: "XLSX" },
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation": { label: "PowerPoint Presentation", extension: "PPTX" },
+  "application/msword": { label: "Word Document", extension: "DOC" },
+  "application/vnd.ms-excel": { label: "Excel Spreadsheet", extension: "XLS" },
+  "application/vnd.ms-powerpoint": { label: "PowerPoint Presentation", extension: "PPT" },
+};
+
 export const DocumentPreview = ({
   signedUrl,
   mimeType,
@@ -24,19 +43,11 @@ export const DocumentPreview = ({
   onDownload,
 }: DocumentPreviewProps) => {
   const [zoom, setZoom] = useState(100);
-  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const isPdf = mimeType === "application/pdf";
   const isImage = mimeType.startsWith("image/");
-  const isOffice = [
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-    "application/msword",
-    "application/vnd.ms-excel",
-    "application/vnd.ms-powerpoint",
-  ].includes(mimeType);
-  const canPreview = isPdf || isImage || isOffice;
+  const isOffice = OFFICE_MIME_TYPES.includes(mimeType);
+  const canPreview = isPdf || isImage;
 
   const handleZoomIn = () => setZoom((z) => Math.min(z + 25, 200));
   const handleZoomOut = () => setZoom((z) => Math.max(z - 25, 50));
@@ -62,6 +73,52 @@ export const DocumentPreview = ({
             <Download className="h-4 w-4 mr-2" />
             Download Document
           </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Office files — show a friendly download card since they can't be previewed in-browser from private storage
+  if (isOffice) {
+    const officeInfo = OFFICE_LABELS[mimeType];
+    return (
+      <Card className="bg-card border-border overflow-hidden">
+        <div className="flex items-center justify-between p-3 border-b border-border bg-muted/30">
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium text-foreground truncate max-w-[200px]">
+              {fileName}
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" onClick={onDownload}>
+              <Download className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        <CardContent className="p-12 text-center">
+          <div className="h-20 w-20 rounded-2xl bg-primary/10 mx-auto mb-4 flex items-center justify-center">
+            <FileText className="h-10 w-10 text-primary" />
+          </div>
+          <div className="inline-block px-3 py-1 rounded-full bg-muted text-xs font-medium text-muted-foreground mb-3">
+            {officeInfo?.extension || mimeType.split("/")[1]?.toUpperCase()}
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-1">
+            {officeInfo?.label || "Office Document"}
+          </h3>
+          <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
+            This document type requires downloading to view. Click below to download and open it in your preferred application.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Button onClick={onDownload}>
+              <Download className="h-4 w-4 mr-2" />
+              Download to View
+            </Button>
+            <Button variant="outline" onClick={handleFullscreen}>
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Open in New Tab
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
@@ -132,12 +189,6 @@ export const DocumentPreview = ({
         {isPdf ? (
           <iframe
             src={`${signedUrl}#toolbar=0&navpanes=0`}
-            className="w-full h-[600px] border-0"
-            title={fileName}
-          />
-        ) : isOffice ? (
-          <iframe
-            src={`https://docs.google.com/gview?url=${encodeURIComponent(signedUrl)}&embedded=true`}
             className="w-full h-[600px] border-0"
             title={fileName}
           />
