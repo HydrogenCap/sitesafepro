@@ -23,12 +23,14 @@ import { generateGoLiveDocuments } from "@/hooks/useGoLiveDocuments";
 interface ProjectComplianceChecklistProps {
   projectId: string;
   projectName: string;
+  principalDesigner?: string | null;
   onGoLive: () => void;
 }
 
 export const ProjectComplianceChecklist = ({
   projectId,
   projectName,
+  principalDesigner,
   onGoLive,
 }: ProjectComplianceChecklistProps) => {
   const { user } = useAuth();
@@ -504,6 +506,7 @@ export const ProjectComplianceChecklist = ({
         projectName={projectName}
         onConfirm={handleGoLive}
         isLoading={goingLive}
+        principalDesigner={principalDesigner}
       />
 
       {confirmDialogConfig && (

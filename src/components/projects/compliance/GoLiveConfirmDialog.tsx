@@ -24,6 +24,7 @@ interface GoLiveConfirmDialogProps {
   projectName: string;
   onConfirm: () => void;
   isLoading: boolean;
+  principalDesigner?: string | null;
 }
 
 export const GoLiveConfirmDialog = ({
@@ -32,6 +33,7 @@ export const GoLiveConfirmDialog = ({
   projectName,
   onConfirm,
   isLoading,
+  principalDesigner,
 }: GoLiveConfirmDialogProps) => {
   const [templates, setTemplates] = useState<DocumentTemplate[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(true);
@@ -74,18 +76,35 @@ export const GoLiveConfirmDialog = ({
         </DialogHeader>
 
         <div className="py-4 space-y-4">
-          {/* Success message */}
-          <div className="flex items-start gap-3 p-3 rounded-lg bg-success/10 border border-success/20">
-            <CheckCircle className="h-5 w-5 text-success flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-foreground">
-                All pre-construction requirements are satisfied
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                The site is ready to go live
-              </p>
+          {/* PD Warning */}
+          {!principalDesigner?.trim() && (
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+              <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  Principal Designer not appointed
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  CDM 2015 Regulation 5 requires a Principal Designer to be appointed in writing before the construction phase begins. Please update the project details first.
+                </p>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Success message */}
+          {principalDesigner?.trim() && (
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-success/10 border border-success/20">
+              <CheckCircle className="h-5 w-5 text-success flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  All pre-construction requirements are satisfied
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  The site is ready to go live
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Templates to generate */}
           <div>
@@ -139,7 +158,7 @@ export const GoLiveConfirmDialog = ({
           >
             Cancel
           </Button>
-          <Button onClick={onConfirm} disabled={isLoading}>
+          <Button onClick={onConfirm} disabled={isLoading || !principalDesigner?.trim()}>
             {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />

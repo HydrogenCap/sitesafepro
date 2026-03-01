@@ -396,6 +396,7 @@ const ProjectDetail = () => {
             <ProjectComplianceChecklist
               projectId={project.id}
               projectName={project.name}
+              principalDesigner={project.principal_designer}
               onGoLive={handleGoLive}
             />
           </div>
