@@ -9,17 +9,17 @@ import { Button } from "@/components/ui/button";
 import { ComplianceDocStatusBadge } from "@/components/contractors/ComplianceDocStatusBadge";
 import { COMPLIANCE_DOC_LABELS, ComplianceDocStatus } from "@/types/contractor";
 import { UploadComplianceDocDialog } from "@/components/contractors/UploadComplianceDocDialog";
+import { ContractorProfileCard } from "@/components/contractors/ContractorProfileCard";
+import { ComplianceProgressGauge } from "@/components/contractors/ComplianceProgressGauge";
 import {
-  Shield, Upload, Building2, CheckCircle2, AlertTriangle, XCircle, FileText, HardHat,
+  Upload, Building2, AlertTriangle, FileText, HardHat,
 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
-import { Link } from "react-router-dom";
 
 export default function ContractorDashboard() {
   const { user } = useAuth();
   const { membership } = useOrg();
 
-  // Find the contractor company linked to this user's email
   const { data: contractorCompany, isLoading: loadingCompany } = useQuery({
     queryKey: ["my-contractor-company", user?.email, membership?.orgId],
     queryFn: async () => {
@@ -35,7 +35,6 @@ export default function ContractorDashboard() {
     enabled: !!user?.email && !!membership?.orgId,
   });
 
-  // Get compliance docs for this contractor
   const { data: complianceDocs = [] } = useQuery({
     queryKey: ["my-compliance-docs", contractorCompany?.id],
     queryFn: async () => {
@@ -51,7 +50,6 @@ export default function ContractorDashboard() {
     enabled: !!contractorCompany?.id,
   });
 
-  // Get assigned projects
   const { data: assignedProjects = [] } = useQuery({
     queryKey: ["my-contractor-projects", contractorCompany?.id],
     queryFn: async () => {
@@ -74,6 +72,7 @@ export default function ContractorDashboard() {
     ["uploaded", "ai_checking", "needs_review"].includes(d.status)
   ).length;
   const rejectedCount = complianceDocs.filter((d: any) => d.status === "rejected").length;
+  const totalRequired = Math.max(requiredDocTypes.length, complianceDocs.length);
 
   if (loadingCompany) {
     return (
@@ -120,52 +119,18 @@ export default function ContractorDashboard() {
           )}
         </div>
 
-        {/* Compliance Summary */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-success/10 flex items-center justify-center">
-                <CheckCircle2 className="h-5 w-5 text-success" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{approvedCount}</p>
-                <p className="text-xs text-muted-foreground">Approved</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Shield className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{pendingCount}</p>
-                <p className="text-xs text-muted-foreground">Pending Review</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-destructive/10 flex items-center justify-center">
-                <XCircle className="h-5 w-5 text-destructive" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{rejectedCount}</p>
-                <p className="text-xs text-muted-foreground">Rejected</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-warning/10 flex items-center justify-center">
-                <AlertTriangle className="h-5 w-5 text-warning" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{missingDocs.length}</p>
-                <p className="text-xs text-muted-foreground">Missing</p>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Top Row: Profile + Compliance Gauge */}
+        <div className="grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <ContractorProfileCard contractor={contractorCompany as any} />
+          </div>
+          <ComplianceProgressGauge
+            approved={approvedCount}
+            pending={pendingCount}
+            rejected={rejectedCount}
+            missing={missingDocs.length}
+            total={totalRequired}
+          />
         </div>
 
         {/* Missing Documents Alert */}
@@ -224,10 +189,10 @@ export default function ContractorDashboard() {
 
                   return (
                     <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
-                      <div className="flex items-center gap-3">
-                        <FileText className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm font-medium">{label}</p>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{label}</p>
                           <div className="flex items-center gap-2 mt-0.5">
                             {doc.expiry_date && (
                               <span className="text-xs text-muted-foreground">
@@ -239,8 +204,12 @@ export default function ContractorDashboard() {
                                 {daysUntilExpiry}d left
                               </Badge>
                             )}
+                            {daysUntilExpiry !== null && daysUntilExpiry < 0 && (
+                              <Badge className="bg-destructive/10 text-destructive text-xs">
+                                Expired
+                              </Badge>
+                            )}
                           </div>
-                          {/* Show rejection info */}
                           {doc.status === "rejected" && doc.rejection_reason && (
                             <p className="text-xs text-destructive mt-1">
                               Rejected: {doc.rejection_reason}
@@ -249,7 +218,19 @@ export default function ContractorDashboard() {
                           )}
                         </div>
                       </div>
-                      <ComplianceDocStatusBadge status={doc.status as ComplianceDocStatus} />
+                      <div className="flex items-center gap-2 shrink-0">
+                        {doc.status === "rejected" && contractorCompany.id && (
+                          <UploadComplianceDocDialog
+                            contractorId={contractorCompany.id}
+                            trigger={
+                              <Button variant="outline" size="sm" className="text-xs">
+                                Re-upload
+                              </Button>
+                            }
+                          />
+                        )}
+                        <ComplianceDocStatusBadge status={doc.status as ComplianceDocStatus} />
+                      </div>
                     </div>
                   );
                 })}
