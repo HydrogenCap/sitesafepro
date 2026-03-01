@@ -3783,6 +3783,7 @@ export type Database = {
           notes: string | null
           organisation_id: string
           project_id: string | null
+          qr_token: string | null
           status: string
           template_id: string | null
           title: string
@@ -3801,6 +3802,7 @@ export type Database = {
           notes?: string | null
           organisation_id: string
           project_id?: string | null
+          qr_token?: string | null
           status?: string
           template_id?: string | null
           title: string
@@ -3819,6 +3821,7 @@ export type Database = {
           notes?: string | null
           organisation_id?: string
           project_id?: string | null
+          qr_token?: string | null
           status?: string
           template_id?: string | null
           title?: string

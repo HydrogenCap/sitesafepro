@@ -112,8 +112,8 @@ export default function ToolboxAttendance() {
       <div className="min-h-screen bg-muted flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="pt-8 pb-8 text-center space-y-4">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-              <CheckCircle className="h-10 w-10 text-primary" />
+            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
+              <CheckCircle className="h-10 w-10 text-emerald-600" />
             </div>
             <h2 className="text-xl font-bold">Attendance Recorded</h2>
             <p className="text-muted-foreground">

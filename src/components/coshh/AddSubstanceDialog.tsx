@@ -38,7 +38,7 @@ import {
 } from '@/components/ui/accordion';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Plus, X, AlertTriangle } from 'lucide-react';
+import { Loader2, Plus, X, AlertTriangle, Sparkles } from 'lucide-react';
 import { GHSPictogramSelector } from './GHSPictograms';
 import type { 
   COSHHSubstance, 
@@ -47,6 +47,7 @@ import type {
   HazardPictogram,
   RouteOfExposure,
 } from '@/types/coshh';
+import { supabase } from '@/integrations/supabase/client';
 import {
   SUBSTANCE_TYPE_LABELS,
   ROUTE_OF_EXPOSURE_LABELS,
@@ -95,6 +96,8 @@ export const AddSubstanceDialog = ({
   editingSubstance,
 }: AddSubstanceDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLookingUp, setIsLookingUp] = useState(false);
+  const [lookupConfidence, setLookupConfidence] = useState<'high'|'medium'|'low'|null>(null);
   const [newHazardStatement, setNewHazardStatement] = useState('');
   const [newPrecautionaryStatement, setNewPrecautionaryStatement] = useState('');
   const [newControlMeasure, setNewControlMeasure] = useState('');
@@ -183,6 +186,50 @@ export const AddSubstanceDialog = ({
     form.setValue(fieldName, current.filter(v => v !== value));
   };
 
+  const handleAiLookup = async () => {
+    const productName = form.getValues('product_name')?.trim();
+    if (!productName) {
+      // If field is empty, focus it
+      form.setFocus('product_name');
+      return;
+    }
+    setIsLookingUp(true);
+    setLookupConfidence(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('coshh-ai-lookup', {
+        body: { substance_name: productName },
+      });
+      if (error) throw error;
+      if (!data.ok) throw new Error(data.error || 'Lookup failed');
+
+      const d = data.data;
+      // Populate form fields with AI data (only overwrite blank/default fields if editing)
+      const isNew = !editingSubstance;
+      if (d.product_name && isNew) form.setValue('product_name', d.product_name);
+      if (d.substance_type) form.setValue('substance_type', d.substance_type);
+      if (d.hazard_pictograms?.length) form.setValue('hazard_pictograms', d.hazard_pictograms);
+      if (d.hazard_statements?.length) form.setValue('hazard_statements', d.hazard_statements);
+      if (d.precautionary_statements?.length) form.setValue('precautionary_statements', d.precautionary_statements);
+      if (d.route_of_exposure?.length) form.setValue('route_of_exposure', d.route_of_exposure);
+      if (d.health_effects) form.setValue('health_effects', d.health_effects);
+      if (d.control_measures?.length) form.setValue('control_measures', d.control_measures);
+      if (d.ppe_required?.length) form.setValue('ppe_required', d.ppe_required);
+      if (d.workplace_exposure_limit) form.setValue('workplace_exposure_limit', d.workplace_exposure_limit);
+      if (typeof d.health_surveillance_required === 'boolean') form.setValue('health_surveillance_required', d.health_surveillance_required);
+      if (d.health_surveillance_details) form.setValue('health_surveillance_details', d.health_surveillance_details);
+      if (d.first_aid_measures) form.setValue('first_aid_measures', d.first_aid_measures);
+      if (d.spill_procedure) form.setValue('spill_procedure', d.spill_procedure);
+      if (d.fire_fighting_measures) form.setValue('fire_fighting_measures', d.fire_fighting_measures);
+      if (d.storage_requirements) form.setValue('storage_requirements', d.storage_requirements);
+      setLookupConfidence(d.confidence ?? 'medium');
+    } catch (err: any) {
+      console.error('[COSHH AI]', err);
+      // Toast is already handled by supabase.functions.invoke on errors
+    } finally {
+      setIsLookingUp(false);
+    }
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-2xl overflow-hidden flex flex-col">
@@ -218,6 +265,35 @@ export const AddSubstanceDialog = ({
                         </FormItem>
                       )}
                     />
+
+                    {/* AI auto-fill button */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleAiLookup}
+                        disabled={isLookingUp}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
+                      >
+                        {isLookingUp
+                          ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Looking up…</>
+                          : <><Sparkles className="h-3.5 w-3.5" />AI Auto-fill</>
+                        }
+                      </button>
+                      {lookupConfidence && (
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                          lookupConfidence === 'high' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400' :
+                          lookupConfidence === 'medium' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400' :
+                          'bg-muted text-muted-foreground'
+                        }`}>
+                          {lookupConfidence} confidence
+                        </span>
+                      )}
+                    </div>
+                    {lookupConfidence && (
+                      <p className="text-xs text-muted-foreground -mt-2">
+                        AI-generated data pre-filled. Review all fields before saving — AI can make mistakes.
+                      </p>
+                    )}
 
                     <FormField
                       control={form.control}
