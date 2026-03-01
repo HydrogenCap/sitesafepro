@@ -72,6 +72,14 @@ import Contact from "./pages/Contact";
 import Templates from "./pages/Templates";
 import AuditLog from "./pages/AuditLog";
 import AdminPanel from "./pages/AdminPanel";
+import SiteMode from "./pages/site-mode/SiteMode";
+import PhotoCapture from "./pages/site-mode/PhotoCapture";
+import NoteCapture from "./pages/site-mode/NoteCapture";
+import HazardCapture from "./pages/site-mode/HazardCapture";
+import ActionCapture from "./pages/site-mode/ActionCapture";
+import IncidentCapture from "./pages/site-mode/IncidentCapture";
+import SignatureCapture from "./pages/site-mode/SignatureCapture";
+import QueueManager from "./pages/site-mode/QueueManager";
 
 const queryClient = new QueryClient();
 
@@ -163,6 +171,14 @@ const App = () => {
               <Route path="/contractors/:id" element={<ProtectedRoute><ContractorDetail /></ProtectedRoute>} />
               <Route path="/contractor-portal" element={<ProtectedRoute><ContractorDashboardPage /></ProtectedRoute>} />
               <Route path="/compliance-calendar" element={<ProtectedRoute><ComplianceCalendar /></ProtectedRoute>} />
+              <Route path="/site-mode" element={<ProtectedRoute><SiteMode /></ProtectedRoute>} />
+              <Route path="/site-mode/photo" element={<ProtectedRoute><PhotoCapture /></ProtectedRoute>} />
+              <Route path="/site-mode/note" element={<ProtectedRoute><NoteCapture /></ProtectedRoute>} />
+              <Route path="/site-mode/hazard" element={<ProtectedRoute><HazardCapture /></ProtectedRoute>} />
+              <Route path="/site-mode/action" element={<ProtectedRoute><ActionCapture /></ProtectedRoute>} />
+              <Route path="/site-mode/incident" element={<ProtectedRoute><IncidentCapture /></ProtectedRoute>} />
+              <Route path="/site-mode/signature" element={<ProtectedRoute><SignatureCapture /></ProtectedRoute>} />
+              <Route path="/site-mode/queue" element={<ProtectedRoute><QueueManager /></ProtectedRoute>} />
               <Route path="/help" element={<ProtectedRoute><Help /></ProtectedRoute>} />
               <Route path="/audit-log" element={<ProtectedRoute><RequireRole role="admin" fallback={<AccessDenied />}><AuditLog /></RequireRole></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute><RequireRole role="owner" fallback={<AccessDenied />}><AdminPanel /></RequireRole></ProtectedRoute>} />
