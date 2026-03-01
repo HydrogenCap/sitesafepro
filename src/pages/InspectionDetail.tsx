@@ -124,7 +124,7 @@ export default function InspectionDetail() {
       const newPaths: string[] = [];
       for (const file of Array.from(files)) {
         const ext = file.name.split(".").pop() || "jpg";
-        const path = `org/${inspection.organisation_id}/inspections/${inspection.id}/${crypto.randomUUID()}.${ext}`;
+        const path = `${inspection.organisation_id}/inspections/${inspection.id}/${crypto.randomUUID()}.${ext}`;
         const { error: uploadError } = await supabase.storage.from("documents").upload(path, file);
         if (uploadError) throw uploadError;
         newPaths.push(path);
