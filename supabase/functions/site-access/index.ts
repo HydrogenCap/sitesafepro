@@ -1,4 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  requireString,
+  requireUUID,
+  optionalString,
+  ValidationError,
+  validationErrorResponse,
+} from "../_shared/validation.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,9 +30,9 @@ Deno.serve(async (req) => {
     if (action === 'get-code-info') {
       const code = url.searchParams.get('code');
       
-      if (!code) {
+      if (!code || code.trim().length === 0 || code.length > 50) {
         return new Response(
-          JSON.stringify({ error: 'Access code required' }),
+          JSON.stringify({ error: 'Valid access code required' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -39,11 +46,10 @@ Deno.serve(async (req) => {
           project:projects(id, name, address, organisation_id),
           organisation:organisations(id, name, logo_url)
         `)
-        .eq('code', code)
+        .eq('code', code.trim())
         .single();
 
       if (error || !accessCode) {
-        console.error('Error fetching access code:', error);
         return new Response(
           JSON.stringify({ error: 'Invalid access code' }),
           { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -81,20 +87,21 @@ Deno.serve(async (req) => {
     // Public action: Complete induction
     if (action === 'complete-induction' && req.method === 'POST') {
       const body = await req.json();
-      const { 
-        template_id,
-        project_id,
-        organisation_id,
-        visitor_name,
-        visitor_email,
-        visitor_company,
-        visitor_phone,
-        signature_data,
-      } = body;
 
-      if (!template_id || !visitor_name || !signature_data) {
+      // Validate inputs
+      const template_id = requireUUID(body.template_id, "template_id");
+      const project_id = requireUUID(body.project_id, "project_id");
+      const organisation_id = requireUUID(body.organisation_id, "organisation_id");
+      const visitor_name = requireString(body.visitor_name, "visitor_name", { maxLength: 100 });
+      const signature_data = requireString(body.signature_data, "signature_data", { maxLength: 50000 });
+      const visitor_email = optionalString(body.visitor_email, "visitor_email", { maxLength: 255 });
+      const visitor_company = optionalString(body.visitor_company, "visitor_company", { maxLength: 200 });
+      const visitor_phone = optionalString(body.visitor_phone, "visitor_phone", { maxLength: 30 });
+
+      // Validate email format if provided
+      if (visitor_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(visitor_email)) {
         return new Response(
-          JSON.stringify({ error: 'Template ID, visitor name, and signature are required' }),
+          JSON.stringify({ error: 'Invalid email format' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -134,21 +141,22 @@ Deno.serve(async (req) => {
     // Public action: Check in a visitor
     if (action === 'check-in' && req.method === 'POST') {
       const body = await req.json();
-      const { 
-        code, 
-        visitor_name, 
-        visitor_company, 
-        visitor_email, 
-        visitor_phone,
-        purpose,
-        emergency_contact_name,
-        emergency_contact_phone,
-        has_signed_induction
-      } = body;
 
-      if (!code || !visitor_name) {
+      // Validate inputs
+      const code = requireString(body.code, "code", { maxLength: 50 });
+      const visitor_name = requireString(body.visitor_name, "visitor_name", { maxLength: 100 });
+      const visitor_company = optionalString(body.visitor_company, "visitor_company", { maxLength: 200 });
+      const visitor_email = optionalString(body.visitor_email, "visitor_email", { maxLength: 255 });
+      const visitor_phone = optionalString(body.visitor_phone, "visitor_phone", { maxLength: 30 });
+      const purpose = optionalString(body.purpose, "purpose", { maxLength: 500 });
+      const emergency_contact_name = optionalString(body.emergency_contact_name, "emergency_contact_name", { maxLength: 100 });
+      const emergency_contact_phone = optionalString(body.emergency_contact_phone, "emergency_contact_phone", { maxLength: 30 });
+      const has_signed_induction = body.has_signed_induction === true;
+
+      // Validate email format if provided
+      if (visitor_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(visitor_email)) {
         return new Response(
-          JSON.stringify({ error: 'Access code and visitor name are required' }),
+          JSON.stringify({ error: 'Invalid email format' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -181,7 +189,7 @@ Deno.serve(async (req) => {
           purpose,
           emergency_contact_name,
           emergency_contact_phone,
-          has_signed_induction: has_signed_induction || false,
+          has_signed_induction,
         })
         .select()
         .single();
@@ -213,13 +221,16 @@ Deno.serve(async (req) => {
         .is('checked_out_at', null);
 
       if (visit_id) {
-        query = query.eq('id', visit_id);
+        // Validate UUID format
+        const validId = requireUUID(visit_id, "visit_id");
+        query = query.eq('id', validId);
       } else if (code && visitor_email) {
+        const validCode = requireString(code, "code", { maxLength: 50 });
         // Find by access code and email
         const { data: accessCode } = await supabase
           .from('site_access_codes')
           .select('id')
-          .eq('code', code)
+          .eq('code', validCode)
           .single();
 
         if (accessCode) {
@@ -227,6 +238,11 @@ Deno.serve(async (req) => {
             .eq('site_access_code_id', accessCode.id)
             .eq('visitor_email', visitor_email);
         }
+      } else {
+        return new Response(
+          JSON.stringify({ error: 'visit_id or code+visitor_email required' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       const { data: visits, error: findError } = await query;
@@ -254,7 +270,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      console.log('Visitor checked out:', visits[0].id);
       return new Response(
         JSON.stringify({ success: true, visit: updatedVisit }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -267,6 +282,9 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return validationErrorResponse(error, corsHeaders);
+    }
     console.error('Edge function error:', error);
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),

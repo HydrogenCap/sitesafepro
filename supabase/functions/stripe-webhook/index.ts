@@ -246,8 +246,8 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    logStep("ERROR: Webhook processing failed", { error: error.message });
-    return new Response(JSON.stringify({ error: error.message }), {
+    logStep("ERROR: Webhook processing failed", { error: error instanceof Error ? error.message : String(error) });
+    return new Response(JSON.stringify({ error: "Webhook processing failed" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

@@ -116,6 +116,8 @@ export function InviteClientDialog({
       // Generate invite token
       const inviteToken = crypto.randomUUID();
 
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
       const { data: clientUser, error } = await supabase.from("client_portal_users").insert({
         organisation_id: orgData.organisation_id,
         email: formData.email,
@@ -126,6 +128,7 @@ export function InviteClientDialog({
         project_ids: formData.allProjects ? [] : formData.selectedProjects,
         invited_by: user.id,
         invite_token: inviteToken,
+        invite_expires_at: expiresAt,
         ...formData.permissions,
       }).select().single();
 

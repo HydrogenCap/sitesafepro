@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
       org_id, doc.project_id ?? "no-project", doc.id, version_id, exportId
     );
 
-    await admin.from("document_exports").update({ status: "processing" }).eq("id", exportId);
+    await admin.rpc("update_export_status", { p_export_id: exportId, p_status: "processing" });
 
     try {
       const pdfBytes = await buildEvidencePdf({
@@ -116,11 +116,12 @@ Deno.serve(async (req) => {
 
       if (uploadErr) throw uploadErr;
 
-      await admin.from("document_exports").update({
-        status: "completed",
-        storage_path: storagePath,
-        completed_at: new Date().toISOString(),
-      }).eq("id", exportId);
+      await admin.rpc("update_export_status", {
+        p_export_id: exportId,
+        p_status: "completed",
+        p_storage_path: storagePath,
+        p_completed_at: new Date().toISOString(),
+      });
 
       return new Response(
         JSON.stringify({ export_id: exportId, status: "completed", ok: true }),
@@ -128,7 +129,7 @@ Deno.serve(async (req) => {
       );
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      await admin.from("document_exports").update({ status: "failed", error: msg }).eq("id", exportId);
+      await admin.rpc("update_export_status", { p_export_id: exportId, p_status: "failed", p_error: msg });
       console.error("[export-pdf] Generation failed:", msg);
       return new Response(JSON.stringify({ error: "PDF generation failed", export_id: exportId }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
