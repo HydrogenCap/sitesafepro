@@ -14,6 +14,7 @@ import { InviteClientDialog } from "@/components/client/InviteClientDialog";
 import { COSHHTab } from "@/components/coshh";
 import { ProjectContractorsTab } from "@/components/projects/ProjectContractorsTab";
 import { ProjectEmergencyInfo } from "@/components/projects/ProjectEmergencyInfo";
+import { HandoverPackButton } from "@/components/projects/HandoverPackButton";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -94,7 +95,7 @@ const ProjectDetail = () => {
   const [inviteClientDialogOpen, setInviteClientDialogOpen] = useState(false);
   const [generatedDocs, setGeneratedDocs] = useState<GeneratedDocument[]>([]);
   const [organisationName, setOrganisationName] = useState<string>("");
-
+  const [organisationId, setOrganisationId] = useState<string>("");
   useEffect(() => {
     const fetchProject = async () => {
       if (!id) return;
@@ -141,6 +142,7 @@ const ProjectDetail = () => {
         .single();
 
       if (memberData) {
+        setOrganisationId(memberData.organisation_id);
         const { data: orgData } = await supabase
           .from("organisations")
           .select("name")
@@ -302,6 +304,12 @@ const ProjectDetail = () => {
                 <UserPlus className="h-4 w-4 mr-2" />
                 Invite Client
               </Button>
+              <HandoverPackButton
+                projectId={project.id}
+                projectName={project.name}
+                projectStatus={project.status}
+                orgId={organisationId}
+              />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="icon">
