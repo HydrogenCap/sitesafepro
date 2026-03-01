@@ -84,20 +84,12 @@ export const HandoverPackButton = ({
     if (!orgId) return;
     setDownloading(true);
     try {
-      const { data: exportData } = await supabase
-        .from("document_exports")
-        .select("storage_path")
-        .eq("id", exportId)
-        .single();
-
-      if (!exportData?.storage_path) throw new Error("No file path");
-
       const { data, error } = await supabase.functions.invoke("get-signed-url", {
-        body: { bucket: "exports", path: exportData.storage_path },
+        body: { bucket: "exports", export_id: exportId, org_id: orgId },
       });
       if (error) throw error;
-      if (data?.signedUrl) {
-        window.open(data.signedUrl, "_blank");
+      if (data?.signed_url) {
+        window.open(data.signed_url, "_blank");
       }
     } catch (err) {
       console.error("Download error:", err);
