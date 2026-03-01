@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { TRADES } from "@/types/contractor";
 import { BulkReminderDialog } from "@/components/contractors/BulkReminderDialog";
+import { InviteContractorDialog } from "@/components/contractors/InviteContractorDialog";
 import { generateContractorComplianceReport, type ContractorComplianceReportData } from "@/lib/report-generators";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -186,6 +187,7 @@ const Contractors = () => {
               expiringCount={stats.expiringSoon} 
               expiredCount={stats.nonCompliant} 
             />
+            <InviteContractorDialog />
             <Button asChild>
               <Link to="/contractors/new">
                 <Plus className="h-4 w-4 mr-2" />

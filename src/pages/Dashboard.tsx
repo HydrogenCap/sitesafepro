@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOrg } from "@/hooks/useOrg";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Button } from "@/components/ui/button";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
@@ -24,8 +25,16 @@ import {
 const Dashboard = () => {
   const { user, checkSubscription, openCustomerPortal, subscriptionLoading } = useAuth();
   const { organisation, tier, isTrialing, loading: subLoading } = useSubscription();
+  const { membership } = useOrg();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Redirect contractor-role users to their portal
+  useEffect(() => {
+    if (membership?.role === "contractor") {
+      navigate("/contractor-portal", { replace: true });
+    }
+  }, [membership?.role, navigate]);
 
   // Handle checkout success
   useEffect(() => {
