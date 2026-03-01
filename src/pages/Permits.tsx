@@ -32,14 +32,21 @@ interface Permit {
   valid_from: string | null;
   valid_until: string | null;
   created_at: string;
+  contractor_company_id: string | null;
   project: { name: string } | null;
   requester: { full_name: string } | null;
   approver: { full_name: string } | null;
+  contractor: { company_name: string } | null;
 }
 
 interface Project {
   id: string;
   name: string;
+}
+
+interface Contractor {
+  id: string;
+  company_name: string;
 }
 
 const PERMIT_TYPES = [
@@ -83,6 +90,7 @@ export default function Permits() {
   const { toast } = useToast();
   const [permits, setPermits] = useState<Permit[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [contractors, setContractors] = useState<Contractor[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -93,6 +101,7 @@ export default function Permits() {
   // Form state
   const [formData, setFormData] = useState({
     project_id: "",
+    contractor_company_id: "",
     permit_type: "general" as Database["public"]["Enums"]["permit_type"],
     title: "",
     description: "",
@@ -124,15 +133,16 @@ export default function Permits() {
       if (!memberData) return;
       setOrganisationId(memberData.organisation_id);
 
-      // Fetch permits and projects in parallel
-      const [permitsRes, projectsRes] = await Promise.all([
+      // Fetch permits, projects and contractors in parallel
+      const [permitsRes, projectsRes, contractorsRes] = await Promise.all([
         supabase
           .from("permits_to_work")
           .select(`
             *,
             project:projects(name),
             requester:profiles!permits_to_work_requested_by_fkey(full_name),
-            approver:profiles!permits_to_work_approved_by_fkey(full_name)
+            approver:profiles!permits_to_work_approved_by_fkey(full_name),
+            contractor:contractor_companies!permits_to_work_contractor_company_id_fkey(company_name)
           `)
           .eq("organisation_id", memberData.organisation_id)
           .order("created_at", { ascending: false }),
@@ -141,10 +151,17 @@ export default function Permits() {
           .select("id, name")
           .eq("organisation_id", memberData.organisation_id)
           .eq("status", "active"),
+        supabase
+          .from("contractor_companies")
+          .select("id, company_name")
+          .eq("organisation_id", memberData.organisation_id)
+          .eq("is_active", true)
+          .order("company_name"),
       ]);
 
       if (permitsRes.data) setPermits(permitsRes.data as Permit[]);
       if (projectsRes.data) setProjects(projectsRes.data);
+      if (contractorsRes.data) setContractors(contractorsRes.data);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -176,6 +193,7 @@ export default function Permits() {
       const { error } = await supabase.from("permits_to_work").insert({
         organisation_id: organisationId,
         project_id: formData.project_id || null,
+        contractor_company_id: formData.contractor_company_id || null,
         permit_number: generatePermitNumber(),
         permit_type: formData.permit_type,
         status: "draft",
@@ -201,6 +219,7 @@ export default function Permits() {
       setDialogOpen(false);
       setFormData({
         project_id: "",
+        contractor_company_id: "",
         permit_type: "general" as Database["public"]["Enums"]["permit_type"],
         title: "",
         description: "",
@@ -375,6 +394,26 @@ export default function Permits() {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="space-y-2">
+                    <Label>Contractor</Label>
+                    <Select
+                      value={formData.contractor_company_id}
+                      onValueChange={(v) => setFormData({ ...formData, contractor_company_id: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select contractor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {contractors.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.company_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Permit Type *</Label>
                     <Select
@@ -649,6 +688,11 @@ export default function Permits() {
                           {permit.project && (
                             <p className="text-sm text-muted-foreground">
                               Project: {permit.project.name}
+                            </p>
+                          )}
+                          {permit.contractor && (
+                            <p className="text-sm text-muted-foreground">
+                              Contractor: {permit.contractor.company_name}
                             </p>
                           )}
                           <div className="flex gap-4 text-sm text-muted-foreground mt-2">
