@@ -103,7 +103,7 @@ async function sendInviteEmail(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "SiteSafe Pro <noreply@resend.dev>",
+        from: "Site Safe <noreply@sitesafe.cloud>",
         to: [to],
         subject: `You're invited to join ${organisationName} on SiteSafe Pro`,
         html: emailHtml,

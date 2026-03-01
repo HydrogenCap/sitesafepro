@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Mail, Phone, MapPin, Clock, Send } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -15,13 +16,32 @@ export default function Contact() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    toast.success("Message sent! We'll get back to you within 24 hours.");
-    setIsSubmitting(false);
-    (e.target as HTMLFormElement).reset();
+
+    const form = e.target as HTMLFormElement;
+    const formData = new FormData(form);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("contact-form", {
+        body: {
+          firstName: formData.get("firstName"),
+          lastName: formData.get("lastName"),
+          email: formData.get("email"),
+          phone: formData.get("phone") || undefined,
+          company: formData.get("company") || undefined,
+          subject: formData.get("subject"),
+          message: formData.get("message"),
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success("Message sent! We'll get back to you within 24 hours.");
+      form.reset();
+    } catch (err) {
+      toast.error("Failed to send message. Please try again or email us directly.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -126,33 +146,33 @@ export default function Contact() {
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="firstName">First name *</Label>
-                      <Input id="firstName" required placeholder="John" />
+                      <Input id="firstName" name="firstName" required placeholder="John" />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="lastName">Last name *</Label>
-                      <Input id="lastName" required placeholder="Smith" />
+                      <Input id="lastName" name="lastName" required placeholder="Smith" />
                     </div>
                   </div>
 
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="email">Email *</Label>
-                      <Input id="email" type="email" required placeholder="john@company.com" />
+                      <Input id="email" name="email" type="email" required placeholder="john@company.com" />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="phone">Phone (optional)</Label>
-                      <Input id="phone" type="tel" placeholder="+44 7700 900000" />
+                      <Input id="phone" name="phone" type="tel" placeholder="+44 7700 900000" />
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="company">Company name</Label>
-                    <Input id="company" placeholder="ABC Construction Ltd" />
+                    <Input id="company" name="company" placeholder="ABC Construction Ltd" />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="subject">Subject *</Label>
-                    <Select required>
+                    <Select name="subject" required>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a subject" />
                       </SelectTrigger>
@@ -170,7 +190,8 @@ export default function Contact() {
                   <div className="space-y-2">
                     <Label htmlFor="message">Message *</Label>
                     <Textarea 
-                      id="message" 
+                      id="message"
+                      name="message"
                       required 
                       placeholder="Tell us how we can help..."
                       className="min-h-[150px]"

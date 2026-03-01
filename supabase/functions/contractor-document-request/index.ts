@@ -190,7 +190,7 @@ serve(async (req) => {
     `;
 
     const { error: emailError } = await resend.emails.send({
-      from: "SiteSafe Pro <noreply@resend.dev>",
+      from: "Site Safe <noreply@sitesafe.cloud>",
       to: [recipient_email],
       subject: `Document Request from ${organisation_name || "SiteSafe Pro"}`,
       html: emailHtml,
