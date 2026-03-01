@@ -157,6 +157,32 @@ Deno.serve(async (req) => {
         cover.drawText(v, { x: M + 140, y: cy, size: 9, font: fontR, color: BLACK });
         cy -= 22;
       }
+
+      // Embed project photo on cover page
+      if (project.image_url) {
+        try {
+          const imgResp = await fetch(project.image_url);
+          if (imgResp.ok) {
+            const imgBytes = new Uint8Array(await imgResp.arrayBuffer());
+            const contentType = imgResp.headers.get("content-type") ?? "";
+            const imgEmbed = contentType.includes("png")
+              ? await pdfDoc.embedPng(imgBytes)
+              : await pdfDoc.embedJpg(imgBytes);
+            const { width, height } = imgEmbed.scale(1);
+            const maxW = PAGE_W - M * 2;
+            const maxH = 160;
+            const scale = Math.min(maxW / width, maxH / height);
+            const imgW = width * scale;
+            const imgH = height * scale;
+            const imgY = cy - imgH - 10;
+            cover.drawImage(imgEmbed, { x: M, y: imgY, width: imgW, height: imgH });
+            log("Project image embedded", { width: imgW, height: imgH });
+          }
+        } catch (imgErr) {
+          log("Skipping project image", { error: imgErr instanceof Error ? imgErr.message : String(imgErr) });
+        }
+      }
+
       footer(cover);
 
       // === 2. PROJECT SUMMARY ===
