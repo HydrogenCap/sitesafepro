@@ -212,7 +212,7 @@ export const EditProjectDialog = ({
                 <path d="M20 8L30 14.5L20 21L30 27.5L40 21L30 14.5L40 8L30 1.5L20 8Z" fill="#0061FF"/>
                 <path d="M10 29.5L20 23L30 29.5L20 36L10 29.5Z" fill="#0061FF"/>
               </svg>
-              Dropbox Folder Link
+              Architectural Drawings (Dropbox)
             </Label>
             <Input
               id="edit-dropboxFolderUrl"
@@ -222,7 +222,7 @@ export const EditProjectDialog = ({
               onChange={(e) => updateField("dropboxFolderUrl", e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
-              Paste a Dropbox shared folder link to make it accessible from this project.
+              Paste a Dropbox shared folder link for architectural drawings.
             </p>
           </div>
 
