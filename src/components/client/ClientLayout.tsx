@@ -131,7 +131,7 @@ export const ClientLayout = ({ children }: ClientLayoutProps) => {
       <footer className="bg-card border-t border-border py-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <p className="text-center text-xs text-muted-foreground">
-            Powered by SiteSafe Pro • Compliance Management Platform
+            Powered by Site Safe • Compliance Management Platform
           </p>
         </div>
       </footer>

@@ -9,20 +9,20 @@ const faqData = [
     category: "General",
     questions: [
       {
-        q: "What is SiteSafe Pro?",
-        a: "SiteSafe Pro is a cloud-based health and safety management platform built specifically for UK construction companies. It replaces paper-based systems, spreadsheets, and shared drives with a single digital platform covering document management, RAMS, permits to work, site access, inspections, incidents, toolbox talks, contractor compliance, and more."
+        q: "What is Site Safe?",
+        a: "Site Safe is a cloud-based health and safety management platform built specifically for UK construction companies. It replaces paper-based systems, spreadsheets, and shared drives with a single digital platform covering document management, RAMS, permits to work, site access, inspections, incidents, toolbox talks, contractor compliance, and more."
       },
       {
-        q: "Who is SiteSafe Pro designed for?",
-        a: "SiteSafe Pro is designed for UK construction SMEs — from sole traders running one project to mid-size contractors managing multiple sites. The typical users are site managers, project managers, H&S managers, and company directors."
+        q: "Who is Site Safe designed for?",
+        a: "Site Safe is designed for UK construction SMEs — from sole traders running one project to mid-size contractors managing multiple sites. The typical users are site managers, project managers, H&S managers, and company directors."
       },
       {
-        q: "Is SiteSafe Pro compliant with UK legislation?",
-        a: "Yes. SiteSafe Pro is built around UK construction health and safety legislation including CDM 2015, the Health and Safety at Work Act 1974, the Work at Height Regulations 2005, COSHH Regulations 2002, and RIDDOR 2013."
+        q: "Is Site Safe compliant with UK legislation?",
+        a: "Yes. Site Safe is built around UK construction health and safety legislation including CDM 2015, the Health and Safety at Work Act 1974, the Work at Height Regulations 2005, COSHH Regulations 2002, and RIDDOR 2013."
       },
       {
-        q: "Can I use SiteSafe Pro on my phone?",
-        a: "Yes. SiteSafe Pro is fully responsive and works in any modern web browser on mobile. You can also install it as a Progressive Web App (PWA) by visiting the Install page or tapping the install prompt in your browser."
+        q: "Can I use Site Safe on my phone?",
+        a: "Yes. Site Safe is fully responsive and works in any modern web browser on mobile. You can also install it as a Progressive Web App (PWA) by visiting the Install page or tapping the install prompt in your browser."
       },
       {
         q: "Is my data secure?",
@@ -56,7 +56,7 @@ const faqData = [
     questions: [
       {
         q: "How do I create an account?",
-        a: "Visit the SiteSafe Pro website and click Sign Up. Enter your name, email, phone number, and create a password. After signing up, you will be guided through an onboarding flow where you create your organisation and configure your first project."
+        a: "Visit sitesafe.cloud and click Sign Up. Enter your name, email, phone number, and create a password. After signing up, you will be guided through an onboarding flow where you create your organisation and configure your first project."
       },
       {
         q: "What happens during onboarding?",
@@ -85,7 +85,7 @@ const faqData = [
       },
       {
         q: "What is AI document classification?",
-        a: "When you upload a document, SiteSafe Pro uses AI to suggest the correct category (e.g., RAMS, Insurance Certificate, Training Record). You can accept or change the suggestion before saving."
+        a: "When you upload a document, Site Safe uses AI to suggest the correct category (e.g., RAMS, Insurance Certificate, Training Record). You can accept or change the suggestion before saving."
       },
       {
         q: "How do document acknowledgements work?",
@@ -140,7 +140,7 @@ const faqData = [
       },
       {
         q: "What is RIDDOR reporting?",
-        a: "RIDDOR (Reporting of Injuries, Diseases and Dangerous Occurrences Regulations) requires certain incidents to be reported to the HSE. SiteSafe Pro flags incidents that may be RIDDOR-reportable and provides guidance on the reporting process."
+        a: "RIDDOR (Reporting of Injuries, Diseases and Dangerous Occurrences Regulations) requires certain incidents to be reported to the HSE. Site Safe flags incidents that may be RIDDOR-reportable and provides guidance on the reporting process."
       }
     ]
   },
@@ -202,7 +202,7 @@ export default function Help() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
-                A comprehensive guide covering every feature of SiteSafe Pro, from account setup to advanced reporting.
+                A comprehensive guide covering every feature of Site Safe, from account setup to advanced reporting.
               </p>
               <Button asChild className="w-full">
                 <a href="/docs/SiteSafePro_Training_Guide.docx" download>
@@ -252,7 +252,7 @@ export default function Help() {
               </p>
               <div className="space-y-2">
                 <Button asChild variant="outline" className="w-full">
-                  <a href="mailto:support@sitesafepro.co.uk">
+                  <a href="mailto:support@sitesafe.cloud">
                     <Mail className="mr-2 h-4 w-4" />
                     Email Support
                   </a>

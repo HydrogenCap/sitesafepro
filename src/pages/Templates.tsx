@@ -143,7 +143,7 @@ export default function Templates() {
                   and other UK legislation. Customise them to suit your specific project requirements.
                 </p>
                 <p className="text-sm text-muted-foreground mt-2">
-                  <strong>SiteSafe Pro users:</strong> These templates are automatically loaded into your 
+                  <strong>Site Safe users:</strong> These templates are automatically loaded into your 
                   organisation when you sign up, and can be generated for each project with pre-filled 
                   project details.
                 </p>
@@ -200,7 +200,7 @@ export default function Templates() {
         <section className="mt-12 text-center bg-muted/50 rounded-xl p-8">
           <h2 className="text-2xl font-bold mb-4">Want these templates built-in?</h2>
           <p className="text-muted-foreground mb-6">
-            SiteSafe Pro automatically generates these documents with your project details pre-filled. 
+            Site Safe automatically generates these documents with your project details pre-filled. 
             No more manual data entry or version control headaches.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

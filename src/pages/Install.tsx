@@ -69,7 +69,7 @@ export default function Install() {
             </div>
             <CardTitle className="text-2xl">App Installed!</CardTitle>
             <CardDescription>
-              SiteSafe Pro is now installed on your device. You can access it from your home screen.
+              Site Safe is now installed on your device. You can access it from your home screen.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -100,9 +100,9 @@ export default function Install() {
           <div className="mx-auto h-20 w-20 rounded-2xl bg-primary/10 flex items-center justify-center">
             <Smartphone className="h-10 w-10 text-primary" />
           </div>
-          <h1 className="text-3xl font-bold">Install SiteSafe Pro</h1>
-          <p className="text-muted-foreground text-lg">
-            Add SiteSafe Pro to your home screen for quick access and offline capabilities.
+           <h1 className="text-3xl font-bold">Install Site Safe</h1>
+           <p className="text-muted-foreground text-lg">
+             Add Site Safe to your home screen for quick access and offline capabilities.
           </p>
         </div>
 
@@ -219,7 +219,7 @@ export default function Install() {
           <Card>
             <CardHeader>
               <CardTitle>Install on Desktop</CardTitle>
-              <CardDescription>Add SiteSafe Pro to your desktop for quick access</CardDescription>
+              <CardDescription>Add Site Safe to your desktop for quick access</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-start gap-4">

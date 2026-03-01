@@ -15,7 +15,7 @@ export default function About() {
         </Button>
 
         <div className="mb-12">
-          <h1 className="text-4xl font-bold mb-4">About SiteSafe Pro</h1>
+          <h1 className="text-4xl font-bold mb-4">About Site Safe</h1>
           <p className="text-xl text-muted-foreground">
             UK construction health & safety management, built by people who understand the industry.
           </p>
@@ -26,7 +26,7 @@ export default function About() {
           <h2 className="text-2xl font-bold mb-4">Our Mission</h2>
           <p className="text-lg text-muted-foreground mb-4">
             We believe every construction worker deserves to go home safely at the end of each day. 
-            SiteSafe Pro was created to make health and safety management simpler, more accessible, 
+            Site Safe was created to make health and safety management simpler, more accessible, 
             and more effective for UK construction companies of all sizes.
           </p>
           <p className="text-lg text-muted-foreground">
@@ -114,7 +114,7 @@ export default function About() {
         <section className="mb-12">
           <h2 className="text-2xl font-bold mb-4">What We Do</h2>
           <p className="text-muted-foreground mb-4">
-            SiteSafe Pro is an all-in-one health and safety management platform for UK construction. 
+            Site Safe is an all-in-one health and safety management platform for UK construction. 
             We replace fragmented systems with a single digital solution:
           </p>
           <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
@@ -164,7 +164,7 @@ export default function About() {
         <section className="text-center bg-muted/50 rounded-xl p-8">
           <h2 className="text-2xl font-bold mb-4">Ready to get started?</h2>
           <p className="text-muted-foreground mb-6">
-            Join hundreds of UK construction companies already using SiteSafe Pro to keep their sites safe and compliant.
+            Join hundreds of UK construction companies already using Site Safe to keep their sites safe and compliant.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button asChild size="lg">

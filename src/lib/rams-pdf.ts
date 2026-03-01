@@ -65,9 +65,9 @@ function addHeader(doc: jsPDF, title: string, reference: string) {
   doc.setFont("helvetica", "normal");
   doc.text(reference, 15, 20);
   
-  // Right side - SiteSafe Pro branding
+  // Right side - Site Safe branding
   doc.setFontSize(10);
-  doc.text("SiteSafe Pro", pageWidth - 15, 16, { align: "right" });
+  doc.text("Site Safe", pageWidth - 15, 16, { align: "right" });
   
   return 35; // Return starting Y position after header
 }

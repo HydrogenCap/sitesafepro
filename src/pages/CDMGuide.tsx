@@ -207,14 +207,14 @@ export default function CDMGuide() {
           </Card>
         </div>
 
-        {/* How SiteSafe Pro Helps */}
+        {/* How Site Safe Helps */}
         <Card className="bg-primary/5 border-primary/20">
           <CardHeader>
-            <CardTitle>How SiteSafe Pro Helps with CDM Compliance</CardTitle>
+            <CardTitle>How Site Safe Helps with CDM Compliance</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-muted-foreground">
-              SiteSafe Pro is built around CDM 2015 requirements, helping you meet your legal obligations:
+              Site Safe is built around CDM 2015 requirements, helping you meet your legal obligations:
             </p>
             <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
               <li><strong>Pre-Construction Checklist:</strong> Ensures all five key requirements (F10, Asbestos, PCI, CPP, PC Appointment) are completed before work starts</li>

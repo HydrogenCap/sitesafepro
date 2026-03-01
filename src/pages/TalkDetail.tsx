@@ -215,7 +215,7 @@ export default function TalkDetail() {
     yPos = doc.internal.pageSize.getHeight() - 20;
     doc.setFontSize(8);
     doc.setTextColor(128);
-    doc.text(`Generated on ${format(new Date(), "dd/MM/yyyy HH:mm")} - SiteSafe Pro`, pageWidth / 2, yPos, { align: "center" });
+    doc.text(`Generated on ${format(new Date(), "dd/MM/yyyy HH:mm")} - Site Safe`, pageWidth / 2, yPos, { align: "center" });
 
     // Save
     doc.save(`toolbox-talk-${talk.title.replace(/\s+/g, "-").toLowerCase()}-${format(new Date(talk.delivered_at), "yyyy-MM-dd")}.pdf`);

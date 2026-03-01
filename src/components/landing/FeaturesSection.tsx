@@ -141,7 +141,7 @@ export const FeaturesSection = () => {
             className="text-lg text-muted-foreground max-w-2xl mx-auto"
           >
             From document management to real-time site access tracking, 
-            SiteSafe Pro covers all your CDM 2015 compliance needs.
+            Site Safe covers all your CDM 2015 compliance needs.
           </motion.p>
         </div>
 

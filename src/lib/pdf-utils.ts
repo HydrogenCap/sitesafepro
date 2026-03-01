@@ -99,7 +99,7 @@ export const addFooter = (doc: jsPDF, orgName?: string) => {
     doc.setTextColor(...PDF_COLORS.muted);
     
     // Company name and generation date
-    const footerText = `Generated on ${format(new Date(), "dd/MM/yyyy HH:mm")}${orgName ? ` - ${orgName}` : ""} - SiteSafe Pro`;
+    const footerText = `Generated on ${format(new Date(), "dd/MM/yyyy HH:mm")}${orgName ? ` - ${orgName}` : ""} - Site Safe`;
     doc.text(footerText, pageWidth / 2, pageHeight - 10, { align: "center" });
     
     // Page numbers

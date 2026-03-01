@@ -23,14 +23,14 @@ export default function Terms() {
           <section>
             <h2 className="text-2xl font-semibold mt-8 mb-4">1. Agreement to Terms</h2>
             <p>
-              By accessing or using SiteSafe Pro ("the Service"), you agree to be bound by these Terms of Service. If you disagree with any part of these terms, you may not access the Service.
+              By accessing or using Site Safe ("the Service"), you agree to be bound by these Terms of Service. If you disagree with any part of these terms, you may not access the Service.
             </p>
           </section>
 
           <section>
             <h2 className="text-2xl font-semibold mt-8 mb-4">2. Description of Service</h2>
             <p>
-              SiteSafe Pro is a construction site safety management platform that provides:
+              Site Safe is a construction site safety management platform that provides:
             </p>
             <ul className="list-disc pl-6 space-y-2">
               <li>Document management and e-signatures</li>
@@ -109,7 +109,7 @@ export default function Terms() {
           <section>
             <h2 className="text-2xl font-semibold mt-8 mb-4">8. Health & Safety Disclaimer</h2>
             <p>
-              While SiteSafe Pro assists with health and safety management, it does not replace professional health and safety advice or your legal obligations. You remain responsible for compliance with all applicable health and safety laws and regulations.
+              While Site Safe assists with health and safety management, it does not replace professional health and safety advice or your legal obligations. You remain responsible for compliance with all applicable health and safety laws and regulations.
             </p>
           </section>
 
@@ -133,8 +133,8 @@ export default function Terms() {
               For questions about these Terms, please contact us at:
             </p>
             <p className="mt-2">
-              <strong>Email:</strong> legal@sitesafepro.co.uk<br />
-              <strong>Address:</strong> SiteSafe Pro Ltd, London, United Kingdom
+               <strong>Email:</strong> legal@sitesafe.cloud<br />
+               <strong>Address:</strong> Site Safe Ltd, London, United Kingdom
             </p>
           </section>
         </div>

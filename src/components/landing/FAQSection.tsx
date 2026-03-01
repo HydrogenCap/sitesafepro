@@ -8,14 +8,14 @@ import {
 
 const faqs = [
   {
-    question: "What is SiteSafe Pro?",
+    question: "What is Site Safe?",
     answer:
-      "SiteSafe Pro is a cloud-based health and safety management platform built specifically for UK construction companies. It replaces paper-based systems, spreadsheets, and shared drives with a single digital platform covering document management, RAMS, permits to work, site access, inspections, incidents, toolbox talks, contractor compliance, and more. It works on any device — desktop, tablet, or phone — and includes a Progressive Web App (PWA) for installation on mobile devices.",
+      "Site Safe is a cloud-based health and safety management platform built specifically for UK construction companies. It replaces paper-based systems, spreadsheets, and shared drives with a single digital platform covering document management, RAMS, permits to work, site access, inspections, incidents, toolbox talks, contractor compliance, and more. It works on any device — desktop, tablet, or phone — and includes a Progressive Web App (PWA) for installation on mobile devices.",
   },
   {
-    question: "Is SiteSafe Pro compliant with UK legislation?",
+    question: "Is Site Safe compliant with UK legislation?",
     answer:
-      "Yes. SiteSafe Pro is built around UK construction health and safety legislation including CDM 2015, the Health and Safety at Work Act 1974, the Work at Height Regulations 2005, COSHH Regulations 2002, and RIDDOR 2013. The pre-construction checklist, RAMS builder, permit types, and inspection categories all reference the correct UK regulatory framework.",
+      "Yes. Site Safe is built around UK construction health and safety legislation including CDM 2015, the Health and Safety at Work Act 1974, the Work at Height Regulations 2005, COSHH Regulations 2002, and RIDDOR 2013. The pre-construction checklist, RAMS builder, permit types, and inspection categories all reference the correct UK regulatory framework.",
   },
   {
     question: "What plans are available?",
@@ -53,9 +53,9 @@ const faqs = [
       "Yes. All data is encrypted in transit and at rest. We use industry-standard security practices and our infrastructure is hosted on secure, EU-based cloud servers compliant with GDPR. All access is logged and auditable.",
   },
   {
-    question: "Can I use SiteSafe Pro on my phone?",
+    question: "Can I use Site Safe on my phone?",
     answer:
-      "Yes. SiteSafe Pro is fully responsive and works in any modern web browser on mobile. You can also install it as a Progressive Web App (PWA) by visiting the Install page or tapping the install prompt in your browser. The PWA gives you an app-like experience with a home screen icon and standalone window.",
+      "Yes. Site Safe is fully responsive and works in any modern web browser on mobile. You can also install it as a Progressive Web App (PWA) by visiting the Install page or tapping the install prompt in your browser. The PWA gives you an app-like experience with a home screen icon and standalone window.",
   },
   {
     question: "Can I export my data if I decide to leave?",
@@ -99,7 +99,7 @@ export const FAQSection = () => {
             transition={{ delay: 0.2 }}
             className="text-lg text-muted-foreground"
           >
-            Everything you need to know about SiteSafe Pro
+            Everything you need to know about Site Safe
           </motion.p>
         </div>
 

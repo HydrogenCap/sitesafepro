@@ -29,7 +29,7 @@ const Dashboard = () => {
   useEffect(() => {
     const checkoutStatus = searchParams.get("checkout");
     if (checkoutStatus === "success") {
-      toast.success("Subscription activated! Welcome to SiteSafe Pro.");
+      toast.success("Subscription activated! Welcome to Site Safe.");
       checkSubscription();
       setSearchParams({});
     }
