@@ -2241,6 +2241,7 @@ export type Database = {
           cancelled_by: string | null
           completed_at: string | null
           completed_by: string | null
+          contractor_company_id: string | null
           control_measures: string | null
           created_at: string
           description: string | null
@@ -2267,6 +2268,7 @@ export type Database = {
           cancelled_by?: string | null
           completed_at?: string | null
           completed_by?: string | null
+          contractor_company_id?: string | null
           control_measures?: string | null
           created_at?: string
           description?: string | null
@@ -2293,6 +2295,7 @@ export type Database = {
           cancelled_by?: string | null
           completed_at?: string | null
           completed_by?: string | null
+          contractor_company_id?: string | null
           control_measures?: string | null
           created_at?: string
           description?: string | null
@@ -2332,6 +2335,13 @@ export type Database = {
             columns: ["completed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permits_to_work_contractor_company_id_fkey"
+            columns: ["contractor_company_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_companies"
             referencedColumns: ["id"]
           },
           {
