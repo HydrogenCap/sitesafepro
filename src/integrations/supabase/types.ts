@@ -1114,6 +1114,114 @@ export type Database = {
           },
         ]
       }
+      document_exports: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          document_version_id: string
+          error: string | null
+          id: string
+          organisation_id: string
+          status: string
+          storage_path: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          document_version_id: string
+          error?: string | null
+          id?: string
+          organisation_id: string
+          status?: string
+          storage_path?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          document_version_id?: string
+          error?: string | null
+          id?: string
+          organisation_id?: string
+          status?: string
+          storage_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_exports_document_version_id_fkey"
+            columns: ["document_version_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_exports_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_signatures: {
+        Row: {
+          document_version_id: string
+          full_name_at_time: string
+          id: string
+          ip_address: unknown
+          organisation_id: string
+          purpose: string
+          role_at_time: string
+          signature_image_path: string | null
+          signed_at: string
+          signed_by: string
+          typed_signature: string | null
+        }
+        Insert: {
+          document_version_id: string
+          full_name_at_time: string
+          id?: string
+          ip_address?: unknown
+          organisation_id: string
+          purpose?: string
+          role_at_time: string
+          signature_image_path?: string | null
+          signed_at?: string
+          signed_by: string
+          typed_signature?: string | null
+        }
+        Update: {
+          document_version_id?: string
+          full_name_at_time?: string
+          id?: string
+          ip_address?: unknown
+          organisation_id?: string
+          purpose?: string
+          role_at_time?: string
+          signature_image_path?: string | null
+          signed_at?: string
+          signed_by?: string
+          typed_signature?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_signatures_document_version_id_fkey"
+            columns: ["document_version_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_signatures_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_templates: {
         Row: {
           auto_generate_on_go_live: boolean
@@ -1183,6 +1291,110 @@ export type Database = {
           },
         ]
       }
+      document_type_schemas: {
+        Row: {
+          created_at: string
+          document_type: string
+          id: string
+          organisation_id: string | null
+          required_sections: string[]
+          requires_signature: boolean
+          schema_json: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          document_type: string
+          id?: string
+          organisation_id?: string | null
+          required_sections?: string[]
+          requires_signature?: boolean
+          schema_json?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          id?: string
+          organisation_id?: string | null
+          required_sections?: string[]
+          requires_signature?: boolean
+          schema_json?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_type_schemas_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_versions: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          change_summary: string | null
+          content_json: Json
+          created_at: string
+          created_by: string
+          document_id: string
+          id: string
+          is_immutable: boolean
+          organisation_id: string
+          status: Database["public"]["Enums"]["document_version_status"]
+          updated_at: string
+          version_number: number
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          change_summary?: string | null
+          content_json?: Json
+          created_at?: string
+          created_by: string
+          document_id: string
+          id?: string
+          is_immutable?: boolean
+          organisation_id: string
+          status?: Database["public"]["Enums"]["document_version_status"]
+          updated_at?: string
+          version_number?: number
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          change_summary?: string | null
+          content_json?: Json
+          created_at?: string
+          created_by?: string
+          document_id?: string
+          id?: string
+          is_immutable?: boolean
+          organisation_id?: string
+          status?: Database["public"]["Enums"]["document_version_status"]
+          updated_at?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_versions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_versions_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           acknowledgement_deadline: string | null
@@ -1193,6 +1405,7 @@ export type Database = {
           approved_by: string | null
           category: Database["public"]["Enums"]["document_category"]
           created_at: string
+          current_version_id: string | null
           description: string | null
           file_path: string
           file_size: number
@@ -1209,6 +1422,7 @@ export type Database = {
           rejection_reason: string | null
           requires_acknowledgement: boolean | null
           status: string
+          type: string | null
           updated_at: string
           uploaded_by: string
           version: number
@@ -1222,6 +1436,7 @@ export type Database = {
           approved_by?: string | null
           category?: Database["public"]["Enums"]["document_category"]
           created_at?: string
+          current_version_id?: string | null
           description?: string | null
           file_path: string
           file_size: number
@@ -1238,6 +1453,7 @@ export type Database = {
           rejection_reason?: string | null
           requires_acknowledgement?: boolean | null
           status?: string
+          type?: string | null
           updated_at?: string
           uploaded_by: string
           version?: number
@@ -1251,6 +1467,7 @@ export type Database = {
           approved_by?: string | null
           category?: Database["public"]["Enums"]["document_category"]
           created_at?: string
+          current_version_id?: string | null
           description?: string | null
           file_path?: string
           file_size?: number
@@ -1267,6 +1484,7 @@ export type Database = {
           rejection_reason?: string | null
           requires_acknowledgement?: boolean | null
           status?: string
+          type?: string | null
           updated_at?: string
           uploaded_by?: string
           version?: number
@@ -1277,6 +1495,13 @@ export type Database = {
             columns: ["approved_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_current_version_id_fkey"
+            columns: ["current_version_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
             referencedColumns: ["id"]
           },
           {
@@ -1319,6 +1544,60 @@ export type Database = {
             columns: ["uploaded_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evidence_items: {
+        Row: {
+          caption: string | null
+          created_at: string
+          created_by: string
+          document_version_id: string
+          id: string
+          metadata_json: Json
+          organisation_id: string
+          sort_order: number
+          storage_path: string | null
+          type: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          created_by: string
+          document_version_id: string
+          id?: string
+          metadata_json?: Json
+          organisation_id: string
+          sort_order?: number
+          storage_path?: string | null
+          type: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          created_by?: string
+          document_version_id?: string
+          id?: string
+          metadata_json?: Json
+          organisation_id?: string
+          sort_order?: number
+          storage_path?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidence_items_document_version_id_fkey"
+            columns: ["document_version_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_items_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
             referencedColumns: ["id"]
           },
         ]
@@ -3514,6 +3793,8 @@ export type Database = {
       }
     }
     Functions: {
+      can_manage_documents: { Args: { p_org_id: string }; Returns: boolean }
+      can_read_document: { Args: { p_doc_id: string }; Returns: boolean }
       check_whatsapp_duplicate: {
         Args: {
           p_recipient_number: string
@@ -3530,8 +3811,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      create_next_document_version: {
+        Args: { p_change_summary?: string; p_document_id: string }
+        Returns: string
+      }
       generate_unique_slug: { Args: { base_name: string }; Returns: string }
       get_client_org_id: { Args: { _user_id: string }; Returns: string }
+      get_org_role: {
+        Args: { p_org_id: string }
+        Returns: Database["public"]["Enums"]["member_role"]
+      }
       get_user_org_id: { Args: never; Returns: string }
       is_client_portal_user: { Args: { _user_id: string }; Returns: boolean }
       is_org_admin: {
@@ -3542,6 +3831,7 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
+      is_org_member_current: { Args: { p_org_id: string }; Returns: boolean }
       log_audit_event: {
         Args: {
           p_action: string
@@ -3553,6 +3843,15 @@ export type Database = {
           p_user_agent?: string
         }
         Returns: string
+      }
+      transition_document_version: {
+        Args: {
+          p_actor_id?: string
+          p_reject_note?: string
+          p_to_status: string
+          p_version_id: string
+        }
+        Returns: Json
       }
     }
     Enums: {
@@ -3645,6 +3944,7 @@ export type Database = {
         | "fire_safety"
         | "meeting_minutes"
         | "drawing"
+      document_version_status: "draft" | "in_review" | "approved" | "superseded"
       incident_severity:
         | "near_miss"
         | "minor_injury"
@@ -3941,6 +4241,7 @@ export const Constants = {
         "meeting_minutes",
         "drawing",
       ],
+      document_version_status: ["draft", "in_review", "approved", "superseded"],
       incident_severity: [
         "near_miss",
         "minor_injury",
