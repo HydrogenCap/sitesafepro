@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrg } from "@/hooks/useOrg";
+import { useCompliancePresets } from "@/hooks/useCompliancePresets";
 import { TRADES, COMPLIANCE_DOC_LABELS, ComplianceDocType } from "@/types/contractor";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
@@ -47,6 +48,7 @@ export function InviteContractorDialog({ trigger }: Props) {
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const { membership } = useOrg();
+  const { data: presets } = useCompliancePresets();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -59,6 +61,16 @@ export function InviteContractorDialog({ trigger }: Props) {
       requiredDocTypes: DEFAULT_REQUIRED_DOCS,
     },
   });
+
+  // Auto-populate required docs from preset when trade changes
+  const watchedTrade = form.watch("primaryTrade");
+  useEffect(() => {
+    if (!watchedTrade || !presets) return;
+    const preset = presets.find((p) => p.trade_category === watchedTrade && p.is_active);
+    if (preset) {
+      form.setValue("requiredDocTypes", preset.required_doc_types);
+    }
+  }, [watchedTrade, presets, form]);
 
   const onSubmit = async (data: FormData) => {
     if (!membership?.orgId) return;
