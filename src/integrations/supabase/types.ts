@@ -456,6 +456,7 @@ export type Database = {
           primary_contact_name: string | null
           primary_contact_phone: string | null
           primary_trade: string
+          required_doc_types: string[]
           secondary_trades: string[] | null
           tax_status: string | null
           trading_name: string | null
@@ -485,6 +486,7 @@ export type Database = {
           primary_contact_name?: string | null
           primary_contact_phone?: string | null
           primary_trade: string
+          required_doc_types?: string[]
           secondary_trades?: string[] | null
           tax_status?: string | null
           trading_name?: string | null
@@ -514,6 +516,7 @@ export type Database = {
           primary_contact_name?: string | null
           primary_contact_phone?: string | null
           primary_trade?: string
+          required_doc_types?: string[]
           secondary_trades?: string[] | null
           tax_status?: string | null
           trading_name?: string | null
