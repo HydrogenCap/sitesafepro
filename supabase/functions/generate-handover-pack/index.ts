@@ -55,22 +55,21 @@ Deno.serve(async (req) => {
     }
     log("Start", { org_id, project_id, userId });
 
-    // Idempotency: check for existing completed handover pack
-    const { data: existing } = await admin
+    // Delete any previous completed handover packs so we always regenerate with latest data
+    const { data: existingPacks } = await admin
       .from("document_exports")
-      .select("id, status, storage_path")
+      .select("id, storage_path")
       .eq("project_id", project_id)
-      .eq("export_type", "handover_pack")
-      .in("status", ["completed"])
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .eq("export_type", "handover_pack");
 
-    if (existing) {
-      log("Existing pack found", { id: existing.id });
-      return new Response(JSON.stringify({ export_id: existing.id, status: "completed", ok: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (existingPacks && existingPacks.length > 0) {
+      for (const pack of existingPacks) {
+        if (pack.storage_path) {
+          await admin.storage.from("exports").remove([pack.storage_path]);
+        }
+      }
+      await admin.from("document_exports").delete().in("id", existingPacks.map(p => p.id));
+      log("Cleaned up previous packs", { count: existingPacks.length });
     }
 
     // Fetch all data in parallel
@@ -79,8 +78,8 @@ Deno.serve(async (req) => {
       admin.from("organisations").select("id, name, slug").eq("id", org_id).single(),
       admin.from("documents").select("id, name, category, status, file_path, file_size, version, created_at, expiry_date, type").eq("project_id", project_id).eq("organisation_id", org_id).order("created_at"),
       admin.from("corrective_actions").select("id, title, description, status, priority, due_date, assigned_to, raised_at, resolution_notes").eq("project_id", project_id).eq("organisation_id", org_id).order("raised_at"),
-      admin.from("incidents").select("id, title, description, severity, status, incident_date, riddor_reportable, actions_taken").eq("project_id", project_id).eq("organisation_id", org_id).order("incident_date"),
-      admin.from("inspections").select("id, inspection_type, inspection_date, conducted_by, score, status, notes").eq("project_id", project_id).eq("organisation_id", org_id).order("inspection_date"),
+      admin.from("incidents").select("id, title, description, severity, status, incident_date, is_riddor_reportable, immediate_actions, location").eq("project_id", project_id).eq("organisation_id", org_id).order("incident_date"),
+      admin.from("inspections").select("id, inspection_type, inspection_date, inspector_id, overall_result, notes, title").eq("project_id", project_id).eq("organisation_id", org_id).order("inspection_date"),
     ]);
 
     const project = projectRes.data;
@@ -169,7 +168,7 @@ Deno.serve(async (req) => {
         ["Approved Documents", String(documents.filter(d => d.status === "approved").length)],
         ["Total Inspections", String(inspections.length)],
         ["Total Incidents", String(incidents.length)],
-        ["RIDDOR Reportable", String(incidents.filter((i: any) => i.riddor_reportable).length)],
+        ["RIDDOR Reportable", String(incidents.filter((i: any) => i.is_riddor_reportable).length)],
         ["Open Actions", String(actions.filter(a => a.status === "open" || a.status === "in_progress").length)],
         ["Closed Actions", String(actions.filter(a => a.status === "closed" || a.status === "completed" || a.status === "verified").length)],
       ];
@@ -226,9 +225,12 @@ Deno.serve(async (req) => {
         }
         currentInspPage.drawText(fmtDate((insp as any).inspection_date), { x: M, y: iy, size: 9, font: fontB, color: BLACK });
         currentInspPage.drawText((insp as any).inspection_type ?? "General", { x: M + 90, y: iy, size: 9, font: fontR, color: BLACK });
-        const scoreText = (insp as any).score != null ? `Score: ${(insp as any).score}/100` : "No score";
-        currentInspPage.drawText(scoreText, { x: M + 280, y: iy, size: 9, font: fontR, color: GREY_MID });
-        currentInspPage.drawText((insp as any).status ?? "—", { x: M + 400, y: iy, size: 9, font: fontR, color: GREY_MID });
+        const resultText = (insp as any).overall_result ?? "—";
+        currentInspPage.drawText(`Result: ${resultText}`, { x: M + 280, y: iy, size: 9, font: fontR, color: GREY_MID });
+        if ((insp as any).title) {
+          iy -= 14;
+          currentInspPage.drawText((insp as any).title, { x: M + 16, y: iy, size: 8, font: fontR, color: BLACK, maxWidth: PAGE_W - M * 2 - 16 });
+        }
         iy -= 18;
       }
       if (inspections.length === 0) {
@@ -251,7 +253,7 @@ Deno.serve(async (req) => {
         currentIncPage.drawText((inc as any).title ?? "Incident", { x: M + 90, y: iiy, size: 9, font: fontB, color: BLACK, maxWidth: 300 });
         iiy -= 16;
         currentIncPage.drawText(`Severity: ${(inc as any).severity ?? "—"}`, { x: M + 16, y: iiy, size: 8, font: fontR, color: GREY_MID });
-        currentIncPage.drawText((inc as any).riddor_reportable ? "RIDDOR" : "", { x: M + 200, y: iiy, size: 8, font: fontB, color: rgb(0.8, 0.1, 0.1) });
+        currentIncPage.drawText((inc as any).is_riddor_reportable ? "RIDDOR" : "", { x: M + 200, y: iiy, size: 8, font: fontB, color: rgb(0.8, 0.1, 0.1) });
         iiy -= 14;
         if ((inc as any).description) {
           currentIncPage.drawText((inc as any).description.substring(0, 200), { x: M + 16, y: iiy, size: 8, font: fontR, color: BLACK, maxWidth: PAGE_W - M * 2 - 16 });

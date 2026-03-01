@@ -31,26 +31,10 @@ export const HandoverPackButton = ({
   const { canAccess } = useSubscription();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [existingExportId, setExistingExportId] = useState<string | null>(null);
+  const [lastExportId, setLastExportId] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
 
-  // Check for existing handover pack
-  useEffect(() => {
-    const check = async () => {
-      if (!orgId) return;
-      const { data } = await supabase
-        .from("document_exports")
-        .select("id, status, storage_path")
-        .eq("project_id", projectId)
-        .eq("export_type", "handover_pack")
-        .eq("status", "completed")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (data) setExistingExportId(data.id);
-    };
-    check();
-  }, [projectId, orgId]);
+  // No longer cache — always allow regeneration with latest data
 
   const handleGenerate = async () => {
     if (!orgId) {
@@ -64,10 +48,9 @@ export const HandoverPackButton = ({
       });
       if (error) throw error;
       if (data?.ok) {
-        setExistingExportId(data.export_id);
+        setLastExportId(data.export_id);
         toast.success("Handover pack generated successfully");
         setDialogOpen(false);
-        // Auto-download after generation
         await downloadExport(data.export_id);
       } else {
         throw new Error(data?.error || "Generation failed");
@@ -109,7 +92,8 @@ export const HandoverPackButton = ({
   };
 
   const handleDownload = () => {
-    if (existingExportId) downloadExport(existingExportId);
+    if (lastExportId) downloadExport(lastExportId);
+    else setDialogOpen(true);
   };
 
   // Only show for completed projects or admin roles
@@ -128,17 +112,10 @@ export const HandoverPackButton = ({
   return (
     <>
       <UpgradePromptWrapper feature="handover_pack">
-        {existingExportId ? (
-          <Button variant="outline" size="sm" onClick={handleDownload} disabled={downloading}>
-            {downloading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <FileDown className="h-4 w-4 mr-1" />}
-            Handover Pack
-          </Button>
-        ) : (
-          <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
-            <Package className="h-4 w-4 mr-1" />
-            Handover Pack
-          </Button>
-        )}
+        <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)} disabled={generating}>
+          {generating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Package className="h-4 w-4 mr-1" />}
+          Handover Pack
+        </Button>
       </UpgradePromptWrapper>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
