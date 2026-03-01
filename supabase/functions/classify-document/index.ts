@@ -191,7 +191,7 @@ Return an additional "complianceScore" (0-100) and "complianceChecklist" array w
   } catch (error) {
     console.error("classify-document error:", error);
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: "Document classification failed. Please try again.",
       category: "other",
       suggestedTitle: null,
       suggestedDescription: null,
