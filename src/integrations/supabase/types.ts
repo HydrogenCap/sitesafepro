@@ -611,6 +611,8 @@ export type Database = {
           reference_number: string | null
           rejection_action_required: string | null
           rejection_reason: string | null
+          reminder_sent_1_day: boolean | null
+          reminder_sent_14_days: boolean | null
           reminder_sent_30_days: boolean | null
           reminder_sent_7_days: boolean | null
           reminder_sent_expired: boolean | null
@@ -644,6 +646,8 @@ export type Database = {
           reference_number?: string | null
           rejection_action_required?: string | null
           rejection_reason?: string | null
+          reminder_sent_1_day?: boolean | null
+          reminder_sent_14_days?: boolean | null
           reminder_sent_30_days?: boolean | null
           reminder_sent_7_days?: boolean | null
           reminder_sent_expired?: boolean | null
@@ -677,6 +681,8 @@ export type Database = {
           reference_number?: string | null
           rejection_action_required?: string | null
           rejection_reason?: string | null
+          reminder_sent_1_day?: boolean | null
+          reminder_sent_14_days?: boolean | null
           reminder_sent_30_days?: boolean | null
           reminder_sent_7_days?: boolean | null
           reminder_sent_expired?: boolean | null
