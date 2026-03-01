@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -43,8 +44,17 @@ interface Project {
   name: string;
 }
 
+interface Operative {
+  id: string;
+  full_name: string;
+  trade: string;
+  contractor_company_id: string;
+  company_name: string;
+}
+
 interface Attendee {
   id?: string;
+  operative_id?: string;
   attendee_name: string;
   attendee_company: string;
   attendee_trade: string;
@@ -99,6 +109,11 @@ export default function DeliverTalk() {
   const [talkId, setTalkId] = useState<string | null>(null);
   const [orgId, setOrgId] = useState<string | null>(null);
 
+  // Operatives
+  const [operatives, setOperatives] = useState<Operative[]>([]);
+  const [loadingOperatives, setLoadingOperatives] = useState(false);
+  const [showManualAdd, setShowManualAdd] = useState(false);
+
   // Attendees
   const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [signDialogOpen, setSignDialogOpen] = useState(false);
@@ -114,6 +129,15 @@ export default function DeliverTalk() {
   useEffect(() => {
     fetchData();
   }, [templateId]);
+
+  // Fetch operatives when project changes
+  useEffect(() => {
+    if (selectedProjectId) {
+      fetchProjectOperatives(selectedProjectId);
+    } else {
+      setOperatives([]);
+    }
+  }, [selectedProjectId]);
 
   const fetchData = async () => {
     if (!templateId) return;
@@ -157,6 +181,52 @@ export default function DeliverTalk() {
       navigate("/toolbox-talks");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchProjectOperatives = async (projectId: string) => {
+    setLoadingOperatives(true);
+    try {
+      // Get contractors assigned to this project
+      const { data: projectContractors, error: pcError } = await supabase
+        .from("project_contractors")
+        .select("contractor_company_id, contractor_companies(company_name)")
+        .eq("project_id", projectId)
+        .eq("status", "active");
+
+      if (pcError) throw pcError;
+      if (!projectContractors || projectContractors.length === 0) {
+        setOperatives([]);
+        return;
+      }
+
+      const contractorIds = projectContractors.map((pc: any) => pc.contractor_company_id);
+      const companyMap: Record<string, string> = {};
+      projectContractors.forEach((pc: any) => {
+        companyMap[pc.contractor_company_id] = pc.contractor_companies?.company_name || "Unknown";
+      });
+
+      // Get operatives for these contractors
+      const { data: ops, error: opsError } = await supabase
+        .from("contractor_operatives")
+        .select("id, full_name, trade, contractor_company_id")
+        .in("contractor_company_id", contractorIds)
+        .eq("is_active", true)
+        .order("full_name");
+
+      if (opsError) throw opsError;
+
+      setOperatives(
+        (ops || []).map((op: any) => ({
+          ...op,
+          company_name: companyMap[op.contractor_company_id] || "Unknown",
+        }))
+      );
+    } catch (error: any) {
+      console.error("Error fetching operatives:", error);
+      setOperatives([]);
+    } finally {
+      setLoadingOperatives(false);
     }
   };
 
@@ -565,38 +635,114 @@ export default function DeliverTalk() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Add attendee form */}
-                <div className="p-4 bg-muted/50 rounded-lg space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label>Name *</Label>
-                      <Input
-                        value={newAttendee.attendee_name}
-                        onChange={(e) => setNewAttendee({ ...newAttendee, attendee_name: e.target.value })}
-                        placeholder="Full name"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Company</Label>
-                      <Input
-                        value={newAttendee.attendee_company}
-                        onChange={(e) => setNewAttendee({ ...newAttendee, attendee_company: e.target.value })}
-                        placeholder="Company name"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Trade</Label>
-                      <Input
-                        value={newAttendee.attendee_trade}
-                        onChange={(e) => setNewAttendee({ ...newAttendee, attendee_trade: e.target.value })}
-                        placeholder="e.g., Electrician"
-                      />
+                {/* Operative selector */}
+                {operatives.length > 0 && (
+                  <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                    <Label className="text-sm font-semibold">Select Operatives from Project</Label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-60 overflow-y-auto">
+                      {operatives.map((op) => {
+                        const isAdded = attendees.some(a => a.operative_id === op.id);
+                        return (
+                          <label
+                            key={op.id}
+                            className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                              isAdded ? "bg-primary/5 border-primary/30" : "hover:bg-muted"
+                            }`}
+                          >
+                            <Checkbox
+                              checked={isAdded}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setAttendees(prev => [...prev, {
+                                    operative_id: op.id,
+                                    attendee_name: op.full_name,
+                                    attendee_company: op.company_name,
+                                    attendee_trade: op.trade,
+                                    signature_data: null,
+                                    signed_at: null,
+                                  }]);
+                                } else {
+                                  setAttendees(prev => prev.filter(a => a.operative_id !== op.id));
+                                }
+                              }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">{op.full_name}</p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {op.company_name} • {op.trade}
+                              </p>
+                            </div>
+                          </label>
+                        );
+                      })}
                     </div>
                   </div>
-                  <Button onClick={addAttendee} variant="secondary">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Attendee
-                  </Button>
+                )}
+
+                {loadingOperatives && (
+                  <div className="text-center py-4 text-muted-foreground text-sm">
+                    Loading operatives...
+                  </div>
+                )}
+
+                {!selectedProjectId && (
+                  <div className="text-center py-4 text-muted-foreground text-sm">
+                    Select a project in step 1 to see assigned operatives
+                  </div>
+                )}
+
+                {selectedProjectId && !loadingOperatives && operatives.length === 0 && (
+                  <div className="text-center py-4 text-muted-foreground text-sm">
+                    No operatives found for this project's contractors
+                  </div>
+                )}
+
+                {/* Manual add fallback */}
+                <div className="border-t pt-4">
+                  {!showManualAdd ? (
+                    <Button variant="ghost" size="sm" onClick={() => setShowManualAdd(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add attendee manually
+                    </Button>
+                  ) : (
+                    <div className="p-4 bg-muted/50 rounded-lg space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label>Name *</Label>
+                          <Input
+                            value={newAttendee.attendee_name}
+                            onChange={(e) => setNewAttendee({ ...newAttendee, attendee_name: e.target.value })}
+                            placeholder="Full name"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Company</Label>
+                          <Input
+                            value={newAttendee.attendee_company}
+                            onChange={(e) => setNewAttendee({ ...newAttendee, attendee_company: e.target.value })}
+                            placeholder="Company name"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Trade</Label>
+                          <Input
+                            value={newAttendee.attendee_trade}
+                            onChange={(e) => setNewAttendee({ ...newAttendee, attendee_trade: e.target.value })}
+                            placeholder="e.g., Electrician"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button onClick={addAttendee} variant="secondary">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Attendee
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setShowManualAdd(false)}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Attendees list */}
