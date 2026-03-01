@@ -118,6 +118,8 @@ export interface ContractorOperative {
   emergency_contact_relationship: string | null;
   known_medical_conditions: string | null;
   blood_type: string | null;
+  health_data_consent: boolean;
+  health_data_consent_at: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;

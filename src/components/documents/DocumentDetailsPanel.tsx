@@ -457,12 +457,12 @@ export const DocumentDetailsPanel = ({
           </Button>
           {isAdmin && (
             <Button
-              variant="destructive"
-              className="w-full"
+              variant="outline"
+              className="w-full text-muted-foreground"
               onClick={onDelete}
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              Delete Document
+              Archive Document
             </Button>
           )}
         </CardContent>

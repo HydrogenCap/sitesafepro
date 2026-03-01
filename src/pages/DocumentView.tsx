@@ -287,25 +287,29 @@ const DocumentView = () => {
   };
 
   const handleDelete = async () => {
-    if (!document || !confirm("Are you sure you want to delete this document?")) return;
+    if (!document) return;
 
     try {
-      await supabase.storage.from("documents").remove([document.file_path]);
-      await supabase.from("documents").delete().eq("id", document.id);
+      const { error } = await supabase
+        .from("documents")
+        .update({ status: "archived" })
+        .eq("id", document.id);
+
+      if (error) throw error;
 
       logActivity({
         activityType: "document_deleted",
         entityType: "document",
         entityName: document.name,
-        description: activityDescriptions.document_deleted(document.name),
+        description: `Archived document: ${document.name}`,
         projectId: document.project_id || undefined,
       });
 
-      toast.success("Document deleted");
+      toast.success("Document archived");
       navigate("/documents");
     } catch (error) {
-      console.error("Error deleting document:", error);
-      toast.error("Failed to delete document");
+      console.error("Error archiving document:", error);
+      toast.error("Failed to archive document");
     }
   };
 

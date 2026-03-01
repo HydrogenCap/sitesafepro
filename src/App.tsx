@@ -67,6 +67,7 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Templates from "./pages/Templates";
 import AuditLog from "./pages/AuditLog";
+import IncidentCapture from "./pages/site-mode/IncidentCapture";
 
 const queryClient = new QueryClient();
 
@@ -156,6 +157,7 @@ const App = () => {
               <Route path="/compliance-calendar" element={<ProtectedRoute><ComplianceCalendar /></ProtectedRoute>} />
               <Route path="/help" element={<ProtectedRoute><Help /></ProtectedRoute>} />
               <Route path="/audit-log" element={<ProtectedRoute><RequireRole role="admin" fallback={<AccessDenied />}><AuditLog /></RequireRole></ProtectedRoute>} />
+              <Route path="/site-mode/incident" element={<ProtectedRoute><IncidentCapture /></ProtectedRoute>} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

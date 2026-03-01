@@ -733,6 +733,8 @@ export type Database = {
           emergency_contact_phone: string | null
           emergency_contact_relationship: string | null
           full_name: string
+          health_data_consent: boolean
+          health_data_consent_at: string | null
           id: string
           is_active: boolean | null
           known_medical_conditions: string | null
@@ -755,6 +757,8 @@ export type Database = {
           emergency_contact_phone?: string | null
           emergency_contact_relationship?: string | null
           full_name: string
+          health_data_consent?: boolean
+          health_data_consent_at?: string | null
           id?: string
           is_active?: boolean | null
           known_medical_conditions?: string | null
@@ -777,6 +781,8 @@ export type Database = {
           emergency_contact_phone?: string | null
           emergency_contact_relationship?: string | null
           full_name?: string
+          health_data_consent?: boolean
+          health_data_consent_at?: string | null
           id?: string
           is_active?: boolean | null
           known_medical_conditions?: string | null

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Camera, FileText, AlertTriangle, CheckSquare, PenLine, RefreshCw, ArrowLeft } from 'lucide-react';
+import { Camera, FileText, AlertTriangle, CheckSquare, PenLine, RefreshCw, ArrowLeft, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { QueueStatusChip } from '@/components/offline/QueueStatusChip';
 import { OfflineBanner } from '@/components/offline/OfflineBanner';
@@ -8,6 +8,7 @@ import { useNetworkStatus } from '@/offline/useNetworkStatus';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 
 const CAPTURE_ACTIONS = [
+  { to: 'incident', icon: ShieldAlert, label: 'Incident', color: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300' },
   { to: 'photo', icon: Camera, label: 'Photo', color: 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300' },
   { to: 'note', icon: FileText, label: 'Note', color: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300' },
   { to: 'hazard', icon: AlertTriangle, label: 'Hazard', color: 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300' },
@@ -48,7 +49,7 @@ export default function SiteMode() {
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
             Capture
           </h2>
-          <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
             {CAPTURE_ACTIONS.map(({ to, icon: Icon, label, color }) => (
               <Link
                 key={to}
