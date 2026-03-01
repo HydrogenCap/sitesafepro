@@ -13,9 +13,15 @@ interface Props {
 }
 
 export const ContractorComplianceTab = ({ contractorId, complianceDocs, requiredDocTypes = [] }: Props) => {
+  // Parse date string as local to avoid UTC timezone shift
+  const parseLocalDate = (dateStr: string) => {
+    const [year, month, day] = dateStr.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  };
+
   const getDocStatus = (doc: ContractorComplianceDoc) => {
     if (!doc.expiry_date) return "valid";
-    const daysUntilExpiry = differenceInDays(new Date(doc.expiry_date), new Date());
+    const daysUntilExpiry = differenceInDays(parseLocalDate(doc.expiry_date), new Date());
     if (daysUntilExpiry < 0) return "expired";
     if (daysUntilExpiry <= 30) return "expiring_soon";
     return "valid";
@@ -119,7 +125,7 @@ export const ContractorComplianceTab = ({ contractorId, complianceDocs, required
                 const label = COMPLIANCE_DOC_LABELS[doc.doc_type]?.label || doc.doc_type;
                 const isInsurance = doc.doc_type.includes('insurance') || doc.doc_type.includes('liability');
                 const daysUntilExpiry = doc.expiry_date
-                  ? differenceInDays(new Date(doc.expiry_date), new Date())
+                  ? differenceInDays(parseLocalDate(doc.expiry_date), new Date())
                   : null;
                 return (
                   <div key={doc.id} className="border border-border rounded-lg p-4">
@@ -132,7 +138,7 @@ export const ContractorComplianceTab = ({ contractorId, complianceDocs, required
                     )}
                     {doc.expiry_date && (
                       <p className="text-xs text-muted-foreground">
-                        Expires: {format(new Date(doc.expiry_date), "dd MMM yyyy")}
+                        Expires: {format(parseLocalDate(doc.expiry_date), "dd MMM yyyy")}
                       </p>
                     )}
                     {doc.verified && (
