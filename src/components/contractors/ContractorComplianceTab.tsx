@@ -1,8 +1,9 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { COMPLIANCE_DOC_LABELS, ContractorComplianceDoc } from "@/types/contractor";
-import { CheckCircle2, AlertTriangle, XCircle, Upload, Eye, Shield } from "lucide-react";
+import { CheckCircle2, AlertTriangle, XCircle, Upload, Shield } from "lucide-react";
 import { differenceInDays, format } from "date-fns";
+import { UploadComplianceDocDialog } from "./UploadComplianceDocDialog";
 
 interface Props {
   contractorId: string;
@@ -44,7 +45,7 @@ export const ContractorComplianceTab = ({ contractorId, complianceDocs }: Props)
         <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
         <h3 className="font-semibold mb-2">No Compliance Documents</h3>
         <p className="text-muted-foreground mb-4">Upload compliance documents to track this contractor's certifications.</p>
-        <Button><Upload className="h-4 w-4 mr-2" />Upload Document</Button>
+        <UploadComplianceDocDialog contractorId={contractorId} />
       </div>
     );
   }
