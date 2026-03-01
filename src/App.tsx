@@ -6,9 +6,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ClientPortalProvider } from "@/contexts/ClientPortalContext";
+import { OrgProvider } from "@/contexts/OrgContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ClientProtectedRoute } from "@/components/client/ClientProtectedRoute";
+import { RequireRole } from "@/components/auth/RequireRole";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import AccessDenied from "./pages/AccessDenied";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -60,6 +63,7 @@ import CookiePolicy from "./pages/CookiePolicy";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Templates from "./pages/Templates";
+import AuditLog from "./pages/AuditLog";
 
 const queryClient = new QueryClient();
 
@@ -86,7 +90,8 @@ const App = () => {
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <ClientPortalProvider>
-        <TooltipProvider>
+        <OrgProvider>
+          <TooltipProvider>
           <Toaster />
           <Sonner />
           <BrowserRouter>
@@ -127,8 +132,8 @@ const App = () => {
               <Route path="/projects/:id/diary" element={<ProtectedRoute><SiteDiary /></ProtectedRoute>} />
               <Route path="/projects/:id/diary/:date" element={<ProtectedRoute><DiaryEntry /></ProtectedRoute>} />
               <Route path="/site-access" element={<ProtectedRoute><SiteAccess /></ProtectedRoute>} />
-              <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/team" element={<ProtectedRoute><RequireRole role="admin" fallback={<AccessDenied />}><Team /></RequireRole></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><RequireRole role="site_manager" fallback={<AccessDenied />}><Settings /></RequireRole></ProtectedRoute>} />
               <Route path="/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
               <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
               <Route path="/toolbox-talks" element={<ProtectedRoute><ToolboxTalks /></ProtectedRoute>} />
@@ -147,12 +152,14 @@ const App = () => {
               <Route path="/contractors/:id" element={<ProtectedRoute><ContractorDetail /></ProtectedRoute>} />
               <Route path="/compliance-calendar" element={<ProtectedRoute><ComplianceCalendar /></ProtectedRoute>} />
               <Route path="/help" element={<ProtectedRoute><Help /></ProtectedRoute>} />
+              <Route path="/audit-log" element={<ProtectedRoute><RequireRole role="admin" fallback={<AccessDenied />}><AuditLog /></RequireRole></ProtectedRoute>} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
-        </TooltipProvider>
+          </TooltipProvider>
+        </OrgProvider>
       </ClientPortalProvider>
     </AuthProvider>
   </QueryClientProvider>
