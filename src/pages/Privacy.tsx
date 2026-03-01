@@ -23,7 +23,7 @@ export default function Privacy() {
           <section>
             <h2 className="text-2xl font-semibold mt-8 mb-4">1. Introduction</h2>
             <p>
-              SiteSafe Pro ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our construction site safety management platform.
+              Site Safe ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our construction site safety management platform.
             </p>
           </section>
 
@@ -104,8 +104,8 @@ export default function Privacy() {
               If you have questions about this Privacy Policy or our data practices, please contact us at:
             </p>
             <p className="mt-2">
-              <strong>Email:</strong> privacy@sitesafepro.co.uk<br />
-              <strong>Address:</strong> SiteSafe Pro Ltd, London, United Kingdom
+               <strong>Email:</strong> privacy@sitesafe.cloud<br />
+               <strong>Address:</strong> Site Safe Ltd, London, United Kingdom
             </p>
           </section>
         </div>

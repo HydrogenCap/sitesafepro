@@ -30,7 +30,7 @@ export default function CookiePolicy() {
 
           <section>
             <h2 className="text-2xl font-semibold mt-8 mb-4">2. How We Use Cookies</h2>
-            <p>SiteSafe Pro uses cookies for the following purposes:</p>
+            <p>Site Safe uses cookies for the following purposes:</p>
             
             <h3 className="text-xl font-medium mt-6 mb-3">Essential Cookies</h3>
             <p>
@@ -136,7 +136,7 @@ export default function CookiePolicy() {
               <li>Configure settings per website</li>
             </ul>
             <p className="mt-4">
-              <strong>Note:</strong> Blocking essential cookies will prevent you from using SiteSafe Pro. 
+              <strong>Note:</strong> Blocking essential cookies will prevent you from using Site Safe. 
               Some features may not work correctly if you block functional or analytics cookies.
             </p>
             
@@ -163,8 +163,8 @@ export default function CookiePolicy() {
               If you have questions about our use of cookies, please contact us at:
             </p>
             <p className="mt-2">
-              <strong>Email:</strong> privacy@sitesafepro.co.uk<br />
-              <strong>Address:</strong> SiteSafe Pro Ltd, London, United Kingdom
+               <strong>Email:</strong> privacy@sitesafe.cloud<br />
+               <strong>Address:</strong> Site Safe Ltd, London, United Kingdom
             </p>
           </section>
         </div>

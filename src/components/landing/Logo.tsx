@@ -31,7 +31,7 @@ export const Logo = forwardRef<HTMLDivElement, LogoProps>(
           <Shield className={iconColor} size={iconSizes[size]} strokeWidth={2.5} />
         </div>
         <span className={`font-bold tracking-tight ${sizeClasses[size]} ${textColor}`}>
-          SiteSafe<span className={accentColor}>Pro</span>
+          Site<span className={accentColor}>Safe</span>
         </span>
       </div>
     );

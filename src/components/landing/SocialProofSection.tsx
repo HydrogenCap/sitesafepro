@@ -11,7 +11,7 @@ const stats = [
 const testimonials = [
   {
     quote:
-      "SiteSafe Pro has transformed how we manage compliance across our sites. What used to take hours of paperwork now takes minutes.",
+      "Site Safe has transformed how we manage compliance across our sites. What used to take hours of paperwork now takes minutes.",
     author: "James Richardson",
     role: "Managing Director",
     company: "Richardson Construction Ltd",
@@ -80,7 +80,7 @@ export const SocialProofSection = () => {
             transition={{ delay: 0.1 }}
             className="text-lg text-muted-foreground"
           >
-            See why hundreds of construction companies choose SiteSafe Pro
+            See why hundreds of construction companies choose Site Safe
           </motion.p>
         </div>
 

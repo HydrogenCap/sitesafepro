@@ -477,8 +477,8 @@ const AuthPage = () => {
               Construction Safety, Simplified
             </h3>
             <p className="text-lg text-primary-foreground/70 mb-8">
-              Join 500+ UK contractors who've replaced paperwork with SiteSafe Pro's 
-              digital compliance platform.
+               Join 500+ UK contractors who've replaced paperwork with Site Safe's 
+               digital compliance platform.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               {["CDM 2015 Compliant", "Mobile-First", "14-Day Free Trial"].map((item) => (

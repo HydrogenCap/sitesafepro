@@ -53,8 +53,8 @@ export default function Contact() {
                   <div>
                     <h3 className="font-semibold mb-1">Email</h3>
                     <p className="text-sm text-muted-foreground">General enquiries</p>
-                    <a href="mailto:hello@sitesafepro.co.uk" className="text-primary hover:underline">
-                      hello@sitesafepro.co.uk
+                     <a href="mailto:hello@sitesafe.cloud" className="text-primary hover:underline">
+                       hello@sitesafe.cloud
                     </a>
                   </div>
                 </div>
@@ -87,8 +87,8 @@ export default function Contact() {
                   <div>
                     <h3 className="font-semibold mb-1">Address</h3>
                     <p className="text-sm text-muted-foreground">
-                      SiteSafe Pro Ltd<br />
-                      London, United Kingdom
+                       Site Safe Ltd<br />
+                       London, United Kingdom
                     </p>
                   </div>
                 </div>
@@ -197,14 +197,14 @@ export default function Contact() {
         <section className="mt-12 text-center bg-muted/50 rounded-xl p-8">
           <h2 className="text-2xl font-bold mb-4">Existing customer?</h2>
           <p className="text-muted-foreground mb-6">
-            If you're already using SiteSafe Pro and need help, check out our Help Centre or contact support directly.
+            If you're already using Site Safe and need help, check out our Help Centre or contact support directly.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button asChild variant="outline">
               <Link to="/documentation">View Documentation</Link>
             </Button>
             <Button asChild variant="outline">
-              <a href="mailto:support@sitesafepro.co.uk">Email Support</a>
+              <a href="mailto:support@sitesafe.cloud">Email Support</a>
             </Button>
           </div>
         </section>

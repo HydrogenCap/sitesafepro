@@ -12,7 +12,7 @@ const documentationSections = [
     content: [
       {
         q: "Creating Your Account",
-        a: "Visit sitesafepro.co.uk and click Sign Up in the top right corner. Enter your full name, email address, phone number, and choose a password. Click Create Account. You will be logged in automatically and taken to the Onboarding wizard."
+        a: "Visit sitesafe.cloud and click Sign Up in the top right corner. Enter your full name, email address, phone number, and choose a password. Click Create Account. You will be logged in automatically and taken to the Onboarding wizard."
       },
       {
         q: "Onboarding Wizard",
@@ -20,7 +20,7 @@ const documentationSections = [
       },
       {
         q: "Dashboard Overview",
-        a: "The Dashboard is your home screen showing project summary cards, actions widget, recent activity feed, site diary reminders, and quick stats. The left sidebar contains links to all 17 sections of SiteSafe Pro."
+        a: "The Dashboard is your home screen showing project summary cards, actions widget, recent activity feed, site diary reminders, and quick stats. The left sidebar contains links to all 17 sections of Site Safe."
       }
     ]
   },
@@ -115,7 +115,7 @@ const documentationSections = [
       },
       {
         q: "RIDDOR Guidance",
-        a: "SiteSafe Pro flags incidents that may require reporting under RIDDOR 2013 — fatal injuries, specified injuries, over-7-day incapacitation, dangerous occurrences, and occupational diseases."
+        a: "Site Safe flags incidents that may require reporting under RIDDOR 2013 — fatal injuries, specified injuries, over-7-day incapacitation, dangerous occurrences, and occupational diseases."
       }
     ]
   },
@@ -173,7 +173,7 @@ export default function Documentation() {
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-4">Documentation</h1>
           <p className="text-lg text-muted-foreground">
-            Complete guide to using every feature of SiteSafe Pro
+            Complete guide to using every feature of Site Safe
           </p>
         </div>
 

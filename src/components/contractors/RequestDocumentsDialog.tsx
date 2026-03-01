@@ -90,7 +90,7 @@ export function RequestDocumentsDialog({
           message,
           recipient_email: email,
           recipient_name: recipientName,
-          organisation_name: (orgData as any)?.organisations?.name || "SiteSafe Pro",
+          organisation_name: (orgData as any)?.organisations?.name || "Site Safe",
         },
       });
 
