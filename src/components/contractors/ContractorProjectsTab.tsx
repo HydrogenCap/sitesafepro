@@ -6,16 +6,17 @@ import { Link } from "react-router-dom";
 interface Props {
   contractorId: string;
   projects: any[];
+  onAssign?: () => void;
 }
 
-export const ContractorProjectsTab = ({ contractorId, projects }: Props) => {
+export const ContractorProjectsTab = ({ contractorId, projects, onAssign }: Props) => {
   if (projects.length === 0) {
     return (
       <div className="bg-card rounded-xl border border-border p-12 text-center">
         <FolderOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
         <h3 className="font-semibold mb-2">No Project Assignments</h3>
         <p className="text-muted-foreground mb-4">Assign this contractor to projects.</p>
-        <Button><Plus className="h-4 w-4 mr-2" />Assign to Project</Button>
+        <Button onClick={onAssign}><Plus className="h-4 w-4 mr-2" />Assign to Project</Button>
       </div>
     );
   }
@@ -24,7 +25,7 @@ export const ContractorProjectsTab = ({ contractorId, projects }: Props) => {
     <div className="bg-card rounded-xl border border-border">
       <div className="p-4 border-b border-border flex items-center justify-between">
         <h3 className="font-semibold">Projects ({projects.length})</h3>
-        <Button size="sm"><Plus className="h-4 w-4 mr-2" />Assign to Project</Button>
+        <Button size="sm" onClick={onAssign}><Plus className="h-4 w-4 mr-2" />Assign to Project</Button>
       </div>
       <div className="divide-y divide-border">
         {projects.map((pc: any) => (
