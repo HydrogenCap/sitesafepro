@@ -558,10 +558,20 @@ export default function AdminPanel() {
     if (!newOrg.name.trim() || !newOrg.ownerEmail.trim()) return;
     setCreatingOrg(true);
     try {
-      const slug = `${newOrg.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}-${Date.now().toString(36)}`;
-      const { data: orgData, error } = await supabase.from("organisations").insert({ name: newOrg.name.trim(), slug, subscription_status: "trialing", trial_ends_at: addDays(new Date(), 14).toISOString() } as any).select().single();
+      // Use the edge function which runs with service role privileges (bypasses RLS)
+      const { data, error } = await supabase.functions.invoke("create-organisation", {
+        body: {
+          userId: user!.id,
+          companyName: newOrg.name.trim(),
+          email: newOrg.ownerEmail.trim(),
+        },
+      });
       if (error) throw error;
-      await logAdminAction(user!.id, "CREATE_ORG", "organisation", orgData.id, orgData.id, { org_name: newOrg.name, owner_email: newOrg.ownerEmail });
+      if (data?.error) throw new Error(data.error);
+      const orgId = data?.organisation?.id;
+      if (orgId) {
+        await logAdminAction(user!.id, "CREATE_ORG", "organisation", orgId, orgId, { org_name: newOrg.name, owner_email: newOrg.ownerEmail });
+      }
       toast({ title: "Organisation created", description: `${newOrg.name} is live with a 14-day trial.` });
       setCreateOrgOpen(false);
       setNewOrg({ name: "", ownerEmail: "" });
