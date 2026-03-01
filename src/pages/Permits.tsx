@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import type { Database } from "@/integrations/supabase/types";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -92,7 +93,7 @@ export default function Permits() {
   // Form state
   const [formData, setFormData] = useState({
     project_id: "",
-    permit_type: "general",
+    permit_type: "general" as Database["public"]["Enums"]["permit_type"],
     title: "",
     description: "",
     location: "",
@@ -176,7 +177,7 @@ export default function Permits() {
         organisation_id: organisationId,
         project_id: formData.project_id || null,
         permit_number: generatePermitNumber(),
-        permit_type: formData.permit_type as any,
+        permit_type: formData.permit_type,
         status: "draft",
         title: formData.title,
         description: formData.description || null,
@@ -200,7 +201,7 @@ export default function Permits() {
       setDialogOpen(false);
       setFormData({
         project_id: "",
-        permit_type: "general",
+        permit_type: "general" as Database["public"]["Enums"]["permit_type"],
         title: "",
         description: "",
         location: "",
@@ -378,7 +379,7 @@ export default function Permits() {
                     <Label>Permit Type *</Label>
                     <Select
                       value={formData.permit_type}
-                      onValueChange={(v) => setFormData({ ...formData, permit_type: v })}
+                      onValueChange={(v) => setFormData({ ...formData, permit_type: v as Database["public"]["Enums"]["permit_type"] })}
                     >
                       <SelectTrigger>
                         <SelectValue />

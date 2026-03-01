@@ -36,6 +36,8 @@ export default function PhotoCapture() {
     }
   }, [toast]);
 
+  const MAX_PHOTO_BYTES = 2 * 1024 * 1024; // 2 MB
+
   const takePhoto = useCallback(() => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -44,10 +46,24 @@ export default function PhotoCapture() {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     canvas.getContext('2d')!.drawImage(video, 0, 0);
-    setCaptured(canvas.toDataURL('image/jpeg', 0.85));
+
+    // M4: Try 0.85 quality first; if too large, reduce quality progressively
+    let quality = 0.85;
+    let dataUrl = canvas.toDataURL('image/jpeg', quality);
+
+    while (dataUrl.length * 0.75 > MAX_PHOTO_BYTES && quality > 0.3) {
+      quality -= 0.15;
+      dataUrl = canvas.toDataURL('image/jpeg', quality);
+    }
+
+    if (dataUrl.length * 0.75 > MAX_PHOTO_BYTES) {
+      toast({ title: 'Photo too large', description: 'Could not compress below 2 MB. Try moving closer or reducing resolution.', variant: 'destructive' });
+    }
+
+    setCaptured(dataUrl);
     stream?.getTracks().forEach(t => t.stop());
     setStream(null);
-  }, [stream]);
+  }, [stream, toast]);
 
   const retake = useCallback(() => {
     setCaptured(null);
