@@ -25,6 +25,7 @@ interface Project {
   start_date: string | null;
   estimated_end_date: string | null;
   image_url: string | null;
+  dropbox_folder_url: string | null;
 }
 
 interface EditProjectDialogProps {
@@ -50,6 +51,7 @@ export const EditProjectDialog = ({
     principalDesigner: project.principal_designer || "",
     startDate: project.start_date || "",
     estimatedEndDate: project.estimated_end_date || "",
+    dropboxFolderUrl: project.dropbox_folder_url || "",
   });
 
   useEffect(() => {
@@ -61,6 +63,7 @@ export const EditProjectDialog = ({
         principalDesigner: project.principal_designer || "",
         startDate: project.start_date || "",
         estimatedEndDate: project.estimated_end_date || "",
+        dropboxFolderUrl: project.dropbox_folder_url || "",
       });
       setImageUrl(project.image_url);
     }
@@ -90,6 +93,7 @@ export const EditProjectDialog = ({
           start_date: formData.startDate || null,
           estimated_end_date: formData.estimatedEndDate || null,
           image_url: imageUrl,
+          dropbox_folder_url: formData.dropboxFolderUrl || null,
         })
         .eq("id", project.id)
         .select()
@@ -198,6 +202,28 @@ export const EditProjectDialog = ({
                 onChange={(e) => updateField("estimatedEndDate", e.target.value)}
               />
             </div>
+          </div>
+
+          {/* Dropbox folder link */}
+          <div className="space-y-2">
+            <Label htmlFor="edit-dropboxFolderUrl" className="flex items-center gap-2">
+              <svg viewBox="0 0 40 40" className="h-4 w-4" fill="none">
+                <path d="M20 8L10 14.5L20 21L10 27.5L0 21L10 14.5L0 8L10 1.5L20 8Z" fill="#0061FF"/>
+                <path d="M20 8L30 14.5L20 21L30 27.5L40 21L30 14.5L40 8L30 1.5L20 8Z" fill="#0061FF"/>
+                <path d="M10 29.5L20 23L30 29.5L20 36L10 29.5Z" fill="#0061FF"/>
+              </svg>
+              Dropbox Folder Link
+            </Label>
+            <Input
+              id="edit-dropboxFolderUrl"
+              type="url"
+              placeholder="https://www.dropbox.com/sh/..."
+              value={formData.dropboxFolderUrl}
+              onChange={(e) => updateField("dropboxFolderUrl", e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Paste a Dropbox shared folder link to make it accessible from this project.
+            </p>
           </div>
 
           {/* Submit */}
