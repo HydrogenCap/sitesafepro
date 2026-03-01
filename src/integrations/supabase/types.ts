@@ -336,6 +336,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          invite_expires_at: string | null
           invite_token: string | null
           invited_at: string
           invited_by: string
@@ -365,6 +366,7 @@ export type Database = {
           email: string
           full_name: string
           id?: string
+          invite_expires_at?: string | null
           invite_token?: string | null
           invited_at?: string
           invited_by: string
@@ -394,6 +396,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          invite_expires_at?: string | null
           invite_token?: string | null
           invited_at?: string
           invited_by?: string
@@ -4040,6 +4043,16 @@ export type Database = {
           p_version_id: string
         }
         Returns: Json
+      }
+      update_export_status: {
+        Args: {
+          p_completed_at?: string
+          p_error?: string
+          p_export_id: string
+          p_status: string
+          p_storage_path?: string
+        }
+        Returns: undefined
       }
     }
     Enums: {

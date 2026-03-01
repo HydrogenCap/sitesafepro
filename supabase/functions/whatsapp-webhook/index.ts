@@ -6,6 +6,39 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Verify webhook signature from Meta using HMAC-SHA256
+async function verifyWebhookSignature(body: string, signature: string | null, appSecret: string): Promise<boolean> {
+  if (!signature) return false;
+  
+  // Meta sends signature as "sha256=<hex>"
+  const expectedPrefix = "sha256=";
+  if (!signature.startsWith(expectedPrefix)) return false;
+  
+  const expectedHash = signature.slice(expectedPrefix.length);
+  
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(appSecret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  
+  const signatureBytes = await crypto.subtle.sign("HMAC", key, encoder.encode(body));
+  const computedHash = Array.from(new Uint8Array(signatureBytes))
+    .map(b => b.toString(16).padStart(2, "0"))
+    .join("");
+  
+  // Constant-time comparison
+  if (computedHash.length !== expectedHash.length) return false;
+  let mismatch = 0;
+  for (let i = 0; i < computedHash.length; i++) {
+    mismatch |= computedHash.charCodeAt(i) ^ expectedHash.charCodeAt(i);
+  }
+  return mismatch === 0;
+}
+
 // Meta sends different status updates for message delivery
 interface WhatsAppWebhookPayload {
   object: string;
@@ -57,7 +90,7 @@ serve(async (req) => {
 
     const VERIFY_TOKEN = Deno.env.get("WHATSAPP_WEBHOOK_VERIFY_TOKEN");
 
-    console.log("[WHATSAPP-WEBHOOK] Verification request:", { mode, token });
+    console.log("[WHATSAPP-WEBHOOK] Verification request received");
 
     if (mode === "subscribe" && token === VERIFY_TOKEN) {
       console.log("[WHATSAPP-WEBHOOK] Verification successful");
@@ -75,11 +108,28 @@ serve(async (req) => {
   // Handle webhook events (POST request)
   if (req.method === "POST") {
     try {
+      const WHATSAPP_APP_SECRET = Deno.env.get("WHATSAPP_APP_SECRET");
+      const rawBody = await req.text();
+
+      // Verify webhook signature if app secret is configured
+      if (WHATSAPP_APP_SECRET) {
+        const signature = req.headers.get("x-hub-signature-256");
+        const isValid = await verifyWebhookSignature(rawBody, signature, WHATSAPP_APP_SECRET);
+        if (!isValid) {
+          console.error("[WHATSAPP-WEBHOOK] Invalid signature - rejecting request");
+          return new Response(JSON.stringify({ error: "Invalid signature" }), {
+            status: 401,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      } else {
+        console.warn("[WHATSAPP-WEBHOOK] WARNING: WHATSAPP_APP_SECRET not configured, skipping signature verification");
+      }
+
       const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
       const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-      const payload: WhatsAppWebhookPayload = await req.json();
-      console.log("[WHATSAPP-WEBHOOK] Received webhook:", JSON.stringify(payload));
+      const payload: WhatsAppWebhookPayload = JSON.parse(rawBody);
 
       const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -135,8 +185,7 @@ serve(async (req) => {
                   console.error("[WHATSAPP-WEBHOOK] Failed to log reply:", error);
                 }
               } else {
-                console.log(`[WHATSAPP-WEBHOOK] Incoming message (not a reply) from ${message.from}`);
-                // We don't process unsolicited messages - this is a one-way notification system
+                console.log(`[WHATSAPP-WEBHOOK] Incoming message (not a reply)`);
               }
             }
           }
@@ -152,7 +201,7 @@ serve(async (req) => {
       console.error("[WHATSAPP-WEBHOOK] Error processing webhook:", error);
       // Always return 200 to Meta to acknowledge receipt
       return new Response(
-        JSON.stringify({ success: false, error: error.message }),
+        JSON.stringify({ success: false }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

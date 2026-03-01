@@ -256,12 +256,14 @@ Deno.serve(async (req) => {
         throw new Error("Client user not found");
       }
 
-      // Update the invite token
+      // Update the invite token with expiry
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
       const { error: updateError } = await supabaseAdmin
         .from("client_portal_users")
         .update({ 
           invite_token: newToken,
           invited_at: new Date().toISOString(),
+          invite_expires_at: expiresAt,
         })
         .eq("id", clientUserId);
 

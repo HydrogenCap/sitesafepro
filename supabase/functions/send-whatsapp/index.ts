@@ -1,22 +1,28 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  requireString,
+  requireUUID,
+  optionalString,
+  optionalUUID,
+  ValidationError,
+  validationErrorResponse,
+} from "../_shared/validation.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface SendWhatsAppRequest {
-  recipientNumber: string;
-  templateName: string;
-  templateParams?: Array<{
-    type: string;
-    parameters: Array<{ type: string; text: string }>;
-  }>;
-  organisationId: string;
-  recipientProfileId?: string;
-  triggerType?: string;
-  triggerReferenceId?: string;
+// Validate phone number: digits only, 7-15 chars (E.164 without +)
+function requirePhoneNumber(value: unknown, field: string): string {
+  const s = requireString(value, field, { maxLength: 20 });
+  // Strip common formatting
+  const cleaned = s.replace(/[\s\-\(\)\+]/g, "");
+  if (!/^\d{7,15}$/.test(cleaned)) {
+    throw new ValidationError(field, `${field} must be a valid phone number (7-15 digits)`);
+  }
+  return cleaned;
 }
 
 serve(async (req) => {
@@ -43,15 +49,33 @@ serve(async (req) => {
       );
     }
 
-    const {
-      recipientNumber,
-      templateName,
-      templateParams,
-      organisationId,
-      recipientProfileId,
-      triggerType,
-      triggerReferenceId,
-    }: SendWhatsAppRequest = await req.json();
+    const body = await req.json();
+
+    // Validate all inputs
+    const recipientNumber = requirePhoneNumber(body.recipientNumber, "recipientNumber");
+    const templateName = requireString(body.templateName, "templateName", { maxLength: 100 });
+    const organisationId = requireUUID(body.organisationId, "organisationId");
+    const recipientProfileId = optionalUUID(body.recipientProfileId, "recipientProfileId");
+    const triggerType = optionalString(body.triggerType, "triggerType", { maxLength: 100 });
+    const triggerReferenceId = optionalUUID(body.triggerReferenceId, "triggerReferenceId");
+
+    // Validate templateParams structure if provided
+    let templateParams = body.templateParams;
+    if (templateParams !== undefined && templateParams !== null) {
+      if (!Array.isArray(templateParams)) {
+        throw new ValidationError("templateParams", "templateParams must be an array");
+      }
+      // Validate each component has type and parameters
+      for (let i = 0; i < templateParams.length; i++) {
+        const comp = templateParams[i];
+        if (!comp || typeof comp.type !== "string") {
+          throw new ValidationError(`templateParams[${i}].type`, "Each template component must have a type");
+        }
+        if (!Array.isArray(comp.parameters)) {
+          throw new ValidationError(`templateParams[${i}].parameters`, "Each template component must have parameters array");
+        }
+      }
+    }
 
     console.log(`[SEND-WHATSAPP] Sending ${templateName} to ${recipientNumber}`);
 
@@ -78,9 +102,7 @@ serve(async (req) => {
 
     // Format the number: ensure it starts with country code, no spaces/dashes
     const cleanNumber = recipientNumber
-      .replace(/[\s\-\(\)]/g, "")
-      .replace(/^0/, "44") // UK: replace leading 0 with 44
-      .replace(/^\+/, ""); // Remove leading +
+      .replace(/^0/, "44"); // UK: replace leading 0 with 44
 
     // Check rate limits
     const { data: canSend } = await supabase.rpc("check_whatsapp_rate_limit", {
@@ -91,7 +113,6 @@ serve(async (req) => {
 
     if (!canSend) {
       console.log("[SEND-WHATSAPP] Rate limit exceeded");
-      // Log as rate limited
       await supabase.from("whatsapp_messages").insert({
         organisation_id: organisationId,
         recipient_profile_id: recipientProfileId,
@@ -181,7 +202,6 @@ serve(async (req) => {
     );
 
     const data = await response.json();
-    console.log(`[SEND-WHATSAPP] Meta API response:`, JSON.stringify(data));
 
     // Log the message
     const { error: logError } = await supabase.from("whatsapp_messages").insert({
@@ -206,7 +226,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: data.error?.message || "Failed to send WhatsApp message",
+          error: "Failed to send WhatsApp message",
           code: "API_ERROR" 
         }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -224,9 +244,12 @@ serve(async (req) => {
     );
 
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return validationErrorResponse(error, corsHeaders);
+    }
     console.error("[SEND-WHATSAPP] Error:", error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: "An unexpected error occurred" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
