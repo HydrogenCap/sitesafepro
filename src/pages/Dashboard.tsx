@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { ActionsDashboardWidget } from "@/components/dashboard/ActionsDashboardWidget";
 import { ComplianceCalendarWidget } from "@/components/dashboard/ComplianceCalendarWidget";
+import { ContractorComplianceWidget } from "@/components/dashboard/ContractorComplianceWidget";
 import { UsageBars } from "@/components/dashboard/UsageBars";
 import { toast } from "sonner";
 import {
@@ -169,6 +170,11 @@ const Dashboard = () => {
         {/* Actions Widget */}
         <div className="mb-8">
           <ActionsDashboardWidget />
+        </div>
+
+        {/* Contractor Compliance Widget */}
+        <div className="mb-8">
+          <ContractorComplianceWidget />
         </div>
 
         {/* Document Expiry Widget */}
