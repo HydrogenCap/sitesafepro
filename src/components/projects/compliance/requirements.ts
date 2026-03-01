@@ -52,6 +52,26 @@ export const COMPLIANCE_REQUIREMENTS: RequirementDefinition[] = [
       { type: "confirm", label: "PCI Received (Alternative Format)", icon: "file-check" },
     ],
   },
+  {
+    type: "construction_phase_plan",
+    label: "Construction Phase Plan (CPP)",
+    description:
+      "The Principal Contractor must draw up a Construction Phase Plan before the construction phase begins. It must set out the health and safety arrangements, site rules, and specific measures for high-risk work. The plan must be reviewed and updated throughout the project. (CDM 2015 Regulation 12)",
+    actions: [
+      { type: "upload", label: "Upload CPP", icon: "upload" },
+      { type: "confirm", label: "CPP Prepared (Alternative Format)", icon: "file-check" },
+    ],
+  },
+  {
+    type: "pc_appointment",
+    label: "Principal Contractor Appointment",
+    description:
+      "For projects with more than one contractor, the Client must appoint a Principal Contractor in writing before the construction phase begins. The PC must be an organisation (not an individual) with the skills, knowledge, and experience to carry out the role. (CDM 2015 Regulation 5)",
+    actions: [
+      { type: "upload", label: "Upload Appointment Letter", icon: "upload" },
+      { type: "confirm", label: "PC Appointed (Verbal/Email)", icon: "file-check" },
+    ],
+  },
 ];
 
 export const getExemptionReasonForType = (

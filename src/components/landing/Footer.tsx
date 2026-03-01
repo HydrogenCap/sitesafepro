@@ -113,7 +113,7 @@ export const Footer = () => {
             © {new Date().getFullYear()} Site Safe. All rights reserved.
           </p>
           <p className="text-sm text-primary-foreground/50">
-            Made with ❤️ in the UK
+            Built for UK construction. CDM 2015 compliant.
           </p>
         </div>
       </div>
