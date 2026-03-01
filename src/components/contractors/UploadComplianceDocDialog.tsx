@@ -98,7 +98,7 @@ export function UploadComplianceDocDialog({ contractorId, trigger }: Props) {
         filePath = path;
       }
 
-      const { error } = await supabase.from("contractor_compliance_docs").insert({
+      const { data: insertedDoc, error } = await supabase.from("contractor_compliance_docs").insert({
         contractor_company_id: contractorId,
         organisation_id: orgId,
         doc_type: data.doc_type as ComplianceDocType,
@@ -109,9 +109,27 @@ export function UploadComplianceDocDialog({ contractorId, trigger }: Props) {
         expiry_date: data.expiry_date || null,
         file_path: filePath,
         uploaded_by: user.id,
-      });
+        status: "uploaded",
+        is_current: true,
+        version_number: 1,
+      }).select("id").single();
 
       if (error) throw error;
+
+      // Create audit trail entry
+      if (insertedDoc?.id) {
+        await supabase.from("document_review_log").insert({
+          organisation_id: orgId,
+          compliance_doc_id: insertedDoc.id,
+          action: "uploaded",
+          actor_id: user.id,
+          actor_type: "user",
+          previous_status: null,
+          new_status: "uploaded",
+          notes: null,
+          metadata: { doc_type: data.doc_type, file_path: filePath },
+        });
+      }
 
       toast.success("Compliance document uploaded");
       queryClient.invalidateQueries({ queryKey: ["contractor-compliance-docs", contractorId] });

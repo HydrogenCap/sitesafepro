@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { COMPLIANCE_DOC_LABELS, ContractorComplianceDoc, ComplianceDocType } from "@/types/contractor";
-import { CheckCircle2, AlertTriangle, XCircle, Shield, Circle, Pencil } from "lucide-react";
+import { COMPLIANCE_DOC_LABELS, ContractorComplianceDoc, ComplianceDocType, ComplianceDocStatus } from "@/types/contractor";
+import { Shield, Circle, Pencil, Eye, AlertTriangle, XCircle } from "lucide-react";
 import { differenceInDays, format } from "date-fns";
 import { UploadComplianceDocDialog } from "./UploadComplianceDocDialog";
 import { EditRequiredDocsDialog } from "./EditRequiredDocsDialog";
 import { EditComplianceDocDialog } from "./EditComplianceDocDialog";
+import { ReviewComplianceDocDialog } from "./ReviewComplianceDocDialog";
+import { ComplianceDocStatusBadge } from "./ComplianceDocStatusBadge";
 
 interface Props {
   contractorId: string;
@@ -16,36 +18,17 @@ interface Props {
 
 export const ContractorComplianceTab = ({ contractorId, complianceDocs, requiredDocTypes = [] }: Props) => {
   const [editingDoc, setEditingDoc] = useState<ContractorComplianceDoc | null>(null);
+  const [reviewingDoc, setReviewingDoc] = useState<ContractorComplianceDoc | null>(null);
 
-  // Parse date string as local to avoid UTC timezone shift
   const parseLocalDate = (dateStr: string) => {
     const [year, month, day] = dateStr.split("-").map(Number);
     return new Date(year, month - 1, day);
   };
 
-  const getDocStatus = (doc: ContractorComplianceDoc) => {
-    if (!doc.expiry_date) return "valid";
-    const daysUntilExpiry = differenceInDays(parseLocalDate(doc.expiry_date), new Date());
-    if (daysUntilExpiry < 0) return "expired";
-    if (daysUntilExpiry <= 30) return "expiring_soon";
-    return "valid";
-  };
+  // Only show current versions
+  const currentDocs = complianceDocs.filter(d => d.is_current !== false);
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "valid":
-        return <Badge className="bg-success/10 text-success">Valid</Badge>;
-      case "expiring_soon":
-        return <Badge className="bg-warning/10 text-warning">Expiring Soon</Badge>;
-      case "expired":
-        return <Badge className="bg-destructive/10 text-destructive">Expired</Badge>;
-      default:
-        return <Badge variant="outline">Unknown</Badge>;
-    }
-  };
-
-  // Build a combined view: uploaded docs + missing required docs
-  const uploadedByType = complianceDocs.reduce((acc, doc) => {
+  const uploadedByType = currentDocs.reduce((acc, doc) => {
     acc[doc.doc_type] = doc;
     return acc;
   }, {} as Record<string, ContractorComplianceDoc>);
@@ -54,7 +37,7 @@ export const ContractorComplianceTab = ({ contractorId, complianceDocs, required
     (dt) => !uploadedByType[dt]
   ) as ComplianceDocType[];
 
-  const groupedDocs = complianceDocs.reduce((acc, doc) => {
+  const groupedDocs = currentDocs.reduce((acc, doc) => {
     const category = COMPLIANCE_DOC_LABELS[doc.doc_type]?.category || "Other";
     if (!acc[category]) acc[category] = [];
     acc[category].push(doc);
@@ -69,45 +52,46 @@ export const ContractorComplianceTab = ({ contractorId, complianceDocs, required
     return acc;
   }, {} as Record<string, ComplianceDocType[]>);
 
-  // Merge all categories
   const allCategories = [...new Set([...Object.keys(groupedDocs), ...Object.keys(groupedMissing)])];
-
   const completedCount = requiredDocTypes.filter((dt) => !!uploadedByType[dt]).length;
+  const needsReviewCount = currentDocs.filter(d => d.status === "needs_review" || d.status === "uploaded").length;
+
+  const canReview = (doc: ContractorComplianceDoc) =>
+    doc.status === "uploaded" || doc.status === "needs_review" || doc.status === "ai_checking";
 
   return (
     <div className="space-y-6">
       {/* Summary bar */}
-      {requiredDocTypes.length > 0 && (
-        <div className="bg-card rounded-xl border border-border p-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Shield className="h-5 w-5 text-primary" />
-            <span className="text-sm font-medium">
-              {completedCount} of {requiredDocTypes.length} required documents uploaded
-            </span>
-            {completedCount === requiredDocTypes.length ? (
-              <Badge className="bg-success/10 text-success">Complete</Badge>
-            ) : (
-              <Badge className="bg-warning/10 text-warning">{requiredDocTypes.length - completedCount} missing</Badge>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <EditRequiredDocsDialog contractorId={contractorId} currentDocs={requiredDocTypes} />
-            <UploadComplianceDocDialog contractorId={contractorId} />
-          </div>
+      <div className="bg-card rounded-xl border border-border p-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <Shield className="h-5 w-5 text-primary" />
+          {requiredDocTypes.length > 0 ? (
+            <>
+              <span className="text-sm font-medium">
+                {completedCount} of {requiredDocTypes.length} required documents
+              </span>
+              {completedCount === requiredDocTypes.length ? (
+                <Badge className="bg-success/10 text-success">Complete</Badge>
+              ) : (
+                <Badge className="bg-warning/10 text-warning">{requiredDocTypes.length - completedCount} missing</Badge>
+              )}
+            </>
+          ) : (
+            <span className="text-sm text-muted-foreground">No required documents configured.</span>
+          )}
+          {needsReviewCount > 0 && (
+            <Badge className="bg-blue-500/10 text-blue-600 dark:text-blue-400">
+              {needsReviewCount} awaiting review
+            </Badge>
+          )}
         </div>
-      )}
-
-      {requiredDocTypes.length === 0 && (
-        <div className="bg-card rounded-xl border border-border p-4 flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">No required documents configured.</span>
-          <div className="flex items-center gap-2">
-            <EditRequiredDocsDialog contractorId={contractorId} currentDocs={requiredDocTypes} />
-            <UploadComplianceDocDialog contractorId={contractorId} />
-          </div>
+        <div className="flex items-center gap-2">
+          <EditRequiredDocsDialog contractorId={contractorId} currentDocs={requiredDocTypes} />
+          <UploadComplianceDocDialog contractorId={contractorId} />
         </div>
-      )}
+      </div>
 
-      {complianceDocs.length === 0 && missingRequired.length === 0 && (
+      {currentDocs.length === 0 && missingRequired.length === 0 && (
         <div className="bg-card rounded-xl border border-border p-12 text-center">
           <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="font-semibold mb-2">No Compliance Documents</h3>
@@ -125,12 +109,12 @@ export const ContractorComplianceTab = ({ contractorId, complianceDocs, required
             <h3 className="font-semibold mb-4">{category}</h3>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {docs.map((doc) => {
-                const status = getDocStatus(doc);
                 const label = COMPLIANCE_DOC_LABELS[doc.doc_type]?.label || doc.doc_type;
                 const isInsurance = doc.doc_type.includes('insurance') || doc.doc_type.includes('liability');
                 const daysUntilExpiry = doc.expiry_date
                   ? differenceInDays(parseLocalDate(doc.expiry_date), new Date())
                   : null;
+
                 return (
                   <div key={doc.id} className="border border-border rounded-lg p-4">
                     <div className="flex items-start justify-between mb-2">
@@ -139,38 +123,59 @@ export const ContractorComplianceTab = ({ contractorId, complianceDocs, required
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingDoc(doc)}>
                           <Pencil className="h-3 w-3" />
                         </Button>
-                        {getStatusBadge(status)}
+                        {canReview(doc) && (
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setReviewingDoc(doc)}>
+                            <Eye className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
                     </div>
+
+                    {/* Status badge */}
+                    <div className="mb-2">
+                      <ComplianceDocStatusBadge status={doc.status as ComplianceDocStatus} />
+                    </div>
+
                     {doc.reference_number && (
                       <p className="text-xs text-muted-foreground">Ref: {doc.reference_number}</p>
+                    )}
+                    {doc.cover_amount && (
+                      <p className="text-xs text-muted-foreground">Cover: {doc.cover_amount}</p>
                     )}
                     {doc.expiry_date && (
                       <p className="text-xs text-muted-foreground">
                         Expires: {format(parseLocalDate(doc.expiry_date), "dd MMM yyyy")}
                       </p>
                     )}
-                    {doc.verified && (
-                      <div className="flex items-center gap-1 mt-2 text-xs text-success">
-                        <CheckCircle2 className="h-3 w-3" />
-                        Verified
+
+                    {/* Rejection info */}
+                    {doc.status === "rejected" && doc.rejection_reason && (
+                      <div className="mt-2 flex items-start gap-1.5 p-2 rounded bg-destructive/10 border border-destructive/20">
+                        <XCircle className="h-3.5 w-3.5 text-destructive flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-xs text-foreground font-medium">{doc.rejection_reason}</p>
+                          {doc.rejection_action_required && (
+                            <p className="text-xs text-muted-foreground mt-0.5">{doc.rejection_action_required}</p>
+                          )}
+                        </div>
                       </div>
                     )}
-                    {isInsurance && status === "expiring_soon" && daysUntilExpiry !== null && (
+
+                    {/* Expiry warnings for approved insurance */}
+                    {doc.status === "approved" && isInsurance && daysUntilExpiry !== null && daysUntilExpiry <= 30 && daysUntilExpiry >= 0 && (
                       <div className="mt-2 flex items-start gap-1.5 p-2 rounded bg-warning/10 border border-warning/20">
                         <AlertTriangle className="h-3.5 w-3.5 text-warning flex-shrink-0 mt-0.5" />
                         <p className="text-xs text-foreground">
-                          Insurance expires in {daysUntilExpiry} day{daysUntilExpiry !== 1 ? 's' : ''}. Request updated certificate before expiry to maintain compliance.
+                          Expires in {daysUntilExpiry} day{daysUntilExpiry !== 1 ? 's' : ''}
                         </p>
                       </div>
                     )}
-                    {isInsurance && status === "expired" && (
-                      <div className="mt-2 flex items-start gap-1.5 p-2 rounded bg-destructive/10 border border-destructive/20">
-                        <XCircle className="h-3.5 w-3.5 text-destructive flex-shrink-0 mt-0.5" />
-                        <p className="text-xs text-foreground">
-                          Insurance has expired. This contractor should not work on site until valid cover is provided.
-                        </p>
-                      </div>
+
+                    {/* Review info */}
+                    {doc.reviewed_at && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Reviewed {format(new Date(doc.reviewed_at), "dd MMM yyyy")}
+                      </p>
                     )}
                   </div>
                 );
@@ -183,10 +188,7 @@ export const ContractorComplianceTab = ({ contractorId, complianceDocs, required
                   <div key={dt} className="border border-dashed border-border rounded-lg p-4 opacity-60">
                     <div className="flex items-start justify-between mb-2">
                       <span className="font-medium text-sm">{label}</span>
-                      <Badge variant="outline" className="text-muted-foreground">
-                        <Circle className="h-2 w-2 mr-1" />
-                        Missing
-                      </Badge>
+                      <ComplianceDocStatusBadge status="missing" />
                     </div>
                     <p className="text-xs text-muted-foreground">Required — not yet uploaded</p>
                   </div>
@@ -196,11 +198,19 @@ export const ContractorComplianceTab = ({ contractorId, complianceDocs, required
           </div>
         );
       })}
+
       {editingDoc && (
         <EditComplianceDocDialog
           doc={editingDoc}
           open={!!editingDoc}
           onOpenChange={(open) => { if (!open) setEditingDoc(null); }}
+        />
+      )}
+      {reviewingDoc && (
+        <ReviewComplianceDocDialog
+          doc={reviewingDoc}
+          open={!!reviewingDoc}
+          onOpenChange={(open) => { if (!open) setReviewingDoc(null); }}
         />
       )}
     </div>
