@@ -182,6 +182,23 @@ Deno.serve(async (req) => {
         );
       }
 
+      // Trigger AI document check (fire-and-forget)
+      if (newDoc?.id) {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+        fetch(`${supabaseUrl}/functions/v1/check-compliance-doc`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${anonKey}`,
+          },
+          body: JSON.stringify({
+            compliance_doc_id: newDoc.id,
+            organisation_id: contractor.organisation_id,
+          }),
+        }).catch((err) => console.error("AI check trigger error:", err));
+      }
+
       return new Response(
         JSON.stringify({ success: true, doc: newDoc }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
