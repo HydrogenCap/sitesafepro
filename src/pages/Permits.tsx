@@ -224,6 +224,19 @@ export default function Permits() {
 
   const handleStatusChange = async (permitId: string, newStatus: string) => {
     try {
+      // I6: Prevent self-approval in the UI as well
+      if (newStatus === "approved") {
+        const permit = permits.find(p => p.id === permitId);
+        if (permit && (permit as any).requested_by === user?.id) {
+          toast({
+            title: "Cannot self-approve",
+            description: "Permit approver must be a different person than the requester (safety-critical role separation)",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
       const updateData: any = { status: newStatus };
       
       if (newStatus === "approved") {
@@ -241,7 +254,32 @@ export default function Permits() {
         .update(updateData)
         .eq("id", permitId);
 
-      if (error) throw error;
+      if (error) {
+        // Check if it's the self-approval trigger error
+        if (error.message?.includes('approver must be a different person')) {
+          toast({
+            title: "Cannot self-approve",
+            description: "Permit approver must be a different person than the requester",
+            variant: "destructive",
+          });
+          return;
+        }
+        throw error;
+      }
+
+      // Log audit event for permit approval
+      if (organisationId && user && (newStatus === "approved" || newStatus === "cancelled")) {
+        const permit = permits.find(p => p.id === permitId);
+        await supabase.from("activity_logs").insert({
+          organisation_id: organisationId,
+          actor_id: user.id,
+          activity_type: (newStatus === "approved" ? "permit_approved" : "permit_cancelled") as any,
+          entity_type: "permit",
+          entity_id: permitId,
+          entity_name: permit?.title || "",
+          description: `Permit ${newStatus}: ${permit?.permit_number || ''}`,
+        });
+      }
 
       toast({
         title: "Status updated",

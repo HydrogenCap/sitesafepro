@@ -518,6 +518,42 @@ export default function Inspections() {
           </Select>
         </div>
 
+        {/* Overdue Inspections Alert */}
+        {(() => {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const overdueInspections = inspections.filter(
+            (i) => i.next_inspection_date && new Date(i.next_inspection_date) < today
+          );
+          if (overdueInspections.length === 0) return null;
+          return (
+            <Card className="border-destructive">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-semibold text-destructive">
+                      {overdueInspections.length} Overdue Inspection{overdueInspections.length > 1 ? 's' : ''}
+                    </h3>
+                    <ul className="mt-1 space-y-1">
+                      {overdueInspections.slice(0, 5).map((ins) => (
+                        <li key={ins.id} className="text-sm text-muted-foreground">
+                          <span className="font-medium text-foreground">{ins.title}</span>
+                          {' — due '}
+                          {format(new Date(ins.next_inspection_date!), "dd MMM yyyy")}
+                          {ins.inspection_type === 'scaffold' && (
+                            <span className="text-destructive text-xs ml-1">(7-day legal requirement)</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
+
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card>
@@ -547,7 +583,7 @@ export default function Inspections() {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-2">
-                <XCircle className="h-5 w-5 text-red-500" />
+                <XCircle className="h-5 w-5 text-destructive" />
                 <div>
                   <p className="text-2xl font-bold">
                     {inspections.filter((i) => i.overall_result === "fail").length}
@@ -563,9 +599,14 @@ export default function Inspections() {
                 <AlertTriangle className="h-5 w-5 text-yellow-500" />
                 <div>
                   <p className="text-2xl font-bold">
-                    {inspections.filter((i) => i.overall_result === "requires_action").length}
+                    {inspections.filter((i) => {
+                      if (!i.next_inspection_date) return false;
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      return new Date(i.next_inspection_date) < today;
+                    }).length}
                   </p>
-                  <p className="text-sm text-muted-foreground">Requires Action</p>
+                  <p className="text-sm text-muted-foreground">Overdue</p>
                 </div>
               </div>
             </CardContent>
@@ -631,11 +672,18 @@ export default function Inspections() {
                               <Calendar className="h-3 w-3 inline mr-1" />
                               Inspected: {format(new Date(inspection.inspection_date), "dd MMM yyyy")}
                             </span>
-                            {inspection.next_inspection_date && (
-                              <span>
-                                Next: {format(new Date(inspection.next_inspection_date), "dd MMM yyyy")}
-                              </span>
-                            )}
+                            {inspection.next_inspection_date && (() => {
+                              const dueDate = new Date(inspection.next_inspection_date);
+                              const today = new Date();
+                              today.setHours(0, 0, 0, 0);
+                              const isOverdue = dueDate < today;
+                              return (
+                                <span className={isOverdue ? 'text-destructive font-semibold' : ''}>
+                                  {isOverdue ? '⚠ OVERDUE — ' : 'Next: '}
+                                  {format(dueDate, "dd MMM yyyy")}
+                                </span>
+                              );
+                            })()}
                           </div>
                           {inspection.inspector && (
                             <p className="text-sm text-muted-foreground">

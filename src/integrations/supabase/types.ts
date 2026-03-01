@@ -1687,6 +1687,7 @@ export type Database = {
           reported_by: string | null
           riddor_reference: string | null
           riddor_reported_at: string | null
+          riddor_submitted_by: string | null
           root_cause: string | null
           severity: Database["public"]["Enums"]["incident_severity"]
           status: Database["public"]["Enums"]["incident_status"]
@@ -1720,6 +1721,7 @@ export type Database = {
           reported_by?: string | null
           riddor_reference?: string | null
           riddor_reported_at?: string | null
+          riddor_submitted_by?: string | null
           root_cause?: string | null
           severity?: Database["public"]["Enums"]["incident_severity"]
           status?: Database["public"]["Enums"]["incident_status"]
@@ -1753,6 +1755,7 @@ export type Database = {
           reported_by?: string | null
           riddor_reference?: string | null
           riddor_reported_at?: string | null
+          riddor_submitted_by?: string | null
           root_cause?: string | null
           severity?: Database["public"]["Enums"]["incident_severity"]
           status?: Database["public"]["Enums"]["incident_status"]
@@ -1791,6 +1794,13 @@ export type Database = {
           {
             foreignKeyName: "incidents_reported_by_fkey"
             columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidents_riddor_submitted_by_fkey"
+            columns: ["riddor_submitted_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -3044,6 +3054,92 @@ export type Database = {
           },
         ]
       }
+      site_actions: {
+        Row: {
+          assigned_to_name: string | null
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          location: string | null
+          organisation_id: string
+          photo_storage_path: string | null
+          priority: string
+          project_id: string | null
+          raised_by: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to_name?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          location?: string | null
+          organisation_id: string
+          photo_storage_path?: string | null
+          priority?: string
+          project_id?: string | null
+          raised_by: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to_name?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          location?: string | null
+          organisation_id?: string
+          photo_storage_path?: string | null
+          priority?: string
+          project_id?: string | null
+          raised_by?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_actions_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_actions_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_actions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_actions_raised_by_fkey"
+            columns: ["raised_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_diary_entries: {
         Row: {
           completed_at: string | null
@@ -3171,6 +3267,92 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_hazards: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          location: string | null
+          organisation_id: string
+          photo_mime_type: string | null
+          photo_storage_path: string | null
+          project_id: string | null
+          reported_at: string
+          reported_by: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          location?: string | null
+          organisation_id: string
+          photo_mime_type?: string | null
+          photo_storage_path?: string | null
+          project_id?: string | null
+          reported_at?: string
+          reported_by: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          location?: string | null
+          organisation_id?: string
+          photo_mime_type?: string | null
+          photo_storage_path?: string | null
+          project_id?: string | null
+          reported_at?: string
+          reported_by?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_hazards_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_hazards_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_hazards_reported_by_fkey"
+            columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_hazards_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -3894,6 +4076,20 @@ export type Database = {
         | "site_visit_checkout"
         | "settings_updated"
         | "subscription_changed"
+        | "incident_reported"
+        | "incident_updated"
+        | "incident_closed"
+        | "riddor_reported"
+        | "permit_approved"
+        | "permit_rejected"
+        | "permit_cancelled"
+        | "contractor_removed"
+        | "exemption_granted"
+        | "rams_approved"
+        | "rams_superseded"
+        | "go_live_activated"
+        | "inspection_completed"
+        | "inspection_overdue"
       client_role:
         | "client"
         | "principal_designer"
@@ -3950,6 +4146,7 @@ export type Database = {
         | "fire_safety"
         | "meeting_minutes"
         | "drawing"
+        | "hs_file"
       document_version_status: "draft" | "in_review" | "approved" | "superseded"
       incident_severity:
         | "near_miss"
@@ -4187,6 +4384,20 @@ export const Constants = {
         "site_visit_checkout",
         "settings_updated",
         "subscription_changed",
+        "incident_reported",
+        "incident_updated",
+        "incident_closed",
+        "riddor_reported",
+        "permit_approved",
+        "permit_rejected",
+        "permit_cancelled",
+        "contractor_removed",
+        "exemption_granted",
+        "rams_approved",
+        "rams_superseded",
+        "go_live_activated",
+        "inspection_completed",
+        "inspection_overdue",
       ],
       client_role: [
         "client",
@@ -4246,6 +4457,7 @@ export const Constants = {
         "fire_safety",
         "meeting_minutes",
         "drawing",
+        "hs_file",
       ],
       document_version_status: ["draft", "in_review", "approved", "superseded"],
       incident_severity: [
