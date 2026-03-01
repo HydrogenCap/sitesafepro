@@ -56,3 +56,6 @@ verify_jwt = false
 
 [functions.check-compliance-doc]
 verify_jwt = false
+
+[functions.contractor-invite]
+verify_jwt = false

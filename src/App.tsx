@@ -61,6 +61,7 @@ import NewContractor from "./pages/NewContractor";
 import ContractorDetail from "./pages/ContractorDetail";
 import ContractorUpload from "./pages/ContractorUpload";
 import ComplianceCalendar from "./pages/ComplianceCalendar";
+import ContractorDashboardPage from "./pages/ContractorDashboard";
 import Help from "./pages/Help";
 import Documentation from "./pages/Documentation";
 import CDMGuide from "./pages/CDMGuide";
@@ -158,6 +159,7 @@ const App = () => {
               <Route path="/contractors" element={<ProtectedRoute><Contractors /></ProtectedRoute>} />
               <Route path="/contractors/new" element={<ProtectedRoute><NewContractor /></ProtectedRoute>} />
               <Route path="/contractors/:id" element={<ProtectedRoute><ContractorDetail /></ProtectedRoute>} />
+              <Route path="/contractor-portal" element={<ProtectedRoute><ContractorDashboardPage /></ProtectedRoute>} />
               <Route path="/compliance-calendar" element={<ProtectedRoute><ComplianceCalendar /></ProtectedRoute>} />
               <Route path="/help" element={<ProtectedRoute><Help /></ProtectedRoute>} />
               <Route path="/audit-log" element={<ProtectedRoute><RequireRole role="admin" fallback={<AccessDenied />}><AuditLog /></RequireRole></ProtectedRoute>} />
