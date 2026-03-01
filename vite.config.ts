@@ -59,7 +59,6 @@ export default defineConfig(({ mode }) => ({
               cacheName: "supabase-never-cache",
             },
           },
-          },
           {
             urlPattern: /\.(png|jpg|jpeg|svg|gif|webp)$/,
             handler: "CacheFirst",
