@@ -125,18 +125,40 @@ export default function TalkDetail() {
 
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
+    const contentWidth = pageWidth - 40;
     let yPos = 20;
+
+    const addWrappedText = (text: string, x: number, maxWidth: number, fontSize = 10) => {
+      doc.setFontSize(fontSize);
+      const lines: string[] = doc.splitTextToSize(text, maxWidth);
+      lines.forEach((line: string) => {
+        if (yPos > 270) {
+          doc.addPage();
+          yPos = 20;
+        }
+        doc.text(line, x, yPos);
+        yPos += fontSize * 0.5 + 1;
+      });
+    };
 
     // Title
     doc.setFontSize(20);
     doc.setFont("helvetica", "bold");
-    doc.text("Toolbox Talk Record", pageWidth / 2, yPos, { align: "center" });
-    yPos += 15;
+    const titleLines: string[] = doc.splitTextToSize("Toolbox Talk Record", contentWidth);
+    titleLines.forEach((line: string) => {
+      doc.text(line, pageWidth / 2, yPos, { align: "center" });
+      yPos += 10;
+    });
+    yPos += 5;
 
     // Talk title
     doc.setFontSize(16);
-    doc.text(talk.title, pageWidth / 2, yPos, { align: "center" });
-    yPos += 10;
+    const talkTitleLines: string[] = doc.splitTextToSize(talk.title, contentWidth);
+    talkTitleLines.forEach((line: string) => {
+      doc.text(line, pageWidth / 2, yPos, { align: "center" });
+      yPos += 8;
+    });
+    yPos += 2;
 
     // Category badge
     doc.setFontSize(10);
@@ -154,17 +176,17 @@ export default function TalkDetail() {
     doc.setFontSize(10);
     
     const details = [
-      [`Date: ${format(new Date(talk.delivered_at), "dd MMMM yyyy HH:mm")}`],
-      talk.deliverer ? [`Delivered by: ${talk.deliverer.full_name}`] : [],
-      talk.project ? [`Project: ${talk.project.name}`] : [],
-      talk.location ? [`Location: ${talk.location}`] : [],
-      talk.weather_conditions ? [`Weather: ${talk.weather_conditions}`] : [],
-      [`Status: ${talk.status === "completed" ? "Completed" : "In Progress"}`],
-    ].flat();
+      `Date: ${format(new Date(talk.delivered_at), "dd MMMM yyyy HH:mm")}`,
+      talk.deliverer ? `Delivered by: ${talk.deliverer.full_name}` : null,
+      talk.project ? `Project: ${talk.project.name}` : null,
+      talk.location ? `Location: ${talk.location}` : null,
+      talk.weather_conditions ? `Weather: ${talk.weather_conditions}` : null,
+      `Status: ${talk.status === "completed" ? "Completed" : "In Progress"}`,
+    ].filter(Boolean) as string[];
 
     details.forEach(detail => {
-      doc.text(detail, 20, yPos);
-      yPos += 6;
+      addWrappedText(detail, 20, contentWidth);
+      yPos += 1;
     });
 
     yPos += 10;

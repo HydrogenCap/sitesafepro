@@ -224,10 +224,10 @@ export const generateToolboxTalksReport = (
   
   const headers = [
     { label: "Title", x: 20 },
-    { label: "Category", x: 65 },
-    { label: "Date", x: 105 },
-    { label: "Delivered By", x: 135 },
-    { label: "Attendees", x: 175 },
+    { label: "Category", x: 75 },
+    { label: "Date", x: 110 },
+    { label: "Delivered By", x: 140 },
+    { label: "Attendees", x: 178 },
   ];
   
   yPos = addTableHeader(doc, headers, yPos);
@@ -239,11 +239,11 @@ export const generateToolboxTalksReport = (
     yPos = checkPageBreak(doc, yPos, 10);
     
     doc.setTextColor(...PDF_COLORS.text);
-    doc.text(truncateText(talk.title, 22), 20, yPos);
-    doc.text(truncateText(talk.category.replace(/_/g, " "), 18), 65, yPos);
-    doc.text(format(new Date(talk.delivered_at), "dd/MM/yy"), 105, yPos);
-    doc.text(truncateText(talk.deliverer_name, 18), 135, yPos);
-    doc.text(talk.attendee_count.toString(), 180, yPos);
+    doc.text(truncateText(talk.title, 28), 20, yPos);
+    doc.text(truncateText(talk.category.replace(/_/g, " "), 18), 75, yPos);
+    doc.text(format(new Date(talk.delivered_at), "dd/MM/yy"), 110, yPos);
+    doc.text(truncateText(talk.deliverer_name, 18), 140, yPos);
+    doc.text(talk.attendee_count.toString(), 183, yPos);
     
     yPos += 7;
   });
