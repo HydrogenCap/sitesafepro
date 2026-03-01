@@ -360,7 +360,7 @@ const ProjectDetail = () => {
             </div>
             {project.dropbox_folder_url && (
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Dropbox Folder</p>
+                <p className="text-sm text-muted-foreground mb-1">Architectural Drawings</p>
                 <a
                   href={project.dropbox_folder_url}
                   target="_blank"

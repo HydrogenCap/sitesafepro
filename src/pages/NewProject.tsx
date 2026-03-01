@@ -39,6 +39,7 @@ const NewProject = () => {
     principalDesigner: "",
     startDate: "",
     estimatedEndDate: "",
+    dropboxFolderUrl: "",
   });
 
   useEffect(() => {
@@ -98,6 +99,7 @@ const NewProject = () => {
           estimated_end_date: formData.estimatedEndDate || null,
           created_by: user?.id,
           image_url: imageUrl,
+          dropbox_folder_url: formData.dropboxFolderUrl || null,
           status: "setup", // Start in setup mode
         })
         .select()
@@ -284,6 +286,28 @@ const NewProject = () => {
                 onChange={(e) => updateField("estimatedEndDate", e.target.value)}
               />
             </div>
+          </div>
+
+          {/* Architectural Drawings - Dropbox link */}
+          <div className="space-y-2">
+            <Label htmlFor="dropboxFolderUrl" className="flex items-center gap-2">
+              <svg viewBox="0 0 40 40" className="h-4 w-4" fill="none">
+                <path d="M20 8L10 14.5L20 21L10 27.5L0 21L10 14.5L0 8L10 1.5L20 8Z" fill="#0061FF"/>
+                <path d="M20 8L30 14.5L20 21L30 27.5L40 21L30 14.5L40 8L30 1.5L20 8Z" fill="#0061FF"/>
+                <path d="M10 29.5L20 23L30 29.5L20 36L10 29.5Z" fill="#0061FF"/>
+              </svg>
+              Architectural Drawings (Dropbox)
+            </Label>
+            <Input
+              id="dropboxFolderUrl"
+              type="url"
+              placeholder="https://www.dropbox.com/sh/..."
+              value={formData.dropboxFolderUrl}
+              onChange={(e) => updateField("dropboxFolderUrl", e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Paste a Dropbox shared folder link for architectural drawings.
+            </p>
           </div>
 
           {/* Submit */}
