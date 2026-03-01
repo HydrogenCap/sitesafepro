@@ -39,6 +39,7 @@ import Inductions from "./pages/Inductions";
 import Reports from "./pages/Reports";
 import Permits from "./pages/Permits";
 import Inspections from "./pages/Inspections";
+import InspectionDetail from "./pages/InspectionDetail";
 import Incidents from "./pages/Incidents";
 import Actions from "./pages/Actions";
 import NewAction from "./pages/NewAction";
@@ -154,6 +155,7 @@ const App = () => {
               <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
               <Route path="/permits" element={<ProtectedRoute><Permits /></ProtectedRoute>} />
               <Route path="/inspections" element={<ProtectedRoute><Inspections /></ProtectedRoute>} />
+              <Route path="/inspections/:id" element={<ProtectedRoute><InspectionDetail /></ProtectedRoute>} />
               <Route path="/incidents" element={<ProtectedRoute><Incidents /></ProtectedRoute>} />
               <Route path="/actions" element={<ProtectedRoute><Actions /></ProtectedRoute>} />
               <Route path="/actions/new" element={<ProtectedRoute><NewAction /></ProtectedRoute>} />

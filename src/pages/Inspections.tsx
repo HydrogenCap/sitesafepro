@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,14 +41,14 @@ interface Project {
 }
 
 const INSPECTION_TYPES = [
-  { value: "scaffold", label: "Scaffold Inspection" },
-  { value: "excavation", label: "Excavation Inspection" },
-  { value: "lifting_equipment", label: "Lifting Equipment" },
-  { value: "electrical", label: "Electrical Inspection" },
-  { value: "fire_safety", label: "Fire Safety" },
-  { value: "housekeeping", label: "Housekeeping" },
-  { value: "ppe_compliance", label: "PPE Compliance" },
-  { value: "general_site", label: "General Site" },
+  { value: "scaffold", label: "Scaffold Inspection", defaultIntervalDays: 7 },
+  { value: "excavation", label: "Excavation Inspection", defaultIntervalDays: 7 },
+  { value: "lifting_equipment", label: "Lifting Equipment", defaultIntervalDays: 7 },
+  { value: "electrical", label: "Electrical Inspection", defaultIntervalDays: 90 },
+  { value: "fire_safety", label: "Fire Safety", defaultIntervalDays: 30 },
+  { value: "housekeeping", label: "Housekeeping", defaultIntervalDays: 7 },
+  { value: "ppe_compliance", label: "PPE Compliance", defaultIntervalDays: 30 },
+  { value: "general_site", label: "General Site", defaultIntervalDays: 14 },
 ];
 
 const SCAFFOLD_CHECKLIST = [
@@ -74,6 +75,7 @@ const RESULT_BADGES: Record<string, { label: string; variant: "default" | "secon
 
 export default function Inspections() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { canAccess } = useSubscription();
   const { toast } = useToast();
   const [inspections, setInspections] = useState<Inspection[]>([]);
@@ -113,7 +115,15 @@ export default function Inspections() {
     } else {
       setChecklistItems([]);
     }
-  }, [formData.inspection_type]);
+
+    // Auto-suggest next inspection date based on type
+    const typeConfig = INSPECTION_TYPES.find(t => t.value === formData.inspection_type);
+    if (typeConfig && formData.inspection_date) {
+      const inspDate = new Date(formData.inspection_date);
+      inspDate.setDate(inspDate.getDate() + typeConfig.defaultIntervalDays);
+      setFormData(prev => ({ ...prev, next_inspection_date: format(inspDate, "yyyy-MM-dd") }));
+    }
+  }, [formData.inspection_type, formData.inspection_date]);
 
   const fetchData = async () => {
     if (!user) return;
@@ -387,6 +397,11 @@ export default function Inspections() {
                     value={formData.next_inspection_date}
                     onChange={(e) => setFormData({ ...formData, next_inspection_date: e.target.value })}
                   />
+                  {formData.next_inspection_date && (
+                    <p className="text-xs text-muted-foreground">
+                      Auto-suggested based on {INSPECTION_TYPES.find(t => t.value === formData.inspection_type)?.label} interval. Adjust if needed.
+                    </p>
+                  )}
                 </div>
 
                 {/* Checklist for scaffold inspections */}
@@ -639,7 +654,11 @@ export default function Inspections() {
                 : null;
 
               return (
-                <Card key={inspection.id}>
+                <Card
+                  key={inspection.id}
+                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => navigate(`/inspections/${inspection.id}`)}
+                >
                   <CardContent className="p-6">
                     <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                       <div className="flex gap-4">
