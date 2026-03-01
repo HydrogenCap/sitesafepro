@@ -546,6 +546,7 @@ export type Database = {
       }
       contractor_compliance_docs: {
         Row: {
+          ai_check_id: string | null
           contractor_company_id: string | null
           cover_amount: string | null
           created_at: string
@@ -554,22 +555,31 @@ export type Database = {
           expiry_date: string | null
           file_path: string | null
           id: string
+          is_current: boolean
           issue_date: string | null
           organisation_id: string
+          previous_version_id: string | null
           profile_id: string | null
           provider: string | null
           reference_number: string | null
+          rejection_action_required: string | null
+          rejection_reason: string | null
           reminder_sent_30_days: boolean | null
           reminder_sent_7_days: boolean | null
           reminder_sent_expired: boolean | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
           updated_at: string
           uploaded_by: string
           verification_notes: string | null
           verified: boolean | null
           verified_at: string | null
           verified_by: string | null
+          version_number: number
         }
         Insert: {
+          ai_check_id?: string | null
           contractor_company_id?: string | null
           cover_amount?: string | null
           created_at?: string
@@ -578,22 +588,31 @@ export type Database = {
           expiry_date?: string | null
           file_path?: string | null
           id?: string
+          is_current?: boolean
           issue_date?: string | null
           organisation_id: string
+          previous_version_id?: string | null
           profile_id?: string | null
           provider?: string | null
           reference_number?: string | null
+          rejection_action_required?: string | null
+          rejection_reason?: string | null
           reminder_sent_30_days?: boolean | null
           reminder_sent_7_days?: boolean | null
           reminder_sent_expired?: boolean | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
           updated_at?: string
           uploaded_by: string
           verification_notes?: string | null
           verified?: boolean | null
           verified_at?: string | null
           verified_by?: string | null
+          version_number?: number
         }
         Update: {
+          ai_check_id?: string | null
           contractor_company_id?: string | null
           cover_amount?: string | null
           created_at?: string
@@ -602,22 +621,37 @@ export type Database = {
           expiry_date?: string | null
           file_path?: string | null
           id?: string
+          is_current?: boolean
           issue_date?: string | null
           organisation_id?: string
+          previous_version_id?: string | null
           profile_id?: string | null
           provider?: string | null
           reference_number?: string | null
+          rejection_action_required?: string | null
+          rejection_reason?: string | null
           reminder_sent_30_days?: boolean | null
           reminder_sent_7_days?: boolean | null
           reminder_sent_expired?: boolean | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
           updated_at?: string
           uploaded_by?: string
           verification_notes?: string | null
           verified?: boolean | null
           verified_at?: string | null
           verified_by?: string | null
+          version_number?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "contractor_compliance_docs_ai_check_id_fkey"
+            columns: ["ai_check_id"]
+            isOneToOne: false
+            referencedRelation: "document_ai_checks"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "contractor_compliance_docs_contractor_company_id_fkey"
             columns: ["contractor_company_id"]
@@ -640,8 +674,22 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "contractor_compliance_docs_previous_version_id_fkey"
+            columns: ["previous_version_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_compliance_docs"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "contractor_compliance_docs_profile_id_fkey"
             columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_compliance_docs_reviewed_by_fkey"
+            columns: ["reviewed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -726,10 +774,91 @@ export type Database = {
           },
         ]
       }
+      contractor_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          company_name: string | null
+          contractor_company_id: string | null
+          created_at: string | null
+          email: string
+          expires_at: string
+          id: string
+          invite_token: string
+          invited_by: string
+          message: string | null
+          organisation_id: string
+          required_doc_types: string[] | null
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          company_name?: string | null
+          contractor_company_id?: string | null
+          created_at?: string | null
+          email: string
+          expires_at?: string
+          id?: string
+          invite_token?: string
+          invited_by: string
+          message?: string | null
+          organisation_id: string
+          required_doc_types?: string[] | null
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          company_name?: string | null
+          contractor_company_id?: string | null
+          created_at?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          invite_token?: string
+          invited_by?: string
+          message?: string | null
+          organisation_id?: string
+          required_doc_types?: string[] | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contractor_invitations_accepted_by_fkey"
+            columns: ["accepted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_invitations_contractor_company_id_fkey"
+            columns: ["contractor_company_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_invitations_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_invitations_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contractor_operatives: {
         Row: {
           blood_type: string | null
           contractor_company_id: string
+          contractor_role: string
           created_at: string
           cscs_card_number: string | null
           cscs_card_type: string | null
@@ -754,6 +883,7 @@ export type Database = {
         Insert: {
           blood_type?: string | null
           contractor_company_id: string
+          contractor_role?: string
           created_at?: string
           cscs_card_number?: string | null
           cscs_card_type?: string | null
@@ -778,6 +908,7 @@ export type Database = {
         Update: {
           blood_type?: string | null
           contractor_company_id?: string
+          contractor_role?: string
           created_at?: string
           cscs_card_number?: string | null
           cscs_card_type?: string | null
@@ -1126,6 +1257,72 @@ export type Database = {
           },
         ]
       }
+      document_ai_checks: {
+        Row: {
+          ai_model: string
+          completed_at: string | null
+          compliance_doc_id: string
+          confidence_score: number | null
+          created_at: string | null
+          extracted_fields: Json | null
+          id: string
+          organisation_id: string
+          processing_time_ms: number | null
+          raw_response: Json | null
+          result: string | null
+          status: string
+          summary: string | null
+          validation_errors: Json | null
+        }
+        Insert: {
+          ai_model?: string
+          completed_at?: string | null
+          compliance_doc_id: string
+          confidence_score?: number | null
+          created_at?: string | null
+          extracted_fields?: Json | null
+          id?: string
+          organisation_id: string
+          processing_time_ms?: number | null
+          raw_response?: Json | null
+          result?: string | null
+          status?: string
+          summary?: string | null
+          validation_errors?: Json | null
+        }
+        Update: {
+          ai_model?: string
+          completed_at?: string | null
+          compliance_doc_id?: string
+          confidence_score?: number | null
+          created_at?: string | null
+          extracted_fields?: Json | null
+          id?: string
+          organisation_id?: string
+          processing_time_ms?: number | null
+          raw_response?: Json | null
+          result?: string | null
+          status?: string
+          summary?: string | null
+          validation_errors?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_ai_checks_compliance_doc_id_fkey"
+            columns: ["compliance_doc_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_compliance_docs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_ai_checks_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_exports: {
         Row: {
           completed_at: string | null
@@ -1189,6 +1386,70 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_review_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_type: string
+          compliance_doc_id: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          new_status: string | null
+          notes: string | null
+          organisation_id: string
+          previous_status: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_type?: string
+          compliance_doc_id: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          new_status?: string | null
+          notes?: string | null
+          organisation_id: string
+          previous_status?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_type?: string
+          compliance_doc_id?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          new_status?: string | null
+          notes?: string | null
+          organisation_id?: string
+          previous_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_review_log_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_review_log_compliance_doc_id_fkey"
+            columns: ["compliance_doc_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_compliance_docs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_review_log_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
             referencedColumns: ["id"]
           },
         ]
@@ -1312,6 +1573,68 @@ export type Database = {
           },
           {
             foreignKeyName: "document_templates_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_type_requirements: {
+        Row: {
+          ai_auto_approve: boolean
+          ai_auto_approve_threshold: number | null
+          applies_to_site_ids: string[] | null
+          applies_to_trades: string[] | null
+          cover_currency: string | null
+          created_at: string | null
+          doc_type: string
+          expiry_warning_days: number[] | null
+          has_expiry: boolean
+          id: string
+          is_required: boolean
+          minimum_cover_amount: number | null
+          organisation_id: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          ai_auto_approve?: boolean
+          ai_auto_approve_threshold?: number | null
+          applies_to_site_ids?: string[] | null
+          applies_to_trades?: string[] | null
+          cover_currency?: string | null
+          created_at?: string | null
+          doc_type: string
+          expiry_warning_days?: number[] | null
+          has_expiry?: boolean
+          id?: string
+          is_required?: boolean
+          minimum_cover_amount?: number | null
+          organisation_id: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          ai_auto_approve?: boolean
+          ai_auto_approve_threshold?: number | null
+          applies_to_site_ids?: string[] | null
+          applies_to_trades?: string[] | null
+          cover_currency?: string | null
+          created_at?: string | null
+          doc_type?: string
+          expiry_warning_days?: number[] | null
+          has_expiry?: boolean
+          id?: string
+          is_required?: boolean
+          minimum_cover_amount?: number | null
+          organisation_id?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_type_requirements_organisation_id_fkey"
             columns: ["organisation_id"]
             isOneToOne: false
             referencedRelation: "organisations"

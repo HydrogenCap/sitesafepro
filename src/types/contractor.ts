@@ -75,6 +75,10 @@ export interface ContractorCompany {
   updated_at: string;
 }
 
+export type ComplianceDocStatus = 
+  | 'missing' | 'uploaded' | 'ai_checking' | 'needs_review'
+  | 'approved' | 'rejected' | 'expired' | 'superseded';
+
 export interface ContractorComplianceDoc {
   id: string;
   organisation_id: string;
@@ -98,6 +102,46 @@ export interface ContractorComplianceDoc {
   uploaded_by: string;
   created_at: string;
   updated_at: string;
+  // New fields
+  status: ComplianceDocStatus;
+  is_current: boolean;
+  version_number: number;
+  previous_version_id: string | null;
+  rejection_reason: string | null;
+  rejection_action_required: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  ai_check_id: string | null;
+}
+
+export interface DocumentAiCheck {
+  id: string;
+  organisation_id: string;
+  compliance_doc_id: string;
+  ai_model: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  result: 'pass' | 'needs_review' | 'fail' | null;
+  confidence_score: number | null;
+  extracted_fields: Record<string, any>;
+  validation_errors: Array<{ field: string; message: string; severity: string }>;
+  summary: string | null;
+  processing_time_ms: number | null;
+  created_at: string;
+  completed_at: string | null;
+}
+
+export interface DocumentReviewLogEntry {
+  id: string;
+  organisation_id: string;
+  compliance_doc_id: string;
+  action: string;
+  actor_id: string | null;
+  actor_type: 'user' | 'system' | 'ai';
+  previous_status: string | null;
+  new_status: string | null;
+  notes: string | null;
+  metadata: Record<string, any>;
+  created_at: string;
 }
 
 export interface ContractorOperative {
