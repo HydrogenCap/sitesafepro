@@ -84,6 +84,7 @@ interface Document {
   requires_acknowledgement?: boolean;
   acknowledgement_count?: number;
   total_contractors?: number;
+  expiry_date?: string | null;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -103,7 +104,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   other: "Other",
 };
 
-type ViewTab = "all" | "my-uploads" | "shared" | "pending-review";
+type ViewTab = "all" | "my-uploads" | "shared" | "pending-review" | "expiring";
 
 const Documents = () => {
   const { user } = useAuth();
@@ -123,6 +124,7 @@ const Documents = () => {
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [pendingCount, setPendingCount] = useState(0);
+  const [expiringCount, setExpiringCount] = useState(0);
   const [generatorDialogOpen, setGeneratorDialogOpen] = useState(false);
 
   // Fetch user role
@@ -168,6 +170,7 @@ const Documents = () => {
           ai_category,
           requires_acknowledgement,
           uploaded_by,
+          expiry_date,
           projects(name),
           profiles!documents_uploaded_by_fkey(full_name)
         `)
@@ -195,6 +198,7 @@ const Documents = () => {
         ai_confidence: doc.ai_confidence || null,
         ai_category: doc.ai_category || null,
         requires_acknowledgement: doc.requires_acknowledgement || false,
+        expiry_date: doc.expiry_date || null,
       }));
       
       setDocuments(transformedData);
@@ -202,6 +206,16 @@ const Documents = () => {
       // Count pending documents for review badge
       const pending = transformedData.filter(d => d.status === "pending").length;
       setPendingCount(pending);
+
+      // Count expiring documents (within 30 days)
+      const now = new Date();
+      const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const expiring = transformedData.filter(d => {
+        if (!d.expiry_date) return false;
+        const exp = new Date(d.expiry_date);
+        return exp <= thirtyDaysFromNow;
+      }).length;
+      setExpiringCount(expiring);
     } catch (error) {
       console.error("Error fetching documents:", error);
       toast.error("Failed to load documents");
@@ -230,10 +244,50 @@ const Documents = () => {
       matchesTab = doc.uploaded_by !== user?.id && doc.requires_acknowledgement === true;
     } else if (activeTab === "pending-review") {
       matchesTab = doc.status === "pending";
+    } else if (activeTab === "expiring") {
+      if (!doc.expiry_date) return false;
+      const exp = new Date(doc.expiry_date);
+      const now = new Date();
+      const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      matchesTab = exp <= thirtyDaysFromNow;
     }
 
     return matchesSearch && matchesCategory && matchesStatus && matchesTab;
+  }).sort((a, b) => {
+    // Sort expiring tab by soonest expiry first
+    if (activeTab === "expiring" && a.expiry_date && b.expiry_date) {
+      return new Date(a.expiry_date).getTime() - new Date(b.expiry_date).getTime();
+    }
+    return 0;
   });
+
+  const getExpiryPill = (expiryDate: string | null | undefined) => {
+    if (!expiryDate) return null;
+    const exp = new Date(expiryDate);
+    const now = new Date();
+    const daysRemaining = Math.ceil((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysRemaining <= 0) {
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive">
+          Expired
+        </span>
+      );
+    } else if (daysRemaining <= 7) {
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive">
+          {daysRemaining}d left
+        </span>
+      );
+    } else if (daysRemaining <= 30) {
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent">
+          {daysRemaining}d left
+        </span>
+      );
+    }
+    return null;
+  };
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return "0 Bytes";
@@ -505,6 +559,15 @@ const Documents = () => {
                     </Badge>
                   )}
                 </TabsTrigger>
+                <TabsTrigger value="expiring" className="gap-2 relative">
+                  <Clock className="h-4 w-4" />
+                  Expiring
+                  {expiringCount > 0 && (
+                    <Badge className="ml-2 h-5 min-w-5 px-1.5 bg-destructive text-destructive-foreground">
+                      {expiringCount}
+                    </Badge>
+                  )}
+                </TabsTrigger>
               </TabsList>
             </Tabs>
           ) : null}
@@ -596,9 +659,12 @@ const Documents = () => {
                             {getFileIcon(doc.mime_type)}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-medium text-foreground truncate max-w-[200px]">
-                              {doc.name}
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-foreground truncate max-w-[200px]">
+                                {doc.name}
+                              </p>
+                              {getExpiryPill(doc.expiry_date)}
+                            </div>
                             {doc.description && (
                               <p className="text-xs text-muted-foreground truncate max-w-[200px]">
                                 {doc.description}
@@ -768,6 +834,8 @@ const Documents = () => {
                 ? "No uploads yet"
                 : activeTab === "shared"
                 ? "No documents shared with you"
+                : activeTab === "expiring"
+                ? "No expiring documents"
                 : searchQuery || categoryFilter !== "all" || statusFilter !== "all"
                 ? "No documents found"
                 : "No documents yet"}
@@ -779,6 +847,8 @@ const Documents = () => {
                 ? "Upload RAMS and safety documents for review"
                 : activeTab === "shared"
                 ? "Documents requiring your acknowledgement will appear here"
+                : activeTab === "expiring"
+                ? "No documents are expiring within the next 30 days"
                 : searchQuery || categoryFilter !== "all" || statusFilter !== "all"
                 ? "Try adjusting your filters"
                 : "Upload RAMS, method statements, and other safety documents to get started."}

@@ -6,6 +6,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { Button } from "@/components/ui/button";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { ActionsDashboardWidget } from "@/components/dashboard/ActionsDashboardWidget";
+import { ComplianceCalendarWidget } from "@/components/dashboard/ComplianceCalendarWidget";
 import { toast } from "sonner";
 import {
   Plus,
@@ -153,6 +154,11 @@ const Dashboard = () => {
         {/* Actions Widget */}
         <div className="mb-8">
           <ActionsDashboardWidget />
+        </div>
+
+        {/* Document Expiry Widget */}
+        <div className="mb-8">
+          <ComplianceCalendarWidget />
         </div>
 
         {/* Recent activity / empty state */}

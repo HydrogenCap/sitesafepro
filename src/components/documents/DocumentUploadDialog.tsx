@@ -139,6 +139,7 @@ export const DocumentUploadDialog = ({
   const [userOverrodeName, setUserOverrodeName] = useState(false);
   const [requiresAcknowledgement, setRequiresAcknowledgement] = useState(false);
   const [acknowledgementDeadline, setAcknowledgementDeadline] = useState<Date | undefined>();
+  const [expiryDate, setExpiryDate] = useState<Date | undefined>();
 
   // Initialize form when parent document changes (versioning)
   useEffect(() => {
@@ -159,6 +160,7 @@ export const DocumentUploadDialog = ({
       setUserOverrodeName(false);
       setRequiresAcknowledgement(false);
       setAcknowledgementDeadline(undefined);
+      setExpiryDate(undefined);
       clearClassification();
     }
   }, [parentDocument, open, initialProjectId, clearClassification]);
@@ -302,6 +304,7 @@ export const DocumentUploadDialog = ({
         ai_compliance_flags: classificationResult?.complianceFlags || null,
         requires_acknowledgement: requiresAcknowledgement,
         acknowledgement_deadline: acknowledgementDeadline?.toISOString() || null,
+        expiry_date: expiryDate ? format(expiryDate, "yyyy-MM-dd") : null,
       } as any).select().single();
 
       if (dbError) throw dbError;
@@ -547,6 +550,47 @@ export const DocumentUploadDialog = ({
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            {/* Expiry Date */}
+            <div className="space-y-2">
+              <Label>Expiry Date (Optional)</Label>
+              <p className="text-xs text-muted-foreground">
+                Set for certificates, insurance docs, training records, or any time-limited document.
+              </p>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !expiryDate && "text-muted-foreground"
+                    )}
+                    disabled={uploading}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {expiryDate ? format(expiryDate, "PPP") : "Pick an expiry date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={expiryDate}
+                    onSelect={setExpiryDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              {expiryDate && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-muted-foreground"
+                  onClick={() => setExpiryDate(undefined)}
+                >
+                  Clear expiry date
+                </Button>
+              )}
             </div>
 
             {/* Requires Acknowledgement toggle */}

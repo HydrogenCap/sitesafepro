@@ -1419,6 +1419,12 @@ export type Database = {
           created_at: string
           current_version_id: string | null
           description: string | null
+          expiry_date: string | null
+          expiry_reminder_sent_0: boolean | null
+          expiry_reminder_sent_1: boolean | null
+          expiry_reminder_sent_14: boolean | null
+          expiry_reminder_sent_30: boolean | null
+          expiry_reminder_sent_7: boolean | null
           file_path: string
           file_size: number
           generated_from_template_id: string | null
@@ -1450,6 +1456,12 @@ export type Database = {
           created_at?: string
           current_version_id?: string | null
           description?: string | null
+          expiry_date?: string | null
+          expiry_reminder_sent_0?: boolean | null
+          expiry_reminder_sent_1?: boolean | null
+          expiry_reminder_sent_14?: boolean | null
+          expiry_reminder_sent_30?: boolean | null
+          expiry_reminder_sent_7?: boolean | null
           file_path: string
           file_size: number
           generated_from_template_id?: string | null
@@ -1481,6 +1493,12 @@ export type Database = {
           created_at?: string
           current_version_id?: string | null
           description?: string | null
+          expiry_date?: string | null
+          expiry_reminder_sent_0?: boolean | null
+          expiry_reminder_sent_1?: boolean | null
+          expiry_reminder_sent_14?: boolean | null
+          expiry_reminder_sent_30?: boolean | null
+          expiry_reminder_sent_7?: boolean | null
           file_path?: string
           file_size?: number
           generated_from_template_id?: string | null
