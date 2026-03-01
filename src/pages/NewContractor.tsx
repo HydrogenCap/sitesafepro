@@ -126,7 +126,8 @@ const NewContractor = () => {
         internal_rating: selectedRating,
         compliance_status: 'incomplete',
         compliance_score: 0,
-      },
+        required_doc_types: requiredDocs,
+      } as any,
       {
         onSuccess: (result) => {
           navigate(`/contractors/${result.id}`);

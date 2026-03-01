@@ -348,6 +348,7 @@ const ContractorDetail = () => {
             <ContractorComplianceTab
               contractorId={id!}
               complianceDocs={complianceDocs}
+              requiredDocTypes={(contractor as any).required_doc_types || []}
             />
           </TabsContent>
 
