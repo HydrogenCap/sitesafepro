@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Building2, CreditCard, Bell, FileText, Users, Plug } from "lucide-react";
+import { User, Building2, CreditCard, Bell, FileText, Users, Plug, ShieldCheck } from "lucide-react";
 import ProfileSettings from "@/components/settings/ProfileSettings";
 import OrganisationSettings from "@/components/settings/OrganisationSettings";
 import SubscriptionSettings from "@/components/settings/SubscriptionSettings";
@@ -11,6 +11,7 @@ import NotificationSettings from "@/components/settings/NotificationSettings";
 import TemplateSettings from "@/components/settings/TemplateSettings";
 import ClientPortalSettings from "@/components/settings/ClientPortalSettings";
 import WhatsAppSettings from "@/components/settings/WhatsAppSettings";
+import ContractorComplianceSettings from "@/components/settings/ContractorComplianceSettings";
 
 export default function Settings() {
   const { user } = useAuth();
@@ -42,7 +43,7 @@ export default function Settings() {
 
         {/* Settings Tabs */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">Profile</span>
@@ -70,6 +71,10 @@ export default function Settings() {
             <TabsTrigger value="notifications" className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
               <span className="hidden sm:inline">Notifications</span>
+            </TabsTrigger>
+            <TabsTrigger value="compliance" className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4" />
+              <span className="hidden sm:inline">Compliance</span>
             </TabsTrigger>
           </TabsList>
 
@@ -99,6 +104,10 @@ export default function Settings() {
 
           <TabsContent value="notifications">
             <NotificationSettings />
+          </TabsContent>
+
+          <TabsContent value="compliance">
+            <ContractorComplianceSettings />
           </TabsContent>
         </Tabs>
       </div>

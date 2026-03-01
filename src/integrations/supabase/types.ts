@@ -436,6 +436,53 @@ export type Database = {
           },
         ]
       }
+      compliance_requirement_presets: {
+        Row: {
+          created_at: string
+          expiry_warning_days: number
+          id: string
+          is_active: boolean
+          min_employers_liability: string | null
+          min_public_liability: string | null
+          organisation_id: string
+          required_doc_types: string[]
+          trade_category: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expiry_warning_days?: number
+          id?: string
+          is_active?: boolean
+          min_employers_liability?: string | null
+          min_public_liability?: string | null
+          organisation_id: string
+          required_doc_types?: string[]
+          trade_category: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expiry_warning_days?: number
+          id?: string
+          is_active?: boolean
+          min_employers_liability?: string | null
+          min_public_liability?: string | null
+          organisation_id?: string
+          required_doc_types?: string[]
+          trade_category?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_requirement_presets_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contractor_companies: {
         Row: {
           approved_at: string | null
