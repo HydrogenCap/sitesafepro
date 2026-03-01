@@ -116,7 +116,7 @@ export function UploadComplianceDocDialog({ contractorId, trigger }: Props) {
 
       if (error) throw error;
 
-      // Create audit trail entry
+      // Create audit trail entry + trigger AI check
       if (insertedDoc?.id) {
         await supabase.from("document_review_log").insert({
           organisation_id: orgId,
@@ -129,6 +129,18 @@ export function UploadComplianceDocDialog({ contractorId, trigger }: Props) {
           notes: null,
           metadata: { doc_type: data.doc_type, file_path: filePath },
         });
+
+        // Trigger AI document check (fire-and-forget)
+        if (filePath) {
+          supabase.functions.invoke("check-compliance-doc", {
+            body: {
+              compliance_doc_id: insertedDoc.id,
+              organisation_id: orgId,
+            },
+          }).then(({ error }) => {
+            if (error) console.error("AI check trigger error:", error);
+          });
+        }
       }
 
       toast.success("Compliance document uploaded");
