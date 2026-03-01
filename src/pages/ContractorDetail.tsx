@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import {
@@ -41,6 +41,7 @@ import { ContractorComplianceTab } from "@/components/contractors/ContractorComp
 import { ContractorOperativesTab } from "@/components/contractors/ContractorOperativesTab";
 import { ContractorProjectsTab } from "@/components/contractors/ContractorProjectsTab";
 import { RequestDocumentsDialog } from "@/components/contractors/RequestDocumentsDialog";
+import { EditContractorDialog } from "@/components/contractors/EditContractorDialog";
 
 const ContractorDetail = () => {
   const { id } = useParams();
@@ -168,12 +169,7 @@ const ContractorDetail = () => {
               <Button variant="outline" onClick={handleApprove}>
                 {contractor.is_approved ? "Revoke Approval" : "Approve Contractor"}
               </Button>
-              <Button variant="outline" asChild>
-                <Link to={`/contractors/${id}/edit`}>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Link>
-              </Button>
+              <EditContractorDialog contractor={contractor} />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="icon">
