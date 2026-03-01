@@ -187,11 +187,27 @@ export const DocumentPreview = ({
       {/* Preview content */}
       <CardContent className="p-0">
         {isPdf ? (
-          <iframe
-            src={`${signedUrl}#toolbar=0&navpanes=0`}
+          <object
+            data={`${signedUrl}#toolbar=0&navpanes=0`}
+            type="application/pdf"
             className="w-full h-[600px] border-0"
             title={fileName}
-          />
+          >
+            <div className="flex flex-col items-center justify-center h-[400px] gap-4 bg-muted/20">
+              <FileText className="h-12 w-12 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">PDF preview unavailable in this browser.</p>
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={handleFullscreen}>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Open in New Tab
+                </Button>
+                <Button onClick={onDownload}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+              </div>
+            </div>
+          </object>
         ) : isImage ? (
           <div className="overflow-auto bg-muted/20 flex items-center justify-center min-h-[400px] max-h-[600px]">
             <img
