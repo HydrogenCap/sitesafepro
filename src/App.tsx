@@ -14,6 +14,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ClientProtectedRoute } from "@/components/client/ClientProtectedRoute";
 import { RequireRole } from "@/components/auth/RequireRole";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { CookieConsent } from "@/components/CookieConsent";
 import AccessDenied from "./pages/AccessDenied";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -186,6 +187,7 @@ const App = () => {
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <CookieConsent />
           </BrowserRouter>
           </TooltipProvider>
         </OrgProvider>
