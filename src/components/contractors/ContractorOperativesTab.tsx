@@ -1,8 +1,8 @@
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { ContractorOperative, CSCS_CARD_TYPES } from "@/types/contractor";
-import { Users, Plus, Phone, Mail } from "lucide-react";
+import { Users, Mail } from "lucide-react";
 import { format } from "date-fns";
+import { AddOperativeDialog } from "./AddOperativeDialog";
 
 interface Props {
   contractorId: string;
@@ -22,7 +22,7 @@ export const ContractorOperativesTab = ({ contractorId, operatives }: Props) => 
         <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
         <h3 className="font-semibold mb-2">No Operatives</h3>
         <p className="text-muted-foreground mb-4">Add operatives from this contractor company.</p>
-        <Button><Plus className="h-4 w-4 mr-2" />Add Operative</Button>
+        <AddOperativeDialog contractorId={contractorId} />
       </div>
     );
   }
@@ -31,7 +31,7 @@ export const ContractorOperativesTab = ({ contractorId, operatives }: Props) => 
     <div className="bg-card rounded-xl border border-border">
       <div className="p-4 border-b border-border flex items-center justify-between">
         <h3 className="font-semibold">Operatives ({operatives.length})</h3>
-        <Button size="sm"><Plus className="h-4 w-4 mr-2" />Add Operative</Button>
+        <AddOperativeDialog contractorId={contractorId} />
       </div>
       <div className="divide-y divide-border">
         {operatives.map((op) => (
