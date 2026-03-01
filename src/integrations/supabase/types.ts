@@ -2647,6 +2647,7 @@ export type Database = {
           client_name: string | null
           created_at: string
           created_by: string | null
+          dropbox_folder_url: string | null
           estimated_end_date: string | null
           fire_warden_name: string | null
           first_aider_name: string | null
@@ -2675,6 +2676,7 @@ export type Database = {
           client_name?: string | null
           created_at?: string
           created_by?: string | null
+          dropbox_folder_url?: string | null
           estimated_end_date?: string | null
           fire_warden_name?: string | null
           first_aider_name?: string | null
@@ -2703,6 +2705,7 @@ export type Database = {
           client_name?: string | null
           created_at?: string
           created_by?: string | null
+          dropbox_folder_url?: string | null
           estimated_end_date?: string | null
           fire_warden_name?: string | null
           first_aider_name?: string | null

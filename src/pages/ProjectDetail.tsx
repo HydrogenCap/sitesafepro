@@ -63,6 +63,7 @@ interface Project {
   is_live: boolean | null;
   went_live_at: string | null;
   went_live_by: string | null;
+  dropbox_folder_url: string | null;
   // Emergency info
   nearest_ae_name: string | null;
   nearest_ae_address: string | null;
@@ -357,6 +358,24 @@ const ProjectDetail = () => {
                 {formatDate(project.estimated_end_date)}
               </p>
             </div>
+            {project.dropbox_folder_url && (
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Dropbox Folder</p>
+                <a
+                  href={project.dropbox_folder_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-primary flex items-center gap-2 hover:underline"
+                >
+                  <svg viewBox="0 0 40 40" className="h-4 w-4 flex-shrink-0" fill="none">
+                    <path d="M20 8L10 14.5L20 21L10 27.5L0 21L10 14.5L0 8L10 1.5L20 8Z" fill="#0061FF"/>
+                    <path d="M20 8L30 14.5L20 21L30 27.5L40 21L30 14.5L40 8L30 1.5L20 8Z" fill="#0061FF"/>
+                    <path d="M10 29.5L20 23L30 29.5L20 36L10 29.5Z" fill="#0061FF"/>
+                  </svg>
+                  Open in Dropbox
+                </a>
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -396,7 +415,6 @@ const ProjectDetail = () => {
             <ProjectComplianceChecklist
               projectId={project.id}
               projectName={project.name}
-              principalDesigner={project.principal_designer}
               onGoLive={handleGoLive}
             />
           </div>
