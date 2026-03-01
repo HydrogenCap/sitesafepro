@@ -28,13 +28,16 @@ import { COMPLIANCE_DOC_LABELS, type ComplianceDocType } from "@/types/contracto
 
 interface ExpiringDoc {
   id: string;
-  doc_type: ComplianceDocType;
+  doc_type: ComplianceDocType | "inspection_due";
   expiry_date: string;
   reference_number: string | null;
   contractor_company_id: string | null;
   contractor_name?: string;
   profile_id: string | null;
   operative_name?: string;
+  isInspection?: boolean;
+  inspectionTitle?: string;
+  projectName?: string;
 }
 
 const ComplianceCalendar = () => {
@@ -45,6 +48,7 @@ const ComplianceCalendar = () => {
   const { data: expiringDocs = [], isLoading } = useQuery({
     queryKey: ["compliance-calendar"],
     queryFn: async () => {
+      // Fetch contractor compliance docs
       const { data: docs, error } = await supabase
         .from("contractor_compliance_docs")
         .select(`
@@ -62,7 +66,7 @@ const ComplianceCalendar = () => {
 
       if (error) throw error;
 
-      return (docs || []).map((doc: any) => ({
+      const complianceDocs: ExpiringDoc[] = (docs || []).map((doc: any) => ({
         id: doc.id,
         doc_type: doc.doc_type,
         expiry_date: doc.expiry_date,
@@ -71,7 +75,37 @@ const ComplianceCalendar = () => {
         contractor_name: doc.contractor_companies?.company_name,
         profile_id: doc.profile_id,
         operative_name: doc.contractor_operatives?.full_name,
-      })) as ExpiringDoc[];
+      }));
+
+      // Fetch inspection due dates
+      const { data: inspections, error: inspError } = await supabase
+        .from("inspections")
+        .select(`
+          id,
+          title,
+          inspection_number,
+          next_inspection_date,
+          inspection_type,
+          project:projects(name)
+        `)
+        .not("next_inspection_date", "is", null)
+        .order("next_inspection_date", { ascending: true });
+
+      if (inspError) console.error("Error fetching inspections:", inspError);
+
+      const inspectionDocs: ExpiringDoc[] = (inspections || []).map((ins: any) => ({
+        id: ins.id,
+        doc_type: "inspection_due" as const,
+        expiry_date: ins.next_inspection_date,
+        reference_number: ins.inspection_number,
+        contractor_company_id: null,
+        profile_id: null,
+        isInspection: true,
+        inspectionTitle: ins.title,
+        projectName: ins.project?.name,
+      }));
+
+      return [...complianceDocs, ...inspectionDocs];
     },
   });
 
@@ -142,7 +176,8 @@ const ComplianceCalendar = () => {
       .slice(0, 15);
   }, [filteredDocs]);
 
-  const getDocLabel = (docType: ComplianceDocType) => {
+  const getDocLabel = (docType: ComplianceDocType | "inspection_due") => {
+    if (docType === "inspection_due") return "Inspection Due";
     return COMPLIANCE_DOC_LABELS[docType]?.label || docType;
   };
 
@@ -178,7 +213,7 @@ const ComplianceCalendar = () => {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Compliance Calendar</h1>
             <p className="text-sm text-muted-foreground">
-              Track document expiry dates across all contractors
+              Track document expiry dates and inspection due dates
             </p>
           </div>
           <Select value={filterType} onValueChange={setFilterType}>
@@ -366,10 +401,15 @@ const ComplianceCalendar = () => {
                           </p>
                           {docsForDay.slice(0, 3).map((doc) => (
                             <div key={doc.id} className="text-xs text-muted-foreground">
-                              • {getDocLabel(doc.doc_type)}
+                              • {doc.isInspection ? doc.inspectionTitle : getDocLabel(doc.doc_type)}
                               {doc.contractor_name && (
                                 <span className="block pl-2 text-muted-foreground/70">
                                   {doc.contractor_name}
+                                </span>
+                              )}
+                              {doc.isInspection && doc.projectName && (
+                                <span className="block pl-2 text-muted-foreground/70">
+                                  {doc.projectName}
                                 </span>
                               )}
                             </div>
@@ -423,15 +463,21 @@ const ComplianceCalendar = () => {
                 {upcomingExpiries.map((doc) => (
                   <Link
                     key={doc.id}
-                    to={doc.contractor_company_id ? `/contractors/${doc.contractor_company_id}` : "#"}
+                    to={doc.isInspection ? `/inspections/${doc.id}` : doc.contractor_company_id ? `/contractors/${doc.contractor_company_id}` : "#"}
                     className="block p-3 rounded-lg border border-border hover:border-primary/30 hover:bg-muted/50 transition-all"
                   >
                     <div className="flex items-start justify-between gap-2 mb-1">
                       <span className="text-sm font-medium text-foreground line-clamp-1">
-                        {getDocLabel(doc.doc_type)}
+                        {doc.isInspection ? doc.inspectionTitle : getDocLabel(doc.doc_type)}
                       </span>
                       {getExpiryBadge(doc.expiry_date)}
                     </div>
+                    {doc.isInspection && doc.projectName && (
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Building2 className="h-3 w-3" />
+                        <span>{doc.projectName}</span>
+                      </div>
+                    )}
                     {doc.contractor_name && (
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Building2 className="h-3 w-3" />
@@ -439,7 +485,7 @@ const ComplianceCalendar = () => {
                       </div>
                     )}
                     <p className="text-xs text-muted-foreground mt-1">
-                      Expires: {format(new Date(doc.expiry_date), "d MMM yyyy")}
+                      {doc.isInspection ? "Due" : "Expires"}: {format(new Date(doc.expiry_date), "d MMM yyyy")}
                     </p>
                   </Link>
                 ))}
