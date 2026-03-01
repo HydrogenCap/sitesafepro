@@ -236,6 +236,16 @@ export default function Incidents() {
 
       if (error) throw error;
 
+      // Log audit event for incident creation
+      await supabase.from("activity_logs").insert({
+        organisation_id: organisationId,
+        actor_id: user.id,
+        activity_type: "incident_reported" as any,
+        entity_type: "incident",
+        entity_name: formData.title,
+        description: `Incident reported: ${formData.title}${isRiddorReportable ? ' (RIDDOR reportable)' : ''}`,
+      });
+
       toast({
         title: "Incident reported",
         description: isRiddorReportable
@@ -287,6 +297,21 @@ export default function Incidents() {
 
       if (error) throw error;
 
+      // Log audit event
+      if (organisationId && user) {
+        const incident = incidents.find(i => i.id === incidentId);
+        const activityType = newStatus === "closed" ? "incident_closed" : "incident_updated";
+        await supabase.from("activity_logs").insert({
+          organisation_id: organisationId,
+          actor_id: user.id,
+          activity_type: activityType as any,
+          entity_type: "incident",
+          entity_id: incidentId,
+          entity_name: incident?.title || "",
+          description: `Incident status changed to ${newStatus}`,
+        });
+      }
+
       toast({
         title: "Status updated",
         description: `Incident status changed to ${STATUS_CONFIG[newStatus as keyof typeof STATUS_CONFIG]?.label || newStatus}`,
@@ -300,6 +325,40 @@ export default function Incidents() {
         description: "Failed to update incident status",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleRiddorConfirm = async (incidentId: string, riddorReference: string) => {
+    if (!user || !organisationId) return;
+    try {
+      const { error } = await supabase
+        .from("incidents")
+        .update({
+          riddor_reference: riddorReference,
+          riddor_reported_at: new Date().toISOString(),
+          riddor_submitted_by: user.id,
+        })
+        .eq("id", incidentId);
+
+      if (error) throw error;
+
+      // Log RIDDOR submission as audit event
+      const incident = incidents.find(i => i.id === incidentId);
+      await supabase.from("activity_logs").insert({
+        organisation_id: organisationId,
+        actor_id: user.id,
+        activity_type: "riddor_reported" as any,
+        entity_type: "incident",
+        entity_id: incidentId,
+        entity_name: incident?.title || "",
+        description: `RIDDOR report submitted with reference ${riddorReference}`,
+      });
+
+      toast({ title: "RIDDOR submission recorded", description: `Reference: ${riddorReference}` });
+      fetchData();
+    } catch (error) {
+      console.error("Error recording RIDDOR:", error);
+      toast({ title: "Error", description: "Failed to record RIDDOR submission", variant: "destructive" });
     }
   };
 
@@ -787,8 +846,10 @@ export default function Incidents() {
                             {statusConfig && (
                               <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
                             )}
-                            {incident.is_riddor_reportable && (
-                              <Badge variant="destructive">RIDDOR</Badge>
+                        {incident.is_riddor_reportable && (
+                              <Badge variant="destructive">
+                                {(incident as any).riddor_reported_at ? 'RIDDOR ✓' : 'RIDDOR'}
+                              </Badge>
                             )}
                           </div>
                           <p className="text-sm text-muted-foreground">{incident.incident_number}</p>
@@ -849,15 +910,32 @@ export default function Incidents() {
                             Close Incident
                           </Button>
                         )}
-                        {incident.is_riddor_reportable && !incident.riddor_reference && (
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => window.open("https://www.hse.gov.uk/riddor/report.htm", "_blank")}
-                          >
-                            <ExternalLink className="h-3 w-3 mr-1" />
-                            Report to HSE
-                          </Button>
+                        {incident.is_riddor_reportable && !(incident as any).riddor_reported_at && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => window.open("https://www.hse.gov.uk/riddor/report.htm", "_blank")}
+                            >
+                              <ExternalLink className="h-3 w-3 mr-1" />
+                              Report to HSE
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                const ref = prompt("Enter the RIDDOR reference number from HSE:");
+                                if (ref?.trim()) handleRiddorConfirm(incident.id, ref.trim());
+                              }}
+                            >
+                              Confirm RIDDOR Submitted
+                            </Button>
+                          </>
+                        )}
+                        {incident.is_riddor_reportable && (incident as any).riddor_reported_at && (
+                          <span className="text-xs text-muted-foreground">
+                            RIDDOR ref: {incident.riddor_reference} · Submitted {format(new Date((incident as any).riddor_reported_at), "dd MMM yyyy")}
+                          </span>
                         )}
                       </div>
                     </div>

@@ -63,6 +63,26 @@ export default function SiteMode() {
           </div>
         </section>
 
+        {/* I3: Persistent failed sync alert */}
+        {counts.failed > 0 && (
+          <section className="rounded-xl border border-destructive bg-destructive/10 p-4">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-destructive">
+                  {counts.failed} item{counts.failed > 1 ? 's' : ''} need{counts.failed === 1 ? 's' : ''} your attention
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  These captures failed to sync and may need to be retried or resolved.
+                </p>
+              </div>
+              <Link to="/site-mode/queue" className="text-xs text-primary font-semibold whitespace-nowrap">
+                Review →
+              </Link>
+            </div>
+          </section>
+        )}
+
         <section>
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
