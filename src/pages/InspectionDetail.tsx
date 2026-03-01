@@ -417,9 +417,12 @@ export default function InspectionDetail() {
 }
 
 function PhotoThumbnail({ path }: { path: string }) {
+  const isFullUrl = path.startsWith("http://") || path.startsWith("https://");
+
   const { data: url } = useQuery({
     queryKey: ["photo-url", path],
     queryFn: async () => {
+      if (isFullUrl) return path;
       const { data } = await supabase.storage.from("documents").createSignedUrl(path, 3600);
       return data?.signedUrl ?? null;
     },
