@@ -278,6 +278,12 @@ const ContractorDetail = () => {
                   </span>
                 </div>
               )}
+              {contractor.utr_number && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">UTR No.</span>
+                  <span className="font-medium">{contractor.utr_number}</span>
+                </div>
+              )}
               {contractor.internal_rating && (
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Rating</span>

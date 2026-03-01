@@ -292,6 +292,23 @@ const NewContractor = () => {
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="utr_number"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>UTR Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="1234567890" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Unique Taxpayer Reference (10 digits)
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             </div>
 
