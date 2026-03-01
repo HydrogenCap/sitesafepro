@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { ActionsDashboardWidget } from "@/components/dashboard/ActionsDashboardWidget";
 import { ComplianceCalendarWidget } from "@/components/dashboard/ComplianceCalendarWidget";
+import { UsageBars } from "@/components/dashboard/UsageBars";
 import { toast } from "sonner";
 import {
   Plus,
@@ -125,6 +126,11 @@ const Dashboard = () => {
             </div>
           </div>
         </motion.div>
+
+        {/* Usage bars for Starter/Trial */}
+        <div className="mb-8">
+          <UsageBars />
+        </div>
 
         {/* Quick actions */}
         <div className="mb-8">
