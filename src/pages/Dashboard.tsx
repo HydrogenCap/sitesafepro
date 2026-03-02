@@ -61,7 +61,8 @@ const Dashboard = () => {
   const quickActions = [
     { icon: Plus, label: "New Project", description: "Create a new construction project", href: "/projects/new" },
     { icon: FolderOpen, label: "View Projects", description: "Manage your existing projects", href: "/projects" },
-    { icon: Users, label: "Invite Contractor", description: "Add team members to your org", href: "/contractors" },
+    { icon: FileText, label: "Documents", description: "Upload & manage H&S documents", href: "/documents" },
+    { icon: Users, label: "Invite Contractor", description: "Add contractors to your org", href: "/contractors" },
     { icon: QrCode, label: "Generate QR", description: "Create site access QR code", href: "/site-access" },
   ];
 
@@ -146,7 +147,7 @@ const Dashboard = () => {
         {/* Quick actions */}
         <div className="mb-8">
           <h3 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {quickActions.map((action, index) => (
               <motion.div
                 key={action.label}

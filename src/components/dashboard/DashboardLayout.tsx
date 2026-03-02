@@ -178,6 +178,9 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   return (
     <div className="min-h-screen bg-muted/30 flex">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:text-sm focus:font-medium">
+        Skip to content
+      </a>
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex md:w-64 flex-col bg-card border-r border-border">
         <div className="p-6 border-b border-border">
@@ -359,7 +362,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         </header>
 
         {/* Page content */}
-        <main className="flex-1">{children}</main>
+        <main id="main-content" className="flex-1">{children}</main>
       </div>
     </div>
   );
