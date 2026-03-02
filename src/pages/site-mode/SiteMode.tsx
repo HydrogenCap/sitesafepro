@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
-import { Camera, FileText, AlertTriangle, CheckSquare, PenLine, RefreshCw, ArrowLeft, ShieldAlert } from 'lucide-react';
+import { Camera, FileText, AlertTriangle, CheckSquare, PenLine, RefreshCw, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { QueueStatusChip } from '@/components/offline/QueueStatusChip';
 import { OfflineBanner } from '@/components/offline/OfflineBanner';
 import { useSync } from '@/offline/SyncContext';
 import { useNetworkStatus } from '@/offline/useNetworkStatus';
+import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 
 const CAPTURE_ACTIONS = [
   { to: 'incident', icon: ShieldAlert, label: 'Incident', color: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300' },
@@ -21,19 +22,13 @@ export default function SiteMode() {
   const isSyncing = syncState === 'syncing';
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pb-[env(safe-area-inset-bottom)]">
+    <DashboardLayout>
       <OfflineBanner />
 
-      {/* Fullscreen header — no sidebar chrome */}
-      <header className="sticky top-0 z-10 border-b bg-background px-4 py-3 flex items-center justify-between safe-area-inset">
-        <div className="flex items-center gap-3">
-          <Link to="/dashboard" className="text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <div>
-            <h1 className="text-xl font-bold leading-tight">Site Mode</h1>
-            <p className="text-xs text-muted-foreground">Capture offline · Sync when ready</p>
-          </div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Site Mode</h1>
+          <p className="text-sm text-muted-foreground">Capture offline · Sync when ready</p>
         </div>
         <Button
           size="sm" variant="outline"
@@ -43,9 +38,9 @@ export default function SiteMode() {
           <RefreshCw className={`h-4 w-4 mr-1.5 ${isSyncing ? 'animate-spin' : ''}`} />
           {isSyncing ? 'Syncing…' : 'Sync'}
         </Button>
-      </header>
+      </div>
 
-      <div className="flex-1 p-4 space-y-6 max-w-lg mx-auto w-full">
+      <div className="space-y-6 max-w-lg">
         {/* Capture grid — large touch targets for gloved fingers */}
         <section>
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
@@ -96,6 +91,6 @@ export default function SiteMode() {
           <QueueStatusChip counts={counts} />
         </section>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }
