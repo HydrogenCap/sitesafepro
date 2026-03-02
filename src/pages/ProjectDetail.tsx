@@ -15,6 +15,7 @@ import { COSHHTab } from "@/components/coshh";
 import { ProgrammeTab } from "@/components/programme/ProgrammeTab";
 import { BudgetTab } from "@/components/budget";
 import { DrawingsTab } from "@/components/drawings";
+import { ProcurementTab } from "@/components/procurement";
 import { ProjectContractorsTab } from "@/components/projects/ProjectContractorsTab";
 import { ProjectEmergencyInfo } from "@/components/projects/ProjectEmergencyInfo";
 import { HandoverPackButton } from "@/components/projects/HandoverPackButton";
@@ -41,6 +42,7 @@ import {
   GanttChart,
   PoundSterling,
   Ruler,
+  ShoppingCart,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -487,6 +489,10 @@ const ProjectDetail = () => {
               <Ruler className="h-3.5 w-3.5" />
               Drawings & RFIs
             </TabsTrigger>
+            <TabsTrigger value="procurement" className="flex items-center gap-1.5">
+              <ShoppingCart className="h-3.5 w-3.5" />
+              Procurement
+            </TabsTrigger>
             <TabsTrigger value="actions" className="flex items-center gap-1.5">
               <AlertTriangle className="h-3.5 w-3.5" />
               Actions
@@ -514,6 +520,10 @@ const ProjectDetail = () => {
 
           <TabsContent value="drawings">
             <DrawingsTab projectId={project.id} organisationId={organisationId} />
+          </TabsContent>
+
+          <TabsContent value="procurement">
+            <ProcurementTab projectId={project.id} organisationId={organisationId} />
           </TabsContent>
 
           <TabsContent value="actions">

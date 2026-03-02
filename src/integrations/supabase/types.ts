@@ -3082,6 +3082,107 @@ export type Database = {
           },
         ]
       }
+      procurement_items: {
+        Row: {
+          actual_delivery_date: string | null
+          budget_value: number | null
+          category: string | null
+          contractor_id: string | null
+          created_at: string
+          description: string
+          design_info_required_date: string | null
+          expected_delivery_date: string | null
+          id: string
+          lead_time_weeks: number | null
+          linked_task_id: string | null
+          notes: string | null
+          order_date: string | null
+          order_value: number | null
+          organisation_id: string
+          project_id: string
+          purchase_order_number: string | null
+          required_on_site_date: string | null
+          status: string | null
+          supplier_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          actual_delivery_date?: string | null
+          budget_value?: number | null
+          category?: string | null
+          contractor_id?: string | null
+          created_at?: string
+          description: string
+          design_info_required_date?: string | null
+          expected_delivery_date?: string | null
+          id?: string
+          lead_time_weeks?: number | null
+          linked_task_id?: string | null
+          notes?: string | null
+          order_date?: string | null
+          order_value?: number | null
+          organisation_id: string
+          project_id: string
+          purchase_order_number?: string | null
+          required_on_site_date?: string | null
+          status?: string | null
+          supplier_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actual_delivery_date?: string | null
+          budget_value?: number | null
+          category?: string | null
+          contractor_id?: string | null
+          created_at?: string
+          description?: string
+          design_info_required_date?: string | null
+          expected_delivery_date?: string | null
+          id?: string
+          lead_time_weeks?: number | null
+          linked_task_id?: string | null
+          notes?: string | null
+          order_date?: string | null
+          order_value?: number | null
+          organisation_id?: string
+          project_id?: string
+          purchase_order_number?: string | null
+          required_on_site_date?: string | null
+          status?: string | null
+          supplier_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procurement_items_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "procurement_items_linked_task_id_fkey"
+            columns: ["linked_task_id"]
+            isOneToOne: false
+            referencedRelation: "programme_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "procurement_items_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "procurement_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
