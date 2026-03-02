@@ -16,6 +16,7 @@ import { ProgrammeTab } from "@/components/programme/ProgrammeTab";
 import { BudgetTab } from "@/components/budget";
 import { DrawingsTab } from "@/components/drawings";
 import { ProcurementTab } from "@/components/procurement";
+import { MeetingsTab } from "@/components/meetings";
 import { ProjectContractorsTab } from "@/components/projects/ProjectContractorsTab";
 import { ProjectEmergencyInfo } from "@/components/projects/ProjectEmergencyInfo";
 import { HandoverPackButton } from "@/components/projects/HandoverPackButton";
@@ -43,6 +44,7 @@ import {
   PoundSterling,
   Ruler,
   ShoppingCart,
+  NotebookPen,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -501,6 +503,10 @@ const ProjectDetail = () => {
               <FlaskConical className="h-3.5 w-3.5" />
               COSHH
             </TabsTrigger>
+            <TabsTrigger value="meetings" className="flex items-center gap-1.5">
+              <NotebookPen className="h-3.5 w-3.5" />
+              Minutes
+            </TabsTrigger>
             <TabsTrigger value="contractors">Contractors</TabsTrigger>
             <TabsTrigger value="permits">Permits</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
@@ -537,6 +543,10 @@ const ProjectDetail = () => {
               organisationName={organisationName}
               projectAddress={project.address || undefined}
             />
+          </TabsContent>
+
+          <TabsContent value="meetings">
+            <MeetingsTab projectId={project.id} organisationId={organisationId} />
           </TabsContent>
 
           <TabsContent value="contractors">
