@@ -33,7 +33,7 @@ const footerLinks = {
     links: [
       { label: "Privacy Policy", href: "/privacy" },
       { label: "Terms of Service", href: "/terms" },
-      { label: "Cookie Policy", href: "/cookies" },
+      { label: "Cookie Policy", href: "/cookie-policy" },
     ],
   },
 };
