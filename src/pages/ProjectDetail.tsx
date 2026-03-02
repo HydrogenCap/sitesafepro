@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
@@ -347,7 +347,7 @@ const ProjectDetail = () => {
           <h2 className="text-lg font-semibold text-foreground mb-4">
             Project Details
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
             <div>
               <p className="text-sm text-muted-foreground mb-1">Client</p>
               <p className="font-medium text-foreground flex items-center gap-2">
@@ -374,6 +374,18 @@ const ProjectDetail = () => {
               <p className="font-medium text-foreground flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 {formatDate(project.estimated_end_date)}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">Days Remaining</p>
+              <p className="font-medium text-foreground flex items-center gap-2">
+                {(() => {
+                  if (!project.estimated_end_date) return <span className="text-muted-foreground">—</span>;
+                  const days = Math.ceil((new Date(project.estimated_end_date).getTime() - Date.now()) / 86400000);
+                  if (days < 0) return <span className="text-destructive">{Math.abs(days)}d overdue</span>;
+                  if (days <= 14) return <span className="text-amber-600">{days}d left</span>;
+                  return <span>{days}d left</span>;
+                })()}
               </p>
             </div>
             {project.dropbox_folder_url && (
