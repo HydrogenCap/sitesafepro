@@ -2196,7 +2196,7 @@ export type Database = {
           caption: string | null
           created_at: string
           created_by: string
-          document_version_id: string
+          document_version_id: string | null
           id: string
           metadata_json: Json
           organisation_id: string
@@ -2208,7 +2208,7 @@ export type Database = {
           caption?: string | null
           created_at?: string
           created_by: string
-          document_version_id: string
+          document_version_id?: string | null
           id?: string
           metadata_json?: Json
           organisation_id: string
@@ -2220,7 +2220,7 @@ export type Database = {
           caption?: string | null
           created_at?: string
           created_by?: string
-          document_version_id?: string
+          document_version_id?: string | null
           id?: string
           metadata_json?: Json
           organisation_id?: string
