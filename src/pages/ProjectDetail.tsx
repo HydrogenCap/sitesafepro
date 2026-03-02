@@ -14,6 +14,7 @@ import { InviteClientDialog } from "@/components/client/InviteClientDialog";
 import { COSHHTab } from "@/components/coshh";
 import { ProgrammeTab } from "@/components/programme/ProgrammeTab";
 import { BudgetTab } from "@/components/budget";
+import { DrawingsTab } from "@/components/drawings";
 import { ProjectContractorsTab } from "@/components/projects/ProjectContractorsTab";
 import { ProjectEmergencyInfo } from "@/components/projects/ProjectEmergencyInfo";
 import { HandoverPackButton } from "@/components/projects/HandoverPackButton";
@@ -39,6 +40,7 @@ import {
   FlaskConical,
   GanttChart,
   PoundSterling,
+  Ruler,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -481,6 +483,10 @@ const ProjectDetail = () => {
               <PoundSterling className="h-3.5 w-3.5" />
               Budget
             </TabsTrigger>
+            <TabsTrigger value="drawings" className="flex items-center gap-1.5">
+              <Ruler className="h-3.5 w-3.5" />
+              Drawings & RFIs
+            </TabsTrigger>
             <TabsTrigger value="actions" className="flex items-center gap-1.5">
               <AlertTriangle className="h-3.5 w-3.5" />
               Actions
@@ -504,6 +510,10 @@ const ProjectDetail = () => {
 
           <TabsContent value="budget">
             <BudgetTab projectId={project.id} organisationId={organisationId} />
+          </TabsContent>
+
+          <TabsContent value="drawings">
+            <DrawingsTab projectId={project.id} organisationId={organisationId} />
           </TabsContent>
 
           <TabsContent value="actions">
