@@ -2586,6 +2586,106 @@ export type Database = {
           },
         ]
       }
+      meeting_minutes: {
+        Row: {
+          agenda_items: Json | null
+          apologies: Json | null
+          attendees: Json | null
+          chairperson: string | null
+          created_at: string
+          created_by: string
+          distribution: Json | null
+          end_time: string | null
+          general_notes: string | null
+          id: string
+          location: string | null
+          meeting_date: string
+          meeting_number: number
+          meeting_type: string
+          minute_taker: string | null
+          next_meeting_date: string | null
+          next_meeting_location: string | null
+          organisation_id: string
+          project_id: string
+          start_time: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          agenda_items?: Json | null
+          apologies?: Json | null
+          attendees?: Json | null
+          chairperson?: string | null
+          created_at?: string
+          created_by: string
+          distribution?: Json | null
+          end_time?: string | null
+          general_notes?: string | null
+          id?: string
+          location?: string | null
+          meeting_date: string
+          meeting_number?: number
+          meeting_type?: string
+          minute_taker?: string | null
+          next_meeting_date?: string | null
+          next_meeting_location?: string | null
+          organisation_id: string
+          project_id: string
+          start_time?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          agenda_items?: Json | null
+          apologies?: Json | null
+          attendees?: Json | null
+          chairperson?: string | null
+          created_at?: string
+          created_by?: string
+          distribution?: Json | null
+          end_time?: string | null
+          general_notes?: string | null
+          id?: string
+          location?: string | null
+          meeting_date?: string
+          meeting_number?: number
+          meeting_type?: string
+          minute_taker?: string | null
+          next_meeting_date?: string | null
+          next_meeting_location?: string | null
+          organisation_id?: string
+          project_id?: string
+          start_time?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_minutes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_minutes_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_minutes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_preferences: {
         Row: {
           action_assigned_email: boolean | null
