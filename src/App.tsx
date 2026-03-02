@@ -172,14 +172,14 @@ const App = () => {
               <Route path="/contractors/:id" element={<ProtectedRoute><ContractorDetail /></ProtectedRoute>} />
               <Route path="/contractor-portal" element={<ProtectedRoute><ContractorDashboardPage /></ProtectedRoute>} />
               <Route path="/compliance-calendar" element={<ProtectedRoute><ComplianceCalendar /></ProtectedRoute>} />
-              <Route path="/site-mode" element={<ProtectedRoute><SiteMode /></ProtectedRoute>} />
-              <Route path="/site-mode/photo" element={<ProtectedRoute><PhotoCapture /></ProtectedRoute>} />
-              <Route path="/site-mode/note" element={<ProtectedRoute><NoteCapture /></ProtectedRoute>} />
-              <Route path="/site-mode/hazard" element={<ProtectedRoute><HazardCapture /></ProtectedRoute>} />
-              <Route path="/site-mode/action" element={<ProtectedRoute><ActionCapture /></ProtectedRoute>} />
-              <Route path="/site-mode/incident" element={<ProtectedRoute><IncidentCapture /></ProtectedRoute>} />
-              <Route path="/site-mode/signature" element={<ProtectedRoute><SignatureCapture /></ProtectedRoute>} />
-              <Route path="/site-mode/queue" element={<ProtectedRoute><QueueManager /></ProtectedRoute>} />
+              <Route path="/site-mode" element={<ProtectedRoute><SyncProvider><SiteMode /></SyncProvider></ProtectedRoute>} />
+              <Route path="/site-mode/photo" element={<ProtectedRoute><SyncProvider><PhotoCapture /></SyncProvider></ProtectedRoute>} />
+              <Route path="/site-mode/note" element={<ProtectedRoute><SyncProvider><NoteCapture /></SyncProvider></ProtectedRoute>} />
+              <Route path="/site-mode/hazard" element={<ProtectedRoute><SyncProvider><HazardCapture /></SyncProvider></ProtectedRoute>} />
+              <Route path="/site-mode/action" element={<ProtectedRoute><SyncProvider><ActionCapture /></SyncProvider></ProtectedRoute>} />
+              <Route path="/site-mode/incident" element={<ProtectedRoute><SyncProvider><IncidentCapture /></SyncProvider></ProtectedRoute>} />
+              <Route path="/site-mode/signature" element={<ProtectedRoute><SyncProvider><SignatureCapture /></SyncProvider></ProtectedRoute>} />
+              <Route path="/site-mode/queue" element={<ProtectedRoute><SyncProvider><QueueManager /></SyncProvider></ProtectedRoute>} />
               <Route path="/help" element={<ProtectedRoute><Help /></ProtectedRoute>} />
               <Route path="/audit-log" element={<ProtectedRoute><RequireRole role="admin" fallback={<AccessDenied />}><AuditLog /></RequireRole></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute><RequireRole role="owner" fallback={<AccessDenied />}><AdminPanel /></RequireRole></ProtectedRoute>} />
