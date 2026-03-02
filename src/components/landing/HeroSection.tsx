@@ -75,7 +75,7 @@ export const HeroSection = () => {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
             </span>
             <span className="text-sm font-medium text-primary-foreground/90">
-              Trusted by 500+ UK contractors
+              Built for UK SME contractors
             </span>
           </motion.div>
 
