@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useNavigate } from 'react-router-dom';
-import { RefreshCw, RotateCcw, Trash2, ArrowLeft } from 'lucide-react';
+import { RefreshCw, RotateCcw, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { QueueStatusChip } from '@/components/offline/QueueStatusChip';
 import { ConflictDialog } from '@/components/offline/ConflictDialog';
@@ -10,6 +10,7 @@ import { getAllQueueItems } from '@/offline/db';
 import { requeueItem, discardItem } from '@/offline/queue';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNetworkStatus } from '@/offline/useNetworkStatus';
+import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import type { QueueItem } from '@/offline/types';
 import { cn } from '@/lib/utils';
 
@@ -62,20 +63,17 @@ export default function QueueManager() {
   }, new Map<QueueItem['status'], QueueItem[]>());
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b bg-background px-4 py-3 flex items-center gap-3">
-        <button onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-5 w-5 text-muted-foreground" />
-        </button>
-        <h1 className="font-bold flex-1">Upload Queue</h1>
+    <DashboardLayout>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Upload Queue</h1>
         <Button size="sm" variant="outline" onClick={() => triggerSync()}
           disabled={syncState === 'syncing' || !isOnline}>
           <RefreshCw className={cn('h-4 w-4 mr-1', syncState === 'syncing' && 'animate-spin')} />
           Sync All
         </Button>
-      </header>
+      </div>
 
-      <div className="px-4 py-4 space-y-5 max-w-lg mx-auto">
+      <div className="space-y-5 max-w-lg">
         <QueueStatusChip counts={counts} />
 
         <div className="flex gap-1 flex-wrap">
@@ -177,6 +175,6 @@ export default function QueueManager() {
           if (discardTarget) handleDiscard(discardTarget);
         }}
       />
-    </div>
+    </DashboardLayout>
   );
 }
