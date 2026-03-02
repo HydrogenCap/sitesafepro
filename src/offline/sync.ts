@@ -167,7 +167,7 @@ class SyncEngine {
       await this.log(item.id, 'item_succeeded', item.type);
       return 'synced';
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = err instanceof Error ? err.message : (err && typeof err === 'object' && 'message' in err) ? String((err as any).message) : String(err);
       await markFailed(this.userId!, item, msg);
       await this.log(item.id, 'item_failed', msg);
       telemetry.error('sync_item_failed', { itemId: item.id, type: item.type, message: msg });
