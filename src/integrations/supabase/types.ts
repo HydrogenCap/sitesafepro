@@ -2816,6 +2816,233 @@ export type Database = {
         }
         Relationships: []
       }
+      programme_baselines: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          notes: string | null
+          organisation_id: string
+          project_id: string
+          snapshot: Json
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          organisation_id: string
+          project_id: string
+          snapshot?: Json
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          organisation_id?: string
+          project_id?: string
+          snapshot?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "programme_baselines_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programme_baselines_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programme_baselines_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      programme_dependencies: {
+        Row: {
+          from_task_id: string
+          id: string
+          lag: number
+          organisation_id: string
+          to_task_id: string
+          type: string
+        }
+        Insert: {
+          from_task_id: string
+          id?: string
+          lag?: number
+          organisation_id: string
+          to_task_id: string
+          type?: string
+        }
+        Update: {
+          from_task_id?: string
+          id?: string
+          lag?: number
+          organisation_id?: string
+          to_task_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "programme_dependencies_from_task_id_fkey"
+            columns: ["from_task_id"]
+            isOneToOne: false
+            referencedRelation: "programme_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programme_dependencies_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programme_dependencies_to_task_id_fkey"
+            columns: ["to_task_id"]
+            isOneToOne: false
+            referencedRelation: "programme_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      programme_tasks: {
+        Row: {
+          actual_finish: string | null
+          actual_start: string | null
+          assigned_contractor_id: string | null
+          baseline_finish: string | null
+          baseline_start: string | null
+          constraint_date: string | null
+          constraint_type: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          early_start: string | null
+          id: string
+          is_critical: boolean
+          late_finish: string | null
+          organisation_id: string
+          parent_id: string | null
+          planned_finish: string
+          planned_start: string
+          progress: number
+          project_id: string
+          sort_order: number
+          status: string
+          task_type: string
+          title: string
+          trade: string | null
+          updated_at: string
+        }
+        Insert: {
+          actual_finish?: string | null
+          actual_start?: string | null
+          assigned_contractor_id?: string | null
+          baseline_finish?: string | null
+          baseline_start?: string | null
+          constraint_date?: string | null
+          constraint_type?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          early_start?: string | null
+          id?: string
+          is_critical?: boolean
+          late_finish?: string | null
+          organisation_id: string
+          parent_id?: string | null
+          planned_finish: string
+          planned_start: string
+          progress?: number
+          project_id: string
+          sort_order?: number
+          status?: string
+          task_type?: string
+          title: string
+          trade?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actual_finish?: string | null
+          actual_start?: string | null
+          assigned_contractor_id?: string | null
+          baseline_finish?: string | null
+          baseline_start?: string | null
+          constraint_date?: string | null
+          constraint_type?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          early_start?: string | null
+          id?: string
+          is_critical?: boolean
+          late_finish?: string | null
+          organisation_id?: string
+          parent_id?: string | null
+          planned_finish?: string
+          planned_start?: string
+          progress?: number
+          project_id?: string
+          sort_order?: number
+          status?: string
+          task_type?: string
+          title?: string
+          trade?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "programme_tasks_assigned_contractor_id_fkey"
+            columns: ["assigned_contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programme_tasks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programme_tasks_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programme_tasks_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "programme_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programme_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_compliance_requirements: {
         Row: {
           completed_at: string | null
