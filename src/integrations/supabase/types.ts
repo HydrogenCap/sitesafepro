@@ -2053,6 +2053,144 @@ export type Database = {
           },
         ]
       }
+      drawing_revisions: {
+        Row: {
+          drawing_id: string
+          file_name: string | null
+          file_path: string
+          id: string
+          issued_by: string | null
+          issued_date: string | null
+          organisation_id: string
+          revision: string
+          revision_description: string | null
+          status: string | null
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          drawing_id: string
+          file_name?: string | null
+          file_path: string
+          id?: string
+          issued_by?: string | null
+          issued_date?: string | null
+          organisation_id: string
+          revision: string
+          revision_description?: string | null
+          status?: string | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          drawing_id?: string
+          file_name?: string | null
+          file_path?: string
+          id?: string
+          issued_by?: string | null
+          issued_date?: string | null
+          organisation_id?: string
+          revision?: string
+          revision_description?: string | null
+          status?: string | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drawing_revisions_drawing_id_fkey"
+            columns: ["drawing_id"]
+            isOneToOne: false
+            referencedRelation: "drawings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "drawing_revisions_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      drawings: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          current_revision: string | null
+          discipline: string | null
+          drawing_number: string
+          file_name: string | null
+          file_path: string | null
+          id: string
+          ifc_date: string | null
+          issued_by: string | null
+          issued_date: string | null
+          organisation_id: string
+          paper_size: string | null
+          project_id: string
+          scale: string | null
+          status: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          current_revision?: string | null
+          discipline?: string | null
+          drawing_number: string
+          file_name?: string | null
+          file_path?: string | null
+          id?: string
+          ifc_date?: string | null
+          issued_by?: string | null
+          issued_date?: string | null
+          organisation_id: string
+          paper_size?: string | null
+          project_id: string
+          scale?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          current_revision?: string | null
+          discipline?: string | null
+          drawing_number?: string
+          file_name?: string | null
+          file_path?: string | null
+          id?: string
+          ifc_date?: string | null
+          issued_by?: string | null
+          issued_date?: string | null
+          organisation_id?: string
+          paper_size?: string | null
+          project_id?: string
+          scale?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drawings_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "drawings_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       evidence_items: {
         Row: {
           caption: string | null
@@ -3884,6 +4022,103 @@ export type Database = {
             columns: ["signer_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rfis: {
+        Row: {
+          assigned_to_email: string | null
+          assigned_to_name: string | null
+          cost_impact: boolean | null
+          created_at: string
+          description: string
+          discipline: string | null
+          id: string
+          linked_drawing_ids: string[] | null
+          linked_variation_id: string | null
+          organisation_id: string
+          priority: string | null
+          project_id: string
+          raised_by: string | null
+          raised_date: string | null
+          required_by: string | null
+          response: string | null
+          response_date: string | null
+          rfi_number: string
+          status: string | null
+          time_impact: boolean | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to_email?: string | null
+          assigned_to_name?: string | null
+          cost_impact?: boolean | null
+          created_at?: string
+          description: string
+          discipline?: string | null
+          id?: string
+          linked_drawing_ids?: string[] | null
+          linked_variation_id?: string | null
+          organisation_id: string
+          priority?: string | null
+          project_id: string
+          raised_by?: string | null
+          raised_date?: string | null
+          required_by?: string | null
+          response?: string | null
+          response_date?: string | null
+          rfi_number: string
+          status?: string | null
+          time_impact?: boolean | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to_email?: string | null
+          assigned_to_name?: string | null
+          cost_impact?: boolean | null
+          created_at?: string
+          description?: string
+          discipline?: string | null
+          id?: string
+          linked_drawing_ids?: string[] | null
+          linked_variation_id?: string | null
+          organisation_id?: string
+          priority?: string | null
+          project_id?: string
+          raised_by?: string | null
+          raised_date?: string | null
+          required_by?: string | null
+          response?: string | null
+          response_date?: string | null
+          rfi_number?: string
+          status?: string | null
+          time_impact?: boolean | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfis_linked_variation_id_fkey"
+            columns: ["linked_variation_id"]
+            isOneToOne: false
+            referencedRelation: "variations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfis_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfis_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
