@@ -21,7 +21,7 @@ export default function SiteMode() {
   const isSyncing = syncState === 'syncing';
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col pb-[env(safe-area-inset-bottom)]">
       <OfflineBanner />
 
       {/* Fullscreen header — no sidebar chrome */}
