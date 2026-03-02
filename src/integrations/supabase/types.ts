@@ -267,6 +267,89 @@ export type Database = {
           },
         ]
       }
+      budget_items: {
+        Row: {
+          budget_value: number | null
+          category: string | null
+          certified_value: number
+          code: string | null
+          committed_value: number
+          contractor_id: string | null
+          created_at: string
+          description: string
+          forecast_final: number | null
+          id: string
+          linked_task_id: string | null
+          organisation_id: string
+          project_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          budget_value?: number | null
+          category?: string | null
+          certified_value?: number
+          code?: string | null
+          committed_value?: number
+          contractor_id?: string | null
+          created_at?: string
+          description: string
+          forecast_final?: number | null
+          id?: string
+          linked_task_id?: string | null
+          organisation_id: string
+          project_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          budget_value?: number | null
+          category?: string | null
+          certified_value?: number
+          code?: string | null
+          committed_value?: number
+          contractor_id?: string | null
+          created_at?: string
+          description?: string
+          forecast_final?: number | null
+          id?: string
+          linked_task_id?: string | null
+          organisation_id?: string
+          project_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_items_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_items_linked_task_id_fkey"
+            columns: ["linked_task_id"]
+            isOneToOne: false
+            referencedRelation: "programme_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_items_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_portal_activity: {
         Row: {
           action: string
@@ -2589,6 +2672,90 @@ export type Database = {
           },
         ]
       }
+      payment_applications: {
+        Row: {
+          application_number: number
+          certified_date: string | null
+          certified_value: number | null
+          created_at: string
+          due_date: string | null
+          gross_value: number | null
+          id: string
+          net_value: number | null
+          notes: string | null
+          organisation_id: string
+          paid_date: string | null
+          paid_value: number | null
+          previous_certified: number | null
+          project_id: string
+          retention: number | null
+          status: string
+          submission_date: string | null
+          this_application: number | null
+          updated_at: string
+          valuation_date: string
+        }
+        Insert: {
+          application_number: number
+          certified_date?: string | null
+          certified_value?: number | null
+          created_at?: string
+          due_date?: string | null
+          gross_value?: number | null
+          id?: string
+          net_value?: number | null
+          notes?: string | null
+          organisation_id: string
+          paid_date?: string | null
+          paid_value?: number | null
+          previous_certified?: number | null
+          project_id: string
+          retention?: number | null
+          status?: string
+          submission_date?: string | null
+          this_application?: number | null
+          updated_at?: string
+          valuation_date: string
+        }
+        Update: {
+          application_number?: number
+          certified_date?: string | null
+          certified_value?: number | null
+          created_at?: string
+          due_date?: string | null
+          gross_value?: number | null
+          id?: string
+          net_value?: number | null
+          notes?: string | null
+          organisation_id?: string
+          paid_date?: string | null
+          paid_value?: number | null
+          previous_certified?: number | null
+          project_id?: string
+          retention?: number | null
+          status?: string
+          submission_date?: string | null
+          this_application?: number | null
+          updated_at?: string
+          valuation_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_applications_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_applications_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permit_signatures: {
         Row: {
           id: string
@@ -3038,6 +3205,72 @@ export type Database = {
             foreignKeyName: "programme_tasks_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_budget: {
+        Row: {
+          anticipated_final_cost: number | null
+          approved_variations: number
+          certified_to_date: number
+          contingency: number | null
+          contract_currency: string
+          contract_sum: number | null
+          contract_type: string | null
+          created_at: string
+          current_contract_sum: number | null
+          id: string
+          organisation_id: string
+          paid_to_date: number
+          project_id: string
+          updated_at: string
+        }
+        Insert: {
+          anticipated_final_cost?: number | null
+          approved_variations?: number
+          certified_to_date?: number
+          contingency?: number | null
+          contract_currency?: string
+          contract_sum?: number | null
+          contract_type?: string | null
+          created_at?: string
+          current_contract_sum?: number | null
+          id?: string
+          organisation_id: string
+          paid_to_date?: number
+          project_id: string
+          updated_at?: string
+        }
+        Update: {
+          anticipated_final_cost?: number | null
+          approved_variations?: number
+          certified_to_date?: number
+          contingency?: number | null
+          contract_currency?: string
+          contract_sum?: number | null
+          contract_type?: string | null
+          created_at?: string
+          current_contract_sum?: number | null
+          id?: string
+          organisation_id?: string
+          paid_to_date?: number
+          project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_budget_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_budget_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
             referencedRelation: "projects"
             referencedColumns: ["id"]
           },
@@ -4491,6 +4724,111 @@ export type Database = {
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "toolbox_talk_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      variations: {
+        Row: {
+          agreed_value: number | null
+          approved_by: string | null
+          approved_date: string | null
+          created_at: string
+          description: string | null
+          early_warning_reference: string | null
+          id: string
+          is_compensation_event: boolean
+          linked_task_id: string | null
+          organisation_id: string
+          project_id: string
+          quoted_value: number | null
+          status: string
+          submitted_by: string | null
+          submitted_date: string | null
+          time_impact_days: number
+          title: string
+          type: string
+          updated_at: string
+          variation_number: string
+        }
+        Insert: {
+          agreed_value?: number | null
+          approved_by?: string | null
+          approved_date?: string | null
+          created_at?: string
+          description?: string | null
+          early_warning_reference?: string | null
+          id?: string
+          is_compensation_event?: boolean
+          linked_task_id?: string | null
+          organisation_id: string
+          project_id: string
+          quoted_value?: number | null
+          status?: string
+          submitted_by?: string | null
+          submitted_date?: string | null
+          time_impact_days?: number
+          title: string
+          type?: string
+          updated_at?: string
+          variation_number: string
+        }
+        Update: {
+          agreed_value?: number | null
+          approved_by?: string | null
+          approved_date?: string | null
+          created_at?: string
+          description?: string | null
+          early_warning_reference?: string | null
+          id?: string
+          is_compensation_event?: boolean
+          linked_task_id?: string | null
+          organisation_id?: string
+          project_id?: string
+          quoted_value?: number | null
+          status?: string
+          submitted_by?: string | null
+          submitted_date?: string | null
+          time_impact_days?: number
+          title?: string
+          type?: string
+          updated_at?: string
+          variation_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "variations_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "variations_linked_task_id_fkey"
+            columns: ["linked_task_id"]
+            isOneToOne: false
+            referencedRelation: "programme_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "variations_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "variations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "variations_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
