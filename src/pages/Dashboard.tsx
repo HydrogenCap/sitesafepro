@@ -10,6 +10,8 @@ import { ActionsDashboardWidget } from "@/components/dashboard/ActionsDashboardW
 import { ComplianceCalendarWidget } from "@/components/dashboard/ComplianceCalendarWidget";
 import { ContractorComplianceWidget } from "@/components/dashboard/ContractorComplianceWidget";
 import { ActivityFeedWidget } from "@/components/dashboard/ActivityFeedWidget";
+import { ProgrammeHealthWidget } from "@/components/dashboard/ProgrammeHealthWidget";
+import { BudgetOverviewWidget } from "@/components/dashboard/BudgetOverviewWidget";
 import { UsageBars } from "@/components/dashboard/UsageBars";
 import { toast } from "sonner";
 import {
@@ -172,6 +174,16 @@ const Dashboard = () => {
         {/* Actions Widget */}
         <div className="mb-8">
           <ActionsDashboardWidget />
+        </div>
+
+        {/* Programme Health Widget */}
+        <div className="mb-8">
+          <ProgrammeHealthWidget />
+        </div>
+
+        {/* Budget Overview Widget */}
+        <div className="mb-8">
+          <BudgetOverviewWidget />
         </div>
 
         {/* Contractor Compliance Widget */}
