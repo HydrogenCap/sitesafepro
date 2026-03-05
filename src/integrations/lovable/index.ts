@@ -2,7 +2,9 @@
 
 import { createLovableAuth } from "@lovable.dev/cloud-auth-js";
 import { supabase } from "../supabase/client";
-const lovableAuth = createLovableAuth();
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const lovableAuth = createLovableAuth(SUPABASE_URL);
 
 type SignInOptions = {
   redirect_uri?: string;
