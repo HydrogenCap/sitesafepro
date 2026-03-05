@@ -13,8 +13,8 @@ import { Eye, EyeOff, Loader2, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 import { PasswordStrength } from "@/components/auth/PasswordStrength";
-import { supabase } from "@/integrations/supabase/client";
-import { Separator } from "@/components/ui/separator";
+
+
 const signInSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
