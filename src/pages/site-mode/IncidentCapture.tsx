@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, AlertTriangle, ExternalLink } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, ExternalLink, MapPin, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,6 +25,7 @@ export default function IncidentCapture() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [locating, setLocating] = useState(false);
   const [organisationId, setOrganisationId] = useState<string | null>(null);
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
 
@@ -58,6 +59,25 @@ export default function IncidentCapture() {
   }, [user]);
 
   const isRiddor = form.severity === 'major_injury' || form.severity === 'dangerous_occurrence' || form.severity === 'fatality';
+
+  const useGps = () => {
+    if (!navigator.geolocation) {
+      toast({ title: 'GPS unavailable', description: 'Geolocation is not supported on this device', variant: 'destructive' });
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setForm(f => ({ ...f, location: `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}` }));
+        setLocating(false);
+      },
+      () => {
+        toast({ title: 'GPS error', description: 'Could not get location', variant: 'destructive' });
+        setLocating(false);
+      },
+      { timeout: 10000 }
+    );
+  };
 
   const handleSave = async () => {
     if (!user || !organisationId) return;
@@ -193,12 +213,17 @@ export default function IncidentCapture() {
         {/* Location */}
         <div className="space-y-1.5">
           <Label className="text-sm font-medium">Location on site</Label>
-          <Input
-            className="h-12 text-base"
-            placeholder="e.g. Ground floor, stairwell B"
-            value={form.location}
-            onChange={(e) => setForm({ ...form, location: e.target.value })}
-          />
+          <div className="flex gap-2">
+            <Input
+              className="h-12 text-base flex-1"
+              placeholder="e.g. Ground floor, stairwell B"
+              value={form.location}
+              onChange={(e) => setForm({ ...form, location: e.target.value })}
+            />
+            <Button type="button" size="icon" variant="outline" onClick={useGps} disabled={locating} className="h-12 w-12 shrink-0">
+              {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
+            </Button>
+          </div>
         </div>
 
         {/* Submit */}
