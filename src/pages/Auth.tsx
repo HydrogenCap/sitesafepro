@@ -430,6 +430,7 @@ const AuthPage = () => {
                   )}
                 </Button>
 
+              </form>
             )}
           </div>
         </motion.div>
