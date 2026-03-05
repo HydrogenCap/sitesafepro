@@ -302,7 +302,23 @@ class SyncEngine {
         if (updErr) throw updErr;
         break;
       }
-
+      case 'site_hazard': {
+                  const { error } = await supabase.from('site_hazards').insert({
+                                id: payload.id as string,
+                                organisation_id: orgId,
+                                project_id: (payload.project_id as string | null) ?? null,
+                                reported_by: payload.reported_by as string,
+                                severity: payload.severity as string,
+                                description: payload.description as string,
+                                location: (payload.location as string | null) ?? null,
+                                photo_storage_path: (payload.storage_path as string | null) ?? null,
+                                photo_mime_type: (payload.photo_mime_type as string | null) ?? null,
+                                reported_at: payload.reported_at as string,
+                  });
+                  if (error) throw error;
+                  break;
+      }
+        
       case 'request_review': {
         const { data, error } = await supabase.functions.invoke('request-review', {
           body: { org_id: orgId, version_id: item.version_id },
