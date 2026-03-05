@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { supabase } from '@/integrations/supabase/client';
+import { enqueue } from '@/offline/queue';
+import { useSync } from '@/offline/SyncContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrg } from '@/hooks/useOrg';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +17,7 @@ export default function HazardCapture() {
   const { user } = useAuth();
   const { membership } = useOrg();
   const { toast } = useToast();
+  const { triggerSync } = useSync();
   const [location, setLocation] = useState('');
   const [description, setDescription] = useState('');
   const [severity, setSeverity] = useState('high');
@@ -40,47 +42,41 @@ export default function HazardCapture() {
   };
 
   const save = async () => {
-    if (!user || !membership || !description.trim()) return;
-    setSaving(true);
-    try {
-      let photoStoragePath: string | null = null;
-      let photoMimeType: string | null = null;
+        if (!user || !membership || !description.trim()) return;
+        setSaving(true);
+        try {
+                let blobData: { data: ArrayBuffer; mimeType: string; fileName: string } | undefined;
+                if (photoFile) {
+                          const ab = await photoFile.arrayBuffer();
+                          blobData = { data: ab, mimeType: photoFile.type, fileName: photoFile.name };
+                }
 
-      // Upload photo if present
-      if (photoFile) {
-        const ext = photoFile.name.split('.').pop() || 'jpg';
-        const path = `org/${membership.orgId}/hazards/${uuid()}.${ext}`;
-        const { error: uploadError } = await supabase.storage
-          .from('evidence')
-          .upload(path, photoFile, { contentType: photoFile.type });
-        if (uploadError) throw uploadError;
-        photoStoragePath = path;
-        photoMimeType = photoFile.type;
-      }
+                await enqueue({
+                          type: 'site_hazard',
+                          orgId: membership.orgId,
+                          payload: {
+                                      id: uuid(),
+                                      organisation_id: membership.orgId,
+                                      project_id: null,
+                                      reported_by: user.id,
+                                      severity,
+                                      description,
+                                      location: location || null,
+                                      photo_mime_type: photoFile?.type ?? null,
+                                      reported_at: new Date().toISOString(),
+                          },
+                          ...(blobData ? { blob: blobData } : {}),
+                          userId: user.id,
+                });
 
-      // Insert into site_hazards relational table
-      const { error } = await supabase.from('site_hazards').insert({
-        id: uuid(),
-        organisation_id: membership.orgId,
-        project_id: null,
-        reported_by: user.id,
-        severity,
-        description,
-        location: location || null,
-        photo_storage_path: photoStoragePath,
-        photo_mime_type: photoMimeType,
-        reported_at: new Date().toISOString(),
-      });
-
-      if (error) throw error;
-
-      toast({ title: 'Hazard reported successfully' });
-      navigate('/site-mode');
-    } catch (err: any) {
-      toast({ title: 'Failed', description: err.message, variant: 'destructive' });
-    } finally {
-      setSaving(false);
-    }
+                toast({ title: 'Hazard saved offline' });
+                if (navigator.onLine) triggerSync();
+                navigate('/site-mode');
+        } catch (err: any) {
+                toast({ title: 'Failed', description: err.message, variant: 'destructive' });
+        } finally {
+                setSaving(false);
+        }
   };
 
   return (
