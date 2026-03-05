@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/landing/Logo";
 import { Eye, EyeOff, Loader2, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { lovable } from "@/integrations/lovable/index";
+
 import { PasswordStrength } from "@/components/auth/PasswordStrength";
 import { supabase } from "@/integrations/supabase/client";
 import { Separator } from "@/components/ui/separator";
