@@ -11,9 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/landing/Logo";
 import { Eye, EyeOff, Loader2, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
+import { lovable } from "@/integrations/lovable/index";
 import { PasswordStrength } from "@/components/auth/PasswordStrength";
-
+import { Separator } from "@/components/ui/separator";
 
 const signInSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
