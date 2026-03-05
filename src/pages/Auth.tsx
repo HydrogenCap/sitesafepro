@@ -52,6 +52,22 @@ const AuthPage = () => {
     }
   }, [user, loading, navigate]);
 
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    try {
+      const { error } = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin + "/dashboard",
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      toast({
+        title: "Google sign in failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      setIsGoogleLoading(false);
+    }
+  };
 
   const signInForm = useForm<SignInFormData>({
     resolver: zodResolver(signInSchema),
