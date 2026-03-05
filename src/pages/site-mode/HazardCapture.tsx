@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, AlertTriangle, Check, Camera, X } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Check, Camera, X, MapPin, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -20,9 +20,29 @@ export default function HazardCapture() {
   const { triggerSync } = useSync();
   const [location, setLocation] = useState('');
   const [description, setDescription] = useState('');
+  const [locating, setLocating] = useState(false);
   const [severity, setSeverity] = useState('high');
   const [saving, setSaving] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+  const useGps = () => {
+        if (!navigator.geolocation) {
+                toast({ title: 'GPS unavailable', description: 'Geolocation is not supported on this device', variant: 'destructive' });
+                return;
+        }
+        setLocating(true);
+        navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                          setLocation(`${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`);
+                          setLocating(false);
+                },
+                () => {
+                          toast({ title: 'GPS error', description: 'Could not get location', variant: 'destructive' });
+                          setLocating(false);
+                },
+          { timeout: 10000 }
+              );
+  };
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -85,9 +105,14 @@ export default function HazardCapture() {
         <button onClick={() => navigate(-1)}><ArrowLeft className="h-5 w-5 text-muted-foreground" /></button>
         <AlertTriangle className="h-5 w-5 text-destructive" />
         <h1 className="font-bold flex-1">Report Hazard</h1>
-      </header>
+    h  </header>
       <div className="p-4 space-y-4 max-w-lg mx-auto">
-        <Input placeholder="Location on site" value={location} onChange={e => setLocation(e.target.value)} />
+        <div className="flex gap-2">
+          <Input placeholder="Location on site" value={location} onChange={e => setLocation(e.target.value)} className="flex-1" />
+          <Button type="button" size="icon" variant="outline" onClick={useGps} disabled={locating} className="shrink-0">
+            {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
+          </Button>
+        </div>
         <Select value={severity} onValueChange={setSeverity}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
