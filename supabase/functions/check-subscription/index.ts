@@ -14,9 +14,17 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
 
 // Map Stripe product IDs to subscription tiers
 const PRODUCT_TIER_MAP: Record<string, string> = {
-  "prod_TvhlSRnZEPA9fh": "starter",
-  "prod_Tvhlx1rQqSEXrr": "professional",
-  "prod_Tvhm61rgsuEQEI": "enterprise",
+  "prod_U5yQaYflCCRt7V": "starter",
+  "prod_U5yRa8ElsPq6UQ": "professional",
+  "prod_U5yR6HvjaEKEVA": "enterprise",
+};
+
+// Check if an email is in the owner override list
+const isOwnerEmail = (email: string): boolean => {
+  const ownerEmails = Deno.env.get("OWNER_EMAILS") || "";
+  if (!ownerEmails) return false;
+  const emails = ownerEmails.split(",").map(e => e.trim().toLowerCase());
+  return emails.includes(email.toLowerCase());
 };
 
 serve(async (req) => {
@@ -48,9 +56,45 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
+    // Owner override: grant free Enterprise access
+    if (isOwnerEmail(user.email)) {
+      logStep("Owner email detected, granting Enterprise override", { email: user.email });
+
+      // Update organisation with enterprise tier
+      const { data: memberData } = await supabaseClient
+        .from('organisation_members')
+        .select('organisation_id')
+        .eq('profile_id', user.id)
+        .eq('status', 'active')
+        .single();
+
+      if (memberData) {
+        await supabaseClient
+          .from('organisations')
+          .update({
+            subscription_tier: 'enterprise',
+            subscription_status: 'active',
+          })
+          .eq('id', memberData.organisation_id);
+        logStep("Organisation updated with owner Enterprise override");
+      }
+
+      return new Response(JSON.stringify({
+        subscribed: true,
+        tier: 'enterprise',
+        subscription_end: null,
+        stripe_customer_id: null,
+        stripe_subscription_id: null,
+        owner_override: true,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    
+
     if (customers.data.length === 0) {
       logStep("No customer found, user is not subscribed");
       return new Response(JSON.stringify({ 
