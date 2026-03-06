@@ -11,8 +11,8 @@ const getEnvVar = (key: string, fallback: string): string => {
 
 export const STRIPE_PRODUCTS = {
   starter: {
-    productId: getEnvVar('VITE_STRIPE_STARTER_PRODUCT_ID', 'prod_TvhlSRnZEPA9fh'),
-    priceId: getEnvVar('VITE_STRIPE_STARTER_PRICE_ID', 'price_1SxqLuAZFDMuITvQ0R713pKz'),
+    productId: getEnvVar('VITE_STRIPE_STARTER_PRODUCT_ID', 'prod_U5yQaYflCCRt7V'),
+    priceId: getEnvVar('VITE_STRIPE_STARTER_PRICE_ID', 'price_1T7mTrPRQEJHylx3Lt7ysocd'),
     name: "Starter",
     price: 49,
     currency: "GBP",
