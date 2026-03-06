@@ -50,8 +50,8 @@ export const STRIPE_PRODUCTS = {
     popular: true,
   },
   enterprise: {
-    productId: getEnvVar('VITE_STRIPE_ENTERPRISE_PRODUCT_ID', 'prod_Tvhm61rgsuEQEI'),
-    priceId: getEnvVar('VITE_STRIPE_ENTERPRISE_PRICE_ID', 'price_1SxqMVAZFDMuITvQtnR3v92b'),
+    productId: getEnvVar('VITE_STRIPE_ENTERPRISE_PRODUCT_ID', 'prod_U5yR6HvjaEKEVA'),
+    priceId: getEnvVar('VITE_STRIPE_ENTERPRISE_PRICE_ID', 'price_1T7mUUPRQEJHylx3DwNzuLkf'),
     name: "Enterprise",
     price: 199,
     currency: "GBP",
