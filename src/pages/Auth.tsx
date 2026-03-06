@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { lovable } from "@/integrations/lovable/index";
 import { PasswordStrength } from "@/components/auth/PasswordStrength";
 import { Separator } from "@/components/ui/separator";
+import { Founding50Banner } from "@/components/landing/Founding50Banner";
 
 const signInSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
