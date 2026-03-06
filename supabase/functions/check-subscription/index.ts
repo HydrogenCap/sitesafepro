@@ -14,9 +14,17 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
 
 // Map Stripe product IDs to subscription tiers
 const PRODUCT_TIER_MAP: Record<string, string> = {
-  "prod_TvhlSRnZEPA9fh": "starter",
-  "prod_Tvhlx1rQqSEXrr": "professional",
-  "prod_Tvhm61rgsuEQEI": "enterprise",
+  "prod_U5yQaYflCCRt7V": "starter",
+  "prod_U5yRa8ElsPq6UQ": "professional",
+  "prod_U5yR6HvjaEKEVA": "enterprise",
+};
+
+// Check if an email is in the owner override list
+const isOwnerEmail = (email: string): boolean => {
+  const ownerEmails = Deno.env.get("OWNER_EMAILS") || "";
+  if (!ownerEmails) return false;
+  const emails = ownerEmails.split(",").map(e => e.trim().toLowerCase());
+  return emails.includes(email.toLowerCase());
 };
 
 serve(async (req) => {
