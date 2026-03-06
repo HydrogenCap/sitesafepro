@@ -2,9 +2,10 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle2, Shield, Users, ClipboardCheck } from "lucide-react";
+import { Founding50Banner } from "@/components/landing/Founding50Banner";
 
 const highlights = [
-  "14-day free trial",
+  "Up to 2 months free",
   "No credit card required",
   "UK CDM 2015 compliant",
 ];
@@ -63,6 +64,9 @@ export const HeroSection = () => {
 
       <div className="container mx-auto relative z-10 pt-24 pb-16">
         <div className="max-w-4xl mx-auto text-center">
+          {/* Founding 50 Banner */}
+          <Founding50Banner variant="hero" />
+
           {/* Badge */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}

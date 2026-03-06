@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { lovable } from "@/integrations/lovable/index";
 import { PasswordStrength } from "@/components/auth/PasswordStrength";
 import { Separator } from "@/components/ui/separator";
+import { Founding50Banner } from "@/components/landing/Founding50Banner";
 
 const signInSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -154,8 +155,13 @@ const AuthPage = () => {
             transition={{ duration: 0.4 }}
           >
             <h2 className="text-center text-2xl font-bold tracking-tight text-foreground">
-              {isSignUp ? "Start your 14-day free trial" : "Sign in to your account"}
+              {isSignUp ? "Start your free trial" : "Sign in to your account"}
             </h2>
+            {isSignUp && (
+              <div className="mt-4">
+                <Founding50Banner variant="auth" />
+              </div>
+            )}
             <p className="mt-2 text-center text-sm text-muted-foreground">
               {isSignUp ? (
                 <>
