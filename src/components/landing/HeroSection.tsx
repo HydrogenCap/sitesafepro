@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle2, Shield, Users, ClipboardCheck } from "lucide-react";
+import { Founding50Banner } from "@/components/landing/Founding50Banner";
 
 const highlights = [
   "14-day free trial",
