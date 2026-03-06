@@ -91,7 +91,10 @@ serve(async (req) => {
         status: 200,
       });
     }
-    
+
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+
     if (customers.data.length === 0) {
       logStep("No customer found, user is not subscribed");
       return new Response(JSON.stringify({ 
