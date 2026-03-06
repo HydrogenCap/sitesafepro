@@ -72,6 +72,15 @@ serve(async (req) => {
 
     const slug = slugData || companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
+    // Founding 50: first 50 orgs get 2 months free, others get 14-day trial
+    const { count: orgCount } = await supabaseAdmin
+      .from('organisations')
+      .select('*', { count: 'exact', head: true });
+
+    const isFounding50 = (orgCount ?? 0) < 50;
+    const trialDays = isFounding50 ? 60 : 14;
+    console.log(`Signup #${(orgCount ?? 0) + 1} — ${isFounding50 ? 'Founding 50 (60 days)' : 'Standard (14 days)'}`);
+
     // Create organisation with trial status
     const { data: orgData, error: orgError } = await supabaseAdmin
       .from('organisations')
@@ -82,7 +91,7 @@ serve(async (req) => {
         phone: phone || null,
         subscription_status: 'trialing',
         subscription_tier: 'enterprise',
-        trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        trial_ends_at: new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString(),
       })
       .select()
       .single();
