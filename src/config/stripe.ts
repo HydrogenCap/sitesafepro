@@ -11,8 +11,8 @@ const getEnvVar = (key: string, fallback: string): string => {
 
 export const STRIPE_PRODUCTS = {
   starter: {
-    productId: getEnvVar('VITE_STRIPE_STARTER_PRODUCT_ID', 'prod_TvhlSRnZEPA9fh'),
-    priceId: getEnvVar('VITE_STRIPE_STARTER_PRICE_ID', 'price_1SxqLuAZFDMuITvQ0R713pKz'),
+    productId: getEnvVar('VITE_STRIPE_STARTER_PRODUCT_ID', 'prod_U5yQaYflCCRt7V'),
+    priceId: getEnvVar('VITE_STRIPE_STARTER_PRICE_ID', 'price_1T7mTrPRQEJHylx3Lt7ysocd'),
     name: "Starter",
     price: 49,
     currency: "GBP",
@@ -28,8 +28,8 @@ export const STRIPE_PRODUCTS = {
     ],
   },
   professional: {
-    productId: getEnvVar('VITE_STRIPE_PROFESSIONAL_PRODUCT_ID', 'prod_Tvhlx1rQqSEXrr'),
-    priceId: getEnvVar('VITE_STRIPE_PROFESSIONAL_PRICE_ID', 'price_1SxqMBAZFDMuITvQmi1VUVhu'),
+    productId: getEnvVar('VITE_STRIPE_PROFESSIONAL_PRODUCT_ID', 'prod_U5yRa8ElsPq6UQ'),
+    priceId: getEnvVar('VITE_STRIPE_PROFESSIONAL_PRICE_ID', 'price_1T7mULPRQEJHylx3HSDq2L0b'),
     name: "Professional",
     price: 99,
     currency: "GBP",
@@ -50,8 +50,8 @@ export const STRIPE_PRODUCTS = {
     popular: true,
   },
   enterprise: {
-    productId: getEnvVar('VITE_STRIPE_ENTERPRISE_PRODUCT_ID', 'prod_Tvhm61rgsuEQEI'),
-    priceId: getEnvVar('VITE_STRIPE_ENTERPRISE_PRICE_ID', 'price_1SxqMVAZFDMuITvQtnR3v92b'),
+    productId: getEnvVar('VITE_STRIPE_ENTERPRISE_PRODUCT_ID', 'prod_U5yR6HvjaEKEVA'),
+    priceId: getEnvVar('VITE_STRIPE_ENTERPRISE_PRICE_ID', 'price_1T7mUUPRQEJHylx3DwNzuLkf'),
     name: "Enterprise",
     price: 199,
     currency: "GBP",

@@ -9,9 +9,9 @@ const corsHeaders = {
 
 // Map Stripe product IDs to subscription tiers
 const PRODUCT_ID_TO_TIER: Record<string, "starter" | "professional" | "enterprise"> = {
-  "prod_TvhlSRnZEPA9fh": "starter",
-  "prod_Tvhlx1rQqSEXrr": "professional",
-  "prod_Tvhm61rgsuEQEI": "enterprise",
+  "prod_U5yQaYflCCRt7V": "starter",
+  "prod_U5yRa8ElsPq6UQ": "professional",
+  "prod_U5yR6HvjaEKEVA": "enterprise",
 };
 
 // Map tiers to max projects
