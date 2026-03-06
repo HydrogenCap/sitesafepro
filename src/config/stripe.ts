@@ -28,8 +28,8 @@ export const STRIPE_PRODUCTS = {
     ],
   },
   professional: {
-    productId: getEnvVar('VITE_STRIPE_PROFESSIONAL_PRODUCT_ID', 'prod_Tvhlx1rQqSEXrr'),
-    priceId: getEnvVar('VITE_STRIPE_PROFESSIONAL_PRICE_ID', 'price_1SxqMBAZFDMuITvQmi1VUVhu'),
+    productId: getEnvVar('VITE_STRIPE_PROFESSIONAL_PRODUCT_ID', 'prod_U5yRa8ElsPq6UQ'),
+    priceId: getEnvVar('VITE_STRIPE_PROFESSIONAL_PRICE_ID', 'price_1T7mULPRQEJHylx3HSDq2L0b'),
     name: "Professional",
     price: 99,
     currency: "GBP",
