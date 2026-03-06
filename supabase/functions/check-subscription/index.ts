@@ -56,8 +56,41 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    // Owner override: grant free Enterprise access
+    if (isOwnerEmail(user.email)) {
+      logStep("Owner email detected, granting Enterprise override", { email: user.email });
+
+      // Update organisation with enterprise tier
+      const { data: memberData } = await supabaseClient
+        .from('organisation_members')
+        .select('organisation_id')
+        .eq('profile_id', user.id)
+        .eq('status', 'active')
+        .single();
+
+      if (memberData) {
+        await supabaseClient
+          .from('organisations')
+          .update({
+            subscription_tier: 'enterprise',
+            subscription_status: 'active',
+          })
+          .eq('id', memberData.organisation_id);
+        logStep("Organisation updated with owner Enterprise override");
+      }
+
+      return new Response(JSON.stringify({
+        subscribed: true,
+        tier: 'enterprise',
+        subscription_end: null,
+        stripe_customer_id: null,
+        stripe_subscription_id: null,
+        owner_override: true,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
     
     if (customers.data.length === 0) {
       logStep("No customer found, user is not subscribed");
