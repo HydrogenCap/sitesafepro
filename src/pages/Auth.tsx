@@ -155,8 +155,13 @@ const AuthPage = () => {
             transition={{ duration: 0.4 }}
           >
             <h2 className="text-center text-2xl font-bold tracking-tight text-foreground">
-              {isSignUp ? "Start your 14-day free trial" : "Sign in to your account"}
+              {isSignUp ? "Start your free trial" : "Sign in to your account"}
             </h2>
+            {isSignUp && (
+              <div className="mt-4">
+                <Founding50Banner variant="auth" />
+              </div>
+            )}
             <p className="mt-2 text-center text-sm text-muted-foreground">
               {isSignUp ? (
                 <>

@@ -64,6 +64,9 @@ export const HeroSection = () => {
 
       <div className="container mx-auto relative z-10 pt-24 pb-16">
         <div className="max-w-4xl mx-auto text-center">
+          {/* Founding 50 Banner */}
+          <Founding50Banner variant="hero" />
+
           {/* Badge */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
