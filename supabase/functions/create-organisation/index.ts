@@ -72,14 +72,24 @@ serve(async (req) => {
 
     const slug = slugData || companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
-    // Founding 50: first 50 orgs get 2 months free, others get 14-day trial
-    const { count: orgCount } = await supabaseAdmin
-      .from('organisations')
-      .select('*', { count: 'exact', head: true });
+    // Founding 50: atomically read and increment the counter
+    const { data: settingRow } = await supabaseAdmin
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'founding_fifty_count')
+      .single();
 
-    const isFounding50 = (orgCount ?? 0) < 50;
+    const currentCount = typeof settingRow?.value === 'number' ? settingRow.value : 0;
+    const isFounding50 = currentCount < 50;
     const trialDays = isFounding50 ? 60 : 14;
-    console.log(`Signup #${(orgCount ?? 0) + 1} — ${isFounding50 ? 'Founding 50 (60 days)' : 'Standard (14 days)'}`);
+
+    // Increment counter
+    await supabaseAdmin
+      .from('app_settings')
+      .update({ value: (currentCount + 1) as any, updated_at: new Date().toISOString() })
+      .eq('key', 'founding_fifty_count');
+
+    console.log(`Signup #${currentCount + 1} — ${isFounding50 ? 'Founding 50 (60 days)' : 'Standard (14 days)'}`);
 
     // Create organisation with trial status
     const { data: orgData, error: orgError } = await supabaseAdmin
