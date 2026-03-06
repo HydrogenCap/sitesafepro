@@ -5,7 +5,7 @@ import { ArrowRight, CheckCircle2, Shield, Users, ClipboardCheck } from "lucide-
 import { Founding50Banner } from "@/components/landing/Founding50Banner";
 
 const highlights = [
-  "14-day free trial",
+  "Up to 2 months free",
   "No credit card required",
   "UK CDM 2015 compliant",
 ];
