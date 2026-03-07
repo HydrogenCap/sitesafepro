@@ -29,7 +29,7 @@ export async function generateGoLiveDocuments(
     }
 
     if (!templates || templates.length === 0) {
-      console.log("No templates configured for auto-generation");
+      // No templates configured — nothing to generate
       return { success: true, documentsGenerated: 0, errors: [] };
     }
 
@@ -92,7 +92,6 @@ export async function generateGoLiveDocuments(
         }
 
         documentsGenerated++;
-        console.log(`Generated document from template: ${template.name}`);
       } catch (templateError) {
         const errorMessage = templateError instanceof Error 
           ? templateError.message 
