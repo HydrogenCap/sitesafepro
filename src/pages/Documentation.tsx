@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ArrowLeft, Download, BookOpen, FileText, Users, Shield, ClipboardCheck, QrCode, AlertTriangle, HardHat } from "lucide-react";
 import { generateTrainingGuidePdf } from "@/lib/training-guide-pdf";
+import { generateFaqGuidePdf } from "@/lib/faq-guide-pdf";
 
 const documentationSections = [
   {
