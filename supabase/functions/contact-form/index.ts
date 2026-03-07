@@ -85,7 +85,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         from: "Site Safe <noreply@sitesafe.cloud>",
-        to: ["hello@sitesafe.cloud"],
+        to: ["david@oxygen.rocks"],
         reply_to: email,
         subject: subjectLine,
         html: emailHtml,
