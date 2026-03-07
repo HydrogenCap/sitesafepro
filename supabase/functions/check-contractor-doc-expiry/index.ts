@@ -239,7 +239,7 @@ async function processDoc(
       Authorization: `Bearer ${resendKey}`,
     },
     body: JSON.stringify({
-      from: "SiteSafePro <notifications@updates.sitesafepro.co.uk>",
+      from: "SiteSafe <notifications@sitesafe.cloud>",
       to: Array.from(recipientEmails),
       subject,
       html,
