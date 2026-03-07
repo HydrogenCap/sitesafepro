@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ArrowLeft, Download, BookOpen, FileText, Users, Shield, ClipboardCheck, QrCode, AlertTriangle, HardHat } from "lucide-react";
+import { generateTrainingGuidePdf } from "@/lib/training-guide-pdf";
 
 const documentationSections = [
   {
