@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Download, BookOpen, Lightbulb } from "lucide-react";
+import { generateTrainingGuidePdf } from "@/lib/training-guide-pdf";
 
 const TipBox = ({ children }: { children: React.ReactNode }) => (
   <div className="my-4 flex gap-3 rounded-lg border border-accent/30 bg-accent/5 p-4">
