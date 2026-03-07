@@ -4,6 +4,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Button } from "@/components/ui/button";
 import { Download, BookOpen, HelpCircle, Mail, Phone } from "lucide-react";
 import { generateTrainingGuidePdf } from "@/lib/training-guide-pdf";
+import { generateFaqGuidePdf } from "@/lib/faq-guide-pdf";
 
 const faqData = [
   {
