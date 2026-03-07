@@ -189,11 +189,16 @@ export default function Documentation() {
                 Comprehensive PDF guide with step-by-step instructions
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <Button asChild className="w-full">
-                <a href="/docs/SiteSafePro_Training_Guide.docx" download>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download Training Guide
+            <CardContent className="flex gap-2">
+              <Button asChild className="flex-1">
+                <Link to="/training-guide">
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  Read Online
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="icon">
+                <a href="/docs/SiteSafePro_Training_Guide.docx" download title="Download DOCX">
+                  <Download className="h-4 w-4" />
                 </a>
               </Button>
             </CardContent>
