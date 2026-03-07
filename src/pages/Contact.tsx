@@ -73,9 +73,7 @@ export default function Contact() {
                   <div>
                     <h3 className="font-semibold mb-1">Email</h3>
                     <p className="text-sm text-muted-foreground">General enquiries</p>
-                     <a href="mailto:hello@sitesafe.cloud" className="text-primary hover:underline">
-                       hello@sitesafe.cloud
-                    </a>
+                     <span className="text-sm text-muted-foreground">Use the form to get in touch</span>
                   </div>
                 </div>
               </CardContent>
