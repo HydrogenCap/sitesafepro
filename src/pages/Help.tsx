@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -250,10 +251,10 @@ export default function Help() {
               </p>
               <div className="space-y-2">
                 <Button asChild variant="outline" className="w-full">
-                  <a href="mailto:support@sitesafe.cloud">
+                  <Link to="/contact">
                     <Mail className="mr-2 h-4 w-4" />
-                    Email Support
-                  </a>
+                    Contact Support
+                  </Link>
                 </Button>
               </div>
             </CardContent>

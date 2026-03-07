@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,15 +6,40 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Mail, Phone, MapPin, Clock, Send } from "lucide-react";
+import { ArrowLeft, Mail, Phone, MapPin, Clock, Send, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
+function generateCaptcha() {
+  const a = Math.floor(Math.random() * 10) + 1;
+  const b = Math.floor(Math.random() * 10) + 1;
+  return { a, b, answer: a + b };
+}
+
 export default function Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [captcha, setCaptcha] = useState(() => generateCaptcha());
+  const [captchaInput, setCaptchaInput] = useState("");
+  const [honeypot, setHoneypot] = useState("");
+
+  const refreshCaptcha = useCallback(() => {
+    setCaptcha(generateCaptcha());
+    setCaptchaInput("");
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    // Honeypot check
+    if (honeypot) return;
+
+    // Captcha check
+    if (parseInt(captchaInput, 10) !== captcha.answer) {
+      toast.error("Incorrect answer. Please try again.");
+      refreshCaptcha();
+      return;
+    }
+
     setIsSubmitting(true);
 
     const form = e.target as HTMLFormElement;
@@ -37,8 +62,9 @@ export default function Contact() {
 
       toast.success("Message sent! We'll get back to you within 24 hours.");
       form.reset();
+      refreshCaptcha();
     } catch (err) {
-      toast.error("Failed to send message. Please try again or email us directly.");
+      toast.error("Failed to send message. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -71,28 +97,8 @@ export default function Contact() {
                     <Mail className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-1">Email</h3>
-                    <p className="text-sm text-muted-foreground">General enquiries</p>
-                     <a href="mailto:hello@sitesafe.cloud" className="text-primary hover:underline">
-                       hello@sitesafe.cloud
-                    </a>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-start gap-4">
-                  <div className="rounded-lg bg-primary/10 p-2">
-                    <Phone className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-1">Phone</h3>
-                    <p className="text-sm text-muted-foreground">Mon-Fri, 9am-5pm GMT</p>
-                    <a href="tel:+442012345678" className="text-primary hover:underline">
-                      +44 20 1234 5678
-                    </a>
+                    <h3 className="font-semibold mb-1">Get in Touch</h3>
+                    <p className="text-sm text-muted-foreground">Use the form to contact us</p>
                   </div>
                 </div>
               </CardContent>
@@ -198,6 +204,40 @@ export default function Contact() {
                     />
                   </div>
 
+                  {/* Honeypot - hidden from real users */}
+                  <div className="absolute -left-[9999px]" aria-hidden="true">
+                    <input
+                      type="text"
+                      name="website_url"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={honeypot}
+                      onChange={(e) => setHoneypot(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Math Captcha */}
+                  <div className="space-y-2">
+                    <Label htmlFor="captcha" className="flex items-center gap-2">
+                      <ShieldCheck className="h-4 w-4 text-primary" />
+                      Security check: What is {captcha.a} + {captcha.b}? *
+                    </Label>
+                    <div className="flex items-center gap-3">
+                      <Input
+                        id="captcha"
+                        type="number"
+                        required
+                        placeholder="Your answer"
+                        value={captchaInput}
+                        onChange={(e) => setCaptchaInput(e.target.value)}
+                        className="max-w-[180px]"
+                      />
+                      <Button type="button" variant="ghost" size="sm" onClick={refreshCaptcha}>
+                        New question
+                      </Button>
+                    </div>
+                  </div>
+
                   <Button type="submit" className="w-full" disabled={isSubmitting}>
                     {isSubmitting ? (
                       <>Sending...</>
@@ -225,7 +265,7 @@ export default function Contact() {
               <Link to="/documentation">View Documentation</Link>
             </Button>
             <Button asChild variant="outline">
-              <a href="mailto:support@sitesafe.cloud">Email Support</a>
+              <Link to="/contact">Contact Support</Link>
             </Button>
           </div>
         </section>
