@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Download, BookOpen, HelpCircle, Mail, Phone } from "lucide-react";
+import { generateTrainingGuidePdf } from "@/lib/training-guide-pdf";
 
 const faqData = [
   {
