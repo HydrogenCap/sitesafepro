@@ -433,11 +433,9 @@ export default function TrainingGuide() {
         <div className="mt-16 text-center">
           <Separator className="mb-8" />
           <p className="text-muted-foreground mb-4">Prefer an offline copy?</p>
-          <Button asChild size="lg">
-            <a href="/docs/SiteSafePro_Training_Guide.docx" download>
-              <Download className="h-4 w-4 mr-2" />
-              Download Training Guide (DOCX)
-            </a>
+          <Button size="lg" onClick={generateTrainingGuidePdf}>
+            <Download className="h-4 w-4 mr-2" />
+            Download Training Guide (PDF)
           </Button>
         </div>
       </div>

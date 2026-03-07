@@ -197,10 +197,8 @@ export default function Documentation() {
                   Read Online
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="icon">
-                <a href="/docs/SiteSafePro_Training_Guide.docx" download title="Download DOCX">
-                  <Download className="h-4 w-4" />
-                </a>
+              <Button variant="outline" size="icon" onClick={generateTrainingGuidePdf} title="Download PDF">
+                <Download className="h-4 w-4" />
               </Button>
             </CardContent>
           </Card>
