@@ -89,7 +89,7 @@ serve(async (req) => {
       .update({ value: (currentCount + 1) as any, updated_at: new Date().toISOString() })
       .eq('key', 'founding_fifty_count');
 
-    console.log(`Signup #${currentCount + 1} — ${isFounding50 ? 'Founding 50 (60 days)' : 'Standard (14 days)'}`);
+    console.log(`Signup #${currentCount + 1} — ${isFounding50 ? 'Founding 50 (180 days)' : 'Standard (14 days)'}`);
 
     // Create organisation with trial status
     const { data: orgData, error: orgError } = await supabaseAdmin

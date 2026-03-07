@@ -79,7 +79,7 @@ export const Founding50Banner = ({ variant = "hero" }: Founding50BannerProps) =>
           <>
             <Sparkles className="h-4 w-4 text-amber-400" />
             <span className="text-sm font-semibold text-primary-foreground">
-              🎉 Founding 50 — 2 months free!{" "}
+              🎉 Founding 50 — 6 months free!{" "}
               <span className="text-amber-300 font-bold">
                 {spotsRemaining} spot{spotsRemaining !== 1 ? "s" : ""} left
               </span>
