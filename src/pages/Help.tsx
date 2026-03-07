@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Download, BookOpen, HelpCircle, Mail, Phone } from "lucide-react";
+import { generateTrainingGuidePdf } from "@/lib/training-guide-pdf";
 
 const faqData = [
   {
@@ -204,11 +205,9 @@ export default function Help() {
               <p className="text-sm text-muted-foreground mb-4">
                 A comprehensive guide covering every feature of Site Safe, from account setup to advanced reporting.
               </p>
-              <Button asChild className="w-full">
-                <a href="/docs/SiteSafePro_Training_Guide.docx" download>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download Training Guide
-                </a>
+              <Button className="w-full" onClick={generateTrainingGuidePdf}>
+                <Download className="mr-2 h-4 w-4" />
+                Download Training Guide (PDF)
               </Button>
             </CardContent>
           </Card>

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ArrowLeft, Download, BookOpen, FileText, Users, Shield, ClipboardCheck, QrCode, AlertTriangle, HardHat } from "lucide-react";
+import { generateTrainingGuidePdf } from "@/lib/training-guide-pdf";
 
 const documentationSections = [
   {
@@ -196,10 +197,8 @@ export default function Documentation() {
                   Read Online
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="icon">
-                <a href="/docs/SiteSafePro_Training_Guide.docx" download title="Download DOCX">
-                  <Download className="h-4 w-4" />
-                </a>
+              <Button variant="outline" size="icon" onClick={generateTrainingGuidePdf} title="Download PDF">
+                <Download className="h-4 w-4" />
               </Button>
             </CardContent>
           </Card>

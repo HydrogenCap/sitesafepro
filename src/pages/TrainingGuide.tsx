@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Download, BookOpen, Lightbulb } from "lucide-react";
+import { generateTrainingGuidePdf } from "@/lib/training-guide-pdf";
 
 const TipBox = ({ children }: { children: React.ReactNode }) => (
   <div className="my-4 flex gap-3 rounded-lg border border-accent/30 bg-accent/5 p-4">
@@ -50,11 +51,9 @@ export default function TrainingGuide() {
               Back to Documentation
             </Link>
           </Button>
-          <Button asChild>
-            <a href="/docs/SiteSafePro_Training_Guide.docx" download>
-              <Download className="h-4 w-4 mr-2" />
-              Download DOCX
-            </a>
+          <Button onClick={generateTrainingGuidePdf}>
+            <Download className="h-4 w-4 mr-2" />
+            Download PDF
           </Button>
         </div>
 
@@ -434,11 +433,9 @@ export default function TrainingGuide() {
         <div className="mt-16 text-center">
           <Separator className="mb-8" />
           <p className="text-muted-foreground mb-4">Prefer an offline copy?</p>
-          <Button asChild size="lg">
-            <a href="/docs/SiteSafePro_Training_Guide.docx" download>
-              <Download className="h-4 w-4 mr-2" />
-              Download Training Guide (DOCX)
-            </a>
+          <Button size="lg" onClick={generateTrainingGuidePdf}>
+            <Download className="h-4 w-4 mr-2" />
+            Download Training Guide (PDF)
           </Button>
         </div>
       </div>
