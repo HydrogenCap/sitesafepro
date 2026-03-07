@@ -66,6 +66,7 @@ import ContractorDashboardPage from "./pages/ContractorDashboard";
 import ContractorCompliance from "./pages/ContractorCompliance";
 import Help from "./pages/Help";
 import Documentation from "./pages/Documentation";
+import TrainingGuide from "./pages/TrainingGuide";
 import CDMGuide from "./pages/CDMGuide";
 import CookiePolicy from "./pages/CookiePolicy";
 import About from "./pages/About";
