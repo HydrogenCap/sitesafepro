@@ -81,7 +81,7 @@ serve(async (req) => {
 
     const currentCount = typeof settingRow?.value === 'number' ? settingRow.value : 0;
     const isFounding50 = currentCount < 50;
-    const trialDays = isFounding50 ? 60 : 14;
+    const trialDays = isFounding50 ? 180 : 14;
 
     // Increment counter
     await supabaseAdmin
