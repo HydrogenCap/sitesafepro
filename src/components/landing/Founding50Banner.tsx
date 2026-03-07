@@ -48,7 +48,7 @@ export const Founding50Banner = ({ variant = "hero" }: Founding50BannerProps) =>
             <span className="flex items-center justify-center gap-2">
               <Sparkles className="h-4 w-4 flex-shrink-0" />
               <span>
-                <strong>Founding 50 Offer</strong> — First 50 users get 2 months free!{" "}
+                <strong>Founding 50 Offer</strong> — First 50 users get 6 months free!{" "}
                 <strong>{spotsRemaining} spot{spotsRemaining !== 1 ? "s" : ""} remaining</strong>
               </span>
             </span>
