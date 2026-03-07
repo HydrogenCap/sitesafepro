@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useEffect, useRef } from "react";
 import * as RechartsPrimitive from "recharts";
 
 import { cn } from "@/lib/utils";
@@ -58,45 +59,44 @@ const ChartContainer = React.forwardRef<
 });
 ChartContainer.displayName = "Chart";
 
-// Allow only safe CSS color formats to prevent injection via dangerouslySetInnerHTML
+// Allow only safe CSS color formats
 const SAFE_COLOR_RE =
   /^(#[0-9a-fA-F]{3,8}|rgba?\(\s*[\d.,\s%]+\)|hsla?\(\s*[\d.,\s%]+\)|[a-zA-Z]+|var\(--[a-zA-Z0-9-]+\))$/;
 
 const sanitizeColor = (color: string): string | null =>
   SAFE_COLOR_RE.test(color.trim()) ? color.trim() : null;
 
-// Allow only alphanumeric, hyphens, and underscores in CSS variable names
 const sanitizeKey = (key: string): string => key.replace(/[^a-zA-Z0-9_-]/g, "");
 
+const buildChartCSS = (id: string, config: ChartConfig): string => {
+  const colorConfig = Object.entries(config).filter(([_, c]) => c.theme || c.color);
+  return Object.entries(THEMES)
+    .map(([theme, prefix]) => {
+      const vars = colorConfig
+        .map(([key, itemConfig]) => {
+          const raw = itemConfig.theme?.[theme as keyof typeof itemConfig.theme] || itemConfig.color;
+          const color = raw ? sanitizeColor(raw) : null;
+          return color ? `  --color-${sanitizeKey(key)}: ${color};` : null;
+        })
+        .filter(Boolean)
+        .join("\n");
+      return vars ? `\n${prefix} [data-chart=${id}] {\n${vars}\n}\n` : "";
+    })
+    .join("\n");
+};
+
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
-  const colorConfig = Object.entries(config).filter(([_, config]) => config.theme || config.color);
+  const styleRef = useRef<HTMLStyleElement>(null);
 
-  if (!colorConfig.length) {
-    return null;
-  }
+  useEffect(() => {
+    if (!styleRef.current) return;
+    styleRef.current.textContent = buildChartCSS(id, config);
+  }, [id, config]);
 
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
-${colorConfig
-  .map(([key, itemConfig]) => {
-    const raw = itemConfig.theme?.[theme as keyof typeof itemConfig.theme] || itemConfig.color;
-    const color = raw ? sanitizeColor(raw) : null;
-    return color ? `  --color-${sanitizeKey(key)}: ${color};` : null;
-  })
-  .filter(Boolean)
-  .join("\n")}
-}
-`,
-          )
-          .join("\n"),
-      }}
-    />
-  );
+  const colorConfig = Object.entries(config).filter(([_, c]) => c.theme || c.color);
+  if (!colorConfig.length) return null;
+
+  return <style ref={styleRef} />;
 };
 
 const ChartTooltip = RechartsPrimitive.Tooltip;
