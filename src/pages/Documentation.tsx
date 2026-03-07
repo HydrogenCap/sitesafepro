@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ArrowLeft, Download, BookOpen, FileText, Users, Shield, ClipboardCheck, QrCode, AlertTriangle, HardHat } from "lucide-react";
 import { generateTrainingGuidePdf } from "@/lib/training-guide-pdf";
+import { generateFaqGuidePdf } from "@/lib/faq-guide-pdf";
 
 const documentationSections = [
   {
@@ -214,11 +215,9 @@ export default function Documentation() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button asChild variant="secondary" className="w-full">
-                <a href="/docs/SiteSafePro_FAQ_Guide.docx" download>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download FAQ Guide
-                </a>
+              <Button variant="secondary" className="w-full" onClick={generateFaqGuidePdf}>
+                <Download className="mr-2 h-4 w-4" />
+                Download FAQ Guide (PDF)
               </Button>
             </CardContent>
           </Card>
