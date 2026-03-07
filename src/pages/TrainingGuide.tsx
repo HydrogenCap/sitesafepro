@@ -51,11 +51,9 @@ export default function TrainingGuide() {
               Back to Documentation
             </Link>
           </Button>
-          <Button asChild>
-            <a href="/docs/SiteSafePro_Training_Guide.docx" download>
-              <Download className="h-4 w-4 mr-2" />
-              Download DOCX
-            </a>
+          <Button onClick={generateTrainingGuidePdf}>
+            <Download className="h-4 w-4 mr-2" />
+            Download PDF
           </Button>
         </div>
 
