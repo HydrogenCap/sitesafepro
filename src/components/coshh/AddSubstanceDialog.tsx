@@ -22,7 +22,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -37,15 +36,15 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, Plus, X, AlertTriangle, Sparkles } from 'lucide-react';
+import { Loader2, AlertTriangle, Sparkles } from 'lucide-react';
 import { GHSPictogramSelector } from './GHSPictograms';
-import type { 
-  COSHHSubstance, 
-  COSHHFormData, 
-  SubstanceType, 
+import { ArrayStatementField } from './ArrayStatementField';
+import { CheckboxGroupField } from './CheckboxGroupField';
+import type {
+  COSHHSubstance,
+  COSHHFormData,
+  SubstanceType,
   HazardPictogram,
-  RouteOfExposure,
 } from '@/types/coshh';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -88,6 +87,12 @@ interface AddSubstanceDialogProps {
   editingSubstance?: COSHHSubstance | null;
 }
 
+const confidenceBadgeClass: Record<string, string> = {
+  high: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400',
+  medium: 'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400',
+  low: 'bg-muted text-muted-foreground',
+};
+
 export const AddSubstanceDialog = ({
   open,
   onOpenChange,
@@ -97,12 +102,9 @@ export const AddSubstanceDialog = ({
 }: AddSubstanceDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLookingUp, setIsLookingUp] = useState(false);
-  const [lookupConfidence, setLookupConfidence] = useState<'high'|'medium'|'low'|null>(null);
-  const [newHazardStatement, setNewHazardStatement] = useState('');
-  const [newPrecautionaryStatement, setNewPrecautionaryStatement] = useState('');
-  const [newControlMeasure, setNewControlMeasure] = useState('');
+  const [lookupConfidence, setLookupConfidence] = useState<'high' | 'medium' | 'low' | null>(null);
 
-  const defaultValues: Partial<COSHHFormData> = editingSubstance 
+  const defaultValues: Partial<COSHHFormData> = editingSubstance
     ? {
         product_name: editingSubstance.product_name,
         manufacturer: editingSubstance.manufacturer || '',
@@ -165,31 +167,9 @@ export const AddSubstanceDialog = ({
     }
   };
 
-  const addToArrayField = (
-    fieldName: keyof Pick<COSHHFormData, 'hazard_statements' | 'precautionary_statements' | 'control_measures'>,
-    value: string,
-    setter: (val: string) => void
-  ) => {
-    if (!value.trim()) return;
-    const current = form.getValues(fieldName) || [];
-    if (!current.includes(value)) {
-      form.setValue(fieldName, [...current, value]);
-    }
-    setter('');
-  };
-
-  const removeFromArrayField = (
-    fieldName: keyof Pick<COSHHFormData, 'hazard_statements' | 'precautionary_statements' | 'control_measures'>,
-    value: string
-  ) => {
-    const current = form.getValues(fieldName) || [];
-    form.setValue(fieldName, current.filter(v => v !== value));
-  };
-
   const handleAiLookup = async () => {
     const productName = form.getValues('product_name')?.trim();
     if (!productName) {
-      // If field is empty, focus it
       form.setFocus('product_name');
       return;
     }
@@ -203,7 +183,6 @@ export const AddSubstanceDialog = ({
       if (!data.ok) throw new Error(data.error || 'Lookup failed');
 
       const d = data.data;
-      // Populate form fields with AI data (only overwrite blank/default fields if editing)
       const isNew = !editingSubstance;
       if (d.product_name && isNew) form.setValue('product_name', d.product_name);
       if (d.substance_type) form.setValue('substance_type', d.substance_type);
@@ -224,7 +203,6 @@ export const AddSubstanceDialog = ({
       setLookupConfidence(d.confidence ?? 'medium');
     } catch (err: any) {
       console.error('[COSHH AI]', err);
-      // Toast is already handled by supabase.functions.invoke on errors
     } finally {
       setIsLookingUp(false);
     }
@@ -245,7 +223,11 @@ export const AddSubstanceDialog = ({
         <ScrollArea className="flex-1 pr-4">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 pb-6">
-              <Accordion type="multiple" defaultValue={['product', 'hazards', 'controls', 'storage']} className="space-y-4">
+              <Accordion
+                type="multiple"
+                defaultValue={['product', 'hazards', 'controls', 'storage']}
+                className="space-y-4"
+              >
                 {/* Section 1: Product Information */}
                 <AccordionItem value="product" className="border rounded-lg px-4">
                   <AccordionTrigger className="text-sm font-semibold">
@@ -266,7 +248,6 @@ export const AddSubstanceDialog = ({
                       )}
                     />
 
-                    {/* AI auto-fill button */}
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
@@ -280,11 +261,7 @@ export const AddSubstanceDialog = ({
                         }
                       </button>
                       {lookupConfidence && (
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                          lookupConfidence === 'high' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400' :
-                          lookupConfidence === 'medium' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400' :
-                          'bg-muted text-muted-foreground'
-                        }`}>
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${confidenceBadgeClass[lookupConfidence]}`}>
                           {lookupConfidence} confidence
                         </span>
                       )}
@@ -322,9 +299,7 @@ export const AddSubstanceDialog = ({
                             </FormControl>
                             <SelectContent>
                               {Object.entries(SUBSTANCE_TYPE_LABELS).map(([value, label]) => (
-                                <SelectItem key={value} value={value}>
-                                  {label}
-                                </SelectItem>
+                                <SelectItem key={value} value={value}>{label}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -373,135 +348,29 @@ export const AddSubstanceDialog = ({
                       )}
                     />
 
-                    <FormField
+                    <ArrayStatementField
                       control={form.control}
                       name="hazard_statements"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Hazard Statements (H-statements)</FormLabel>
-                          <div className="space-y-2">
-                            <div className="flex gap-2">
-                              <Select 
-                                value="" 
-                                onValueChange={(val) => addToArrayField('hazard_statements', val, setNewHazardStatement)}
-                              >
-                                <SelectTrigger className="flex-1">
-                                  <SelectValue placeholder="Add common H-statement" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {COMMON_HAZARD_STATEMENTS.map((stmt) => (
-                                    <SelectItem key={stmt} value={stmt}>{stmt}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="flex gap-2">
-                              <Input
-                                placeholder="Or type custom H-statement"
-                                value={newHazardStatement}
-                                onChange={(e) => setNewHazardStatement(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    addToArrayField('hazard_statements', newHazardStatement, setNewHazardStatement);
-                                  }
-                                }}
-                              />
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="icon"
-                                onClick={() => addToArrayField('hazard_statements', newHazardStatement, setNewHazardStatement)}
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                              {(field.value || []).map((stmt) => (
-                                <Badge key={stmt} variant="secondary" className="text-xs">
-                                  {stmt}
-                                  <button
-                                    type="button"
-                                    onClick={() => removeFromArrayField('hazard_statements', stmt)}
-                                    className="ml-1 hover:text-destructive"
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </button>
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        </FormItem>
-                      )}
+                      label="Hazard Statements (H-statements)"
+                      commonOptions={COMMON_HAZARD_STATEMENTS}
+                      showCustomInput
+                      placeholder="Or type custom H-statement"
+                      displayAs="badges"
                     />
 
-                    <FormField
+                    <ArrayStatementField
                       control={form.control}
                       name="precautionary_statements"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Precautionary Statements (P-statements)</FormLabel>
-                          <div className="space-y-2">
-                            <Select 
-                              value="" 
-                              onValueChange={(val) => addToArrayField('precautionary_statements', val, setNewPrecautionaryStatement)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Add common P-statement" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {COMMON_PRECAUTIONARY_STATEMENTS.map((stmt) => (
-                                  <SelectItem key={stmt} value={stmt}>{stmt}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <div className="flex flex-wrap gap-2">
-                              {(field.value || []).map((stmt) => (
-                                <Badge key={stmt} variant="secondary" className="text-xs">
-                                  {stmt}
-                                  <button
-                                    type="button"
-                                    onClick={() => removeFromArrayField('precautionary_statements', stmt)}
-                                    className="ml-1 hover:text-destructive"
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </button>
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        </FormItem>
-                      )}
+                      label="Precautionary Statements (P-statements)"
+                      commonOptions={COMMON_PRECAUTIONARY_STATEMENTS}
+                      displayAs="badges"
                     />
 
-                    <FormField
+                    <CheckboxGroupField
                       control={form.control}
                       name="route_of_exposure"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Routes of Exposure</FormLabel>
-                          <div className="grid grid-cols-2 gap-3">
-                            {Object.entries(ROUTE_OF_EXPOSURE_LABELS).map(([value, label]) => (
-                              <div key={value} className="flex items-center space-x-2">
-                                <Checkbox
-                                  id={`exposure-${value}`}
-                                  checked={(field.value || []).includes(value as RouteOfExposure)}
-                                  onCheckedChange={(checked) => {
-                                    if (checked) {
-                                      field.onChange([...(field.value || []), value]);
-                                    } else {
-                                      field.onChange((field.value || []).filter((v) => v !== value));
-                                    }
-                                  }}
-                                />
-                                <label htmlFor={`exposure-${value}`} className="text-sm">
-                                  {label}
-                                </label>
-                              </div>
-                            ))}
-                          </div>
-                        </FormItem>
-                      )}
+                      label="Routes of Exposure"
+                      options={ROUTE_OF_EXPOSURE_LABELS}
                     />
 
                     <FormField
@@ -529,94 +398,21 @@ export const AddSubstanceDialog = ({
                     Control Measures & PPE
                   </AccordionTrigger>
                   <AccordionContent className="space-y-4 pt-4">
-                    <FormField
+                    <ArrayStatementField
                       control={form.control}
                       name="control_measures"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Control Measures</FormLabel>
-                          <div className="space-y-2">
-                            <Select 
-                              value="" 
-                              onValueChange={(val) => addToArrayField('control_measures', val, setNewControlMeasure)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Add common control measure" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {COMMON_CONTROL_MEASURES.map((measure) => (
-                                  <SelectItem key={measure} value={measure}>{measure}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <div className="flex gap-2">
-                              <Input
-                                placeholder="Or type custom control measure"
-                                value={newControlMeasure}
-                                onChange={(e) => setNewControlMeasure(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    addToArrayField('control_measures', newControlMeasure, setNewControlMeasure);
-                                  }
-                                }}
-                              />
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="icon"
-                                onClick={() => addToArrayField('control_measures', newControlMeasure, setNewControlMeasure)}
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </div>
-                            <div className="space-y-1">
-                              {(field.value || []).map((measure, idx) => (
-                                <div key={idx} className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
-                                  <span className="text-sm flex-1">{measure}</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => removeFromArrayField('control_measures', measure)}
-                                    className="text-muted-foreground hover:text-destructive"
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </FormItem>
-                      )}
+                      label="Control Measures"
+                      commonOptions={COMMON_CONTROL_MEASURES}
+                      showCustomInput
+                      placeholder="Or type custom control measure"
+                      displayAs="list"
                     />
 
-                    <FormField
+                    <CheckboxGroupField
                       control={form.control}
                       name="ppe_required"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>PPE Required</FormLabel>
-                          <div className="grid grid-cols-2 gap-3">
-                            {Object.entries(PPE_TYPE_LABELS).map(([value, label]) => (
-                              <div key={value} className="flex items-center space-x-2">
-                                <Checkbox
-                                  id={`ppe-${value}`}
-                                  checked={(field.value || []).includes(value)}
-                                  onCheckedChange={(checked) => {
-                                    if (checked) {
-                                      field.onChange([...(field.value || []), value]);
-                                    } else {
-                                      field.onChange((field.value || []).filter((v: string) => v !== value));
-                                    }
-                                  }}
-                                />
-                                <label htmlFor={`ppe-${value}`} className="text-sm">
-                                  {label}
-                                </label>
-                              </div>
-                            ))}
-                          </div>
-                        </FormItem>
-                      )}
+                      label="PPE Required"
+                      options={PPE_TYPE_LABELS}
                     />
 
                     <FormField
@@ -647,10 +443,7 @@ export const AddSubstanceDialog = ({
                             </FormDescription>
                           </div>
                           <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
+                            <Switch checked={field.value} onCheckedChange={field.onChange} />
                           </FormControl>
                         </FormItem>
                       )}
@@ -683,91 +476,34 @@ export const AddSubstanceDialog = ({
                     Storage & Emergency Procedures
                   </AccordionTrigger>
                   <AccordionContent className="space-y-4 pt-4">
-                    <FormField
-                      control={form.control}
-                      name="storage_location"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Storage Location on Site</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g. COSHH cabinet, welfare unit" {...field} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="storage_requirements"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Storage Requirements</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="e.g. Store in cool, dry place away from ignition sources"
-                              rows={2}
-                              {...field}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="first_aid_measures"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>First Aid Measures</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="First aid procedures for skin, eyes, inhalation, ingestion..."
-                              rows={4}
-                              {...field}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="spill_procedure"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Spill Procedure</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="Steps to take in case of spillage..."
-                              rows={2}
-                              {...field}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="fire_fighting_measures"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Fire Fighting Measures</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="Suitable extinguishing media and precautions..."
-                              rows={2}
-                              {...field}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
+                    {[
+                      { name: 'storage_location' as const, label: 'Storage Location on Site', placeholder: 'e.g. COSHH cabinet, welfare unit', rows: 1 },
+                      { name: 'storage_requirements' as const, label: 'Storage Requirements', placeholder: 'e.g. Store in cool, dry place away from ignition sources', rows: 2 },
+                      { name: 'first_aid_measures' as const, label: 'First Aid Measures', placeholder: 'First aid procedures for skin, eyes, inhalation, ingestion...', rows: 4 },
+                      { name: 'spill_procedure' as const, label: 'Spill Procedure', placeholder: 'Steps to take in case of spillage...', rows: 2 },
+                      { name: 'fire_fighting_measures' as const, label: 'Fire Fighting Measures', placeholder: 'Suitable extinguishing media and precautions...', rows: 2 },
+                    ].map(({ name, label, placeholder, rows }) => (
+                      <FormField
+                        key={name}
+                        control={form.control}
+                        name={name}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{label}</FormLabel>
+                            <FormControl>
+                              {rows === 1
+                                ? <Input placeholder={placeholder} {...field} />
+                                : <Textarea placeholder={placeholder} rows={rows} {...field} />
+                              }
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    ))}
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
 
-              {/* SDS Warning */}
               <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 flex items-start gap-3">
                 <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
                 <div>

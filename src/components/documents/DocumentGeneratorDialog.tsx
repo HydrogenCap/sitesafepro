@@ -58,36 +58,59 @@ type TemplateType = "induction_register" | "rams_register" | "permit_to_work" | 
 type Step = "select_template" | "select_project" | "questions" | "generating" | "complete";
 
 const TEMPLATES = [
-  {
-    id: "induction_register" as TemplateType,
-    name: "Site Induction Register",
-    description: "Visitor/contractor sign-in sheets with site-specific safety rules",
-    icon: ClipboardList,
-  },
-  {
-    id: "rams_register" as TemplateType,
-    name: "RAMS Register",
-    description: "Track subcontractor risk assessments for the project",
-    icon: FileText,
-  },
-  {
-    id: "permit_to_work" as TemplateType,
-    name: "Permit to Work Forms",
-    description: "Hot work, confined space, excavation permits and more",
-    icon: ShieldCheck,
-  },
-  {
-    id: "f10_notification" as TemplateType,
-    name: "F10 Notification",
-    description: "HSE notification for construction projects (CDM 2015)",
-    icon: FileText,
-  },
+  { id: "induction_register" as TemplateType, name: "Site Induction Register", description: "Visitor/contractor sign-in sheets with site-specific safety rules", icon: ClipboardList },
+  { id: "rams_register" as TemplateType, name: "RAMS Register", description: "Track subcontractor risk assessments for the project", icon: FileText },
+  { id: "permit_to_work" as TemplateType, name: "Permit to Work Forms", description: "Hot work, confined space, excavation permits and more", icon: ShieldCheck },
+  { id: "f10_notification" as TemplateType, name: "F10 Notification", description: "HSE notification for construction projects (CDM 2015)", icon: FileText },
 ];
 
-export const DocumentGeneratorDialog = ({
-  open,
-  onOpenChange,
-}: DocumentGeneratorDialogProps) => {
+const SLIDE = { initial: { opacity: 0, x: 20 }, animate: { opacity: 1, x: 0 }, exit: { opacity: 0, x: -20 } };
+
+// QuestionInput renders the right input for each question type
+const QuestionInput = ({
+  question,
+  value,
+  onChange,
+}: {
+  question: Question;
+  value: string;
+  onChange: (v: string) => void;
+}) => {
+  switch (question.type) {
+    case "textarea":
+      return (
+        <Textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={question.placeholder}
+          rows={4}
+        />
+      );
+    case "select":
+      return (
+        <Select value={value} onValueChange={onChange}>
+          <SelectTrigger><SelectValue placeholder="Select an option" /></SelectTrigger>
+          <SelectContent>
+            {question.options?.map((opt) => (
+              <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    case "number":
+      return (
+        <Input type="number" value={value} onChange={(e) => onChange(e.target.value)} placeholder={question.placeholder} />
+      );
+    case "date":
+      return <Input type="date" value={value} onChange={(e) => onChange(e.target.value)} />;
+    default:
+      return (
+        <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder={question.placeholder} />
+      );
+  }
+};
+
+export const DocumentGeneratorDialog = ({ open, onOpenChange }: DocumentGeneratorDialogProps) => {
   const { organisation } = useSubscription();
   const [step, setStep] = useState<Step>("select_template");
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType | null>(null);
@@ -99,7 +122,6 @@ export const DocumentGeneratorDialog = ({
   const [generatedDocument, setGeneratedDocument] = useState<DocumentData | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
-  // Reset state when dialog closes
   useEffect(() => {
     if (!open) {
       setStep("select_template");
@@ -112,17 +134,10 @@ export const DocumentGeneratorDialog = ({
     }
   }, [open]);
 
-  // Fetch projects
   useEffect(() => {
-    const fetchProjects = async () => {
-      const { data } = await supabase
-        .from("projects")
-        .select("id, name")
-        .eq("status", "active")
-        .order("name");
-      setProjects(data || []);
-    };
-    if (open) fetchProjects();
+    if (!open) return;
+    supabase.from("projects").select("id, name").eq("status", "active").order("name")
+      .then(({ data }) => setProjects(data || []));
   }, [open]);
 
   const handleSelectTemplate = (template: TemplateType) => {
@@ -132,28 +147,17 @@ export const DocumentGeneratorDialog = ({
 
   const handleProjectSelected = async () => {
     if (!selectedTemplate) return;
-    
     setLoading(true);
     setStep("questions");
 
     try {
-      const projectName = projects.find(p => p.id === selectedProject)?.name;
-      
+      const projectName = projects.find((p) => p.id === selectedProject)?.name;
       const { data, error } = await supabase.functions.invoke("generate-document", {
-        body: {
-          action: "generate_questions",
-          templateType: selectedTemplate,
-          projectName,
-        },
+        body: { action: "generate_questions", templateType: selectedTemplate, projectName },
       });
 
       if (error) throw error;
-
-      if (data.error) {
-        toast.error(data.error);
-        setStep("select_project");
-        return;
-      }
+      if (data.error) { toast.error(data.error); setStep("select_project"); return; }
 
       setQuestions(data.questions || []);
       setCurrentQuestionIndex(0);
@@ -166,33 +170,13 @@ export const DocumentGeneratorDialog = ({
     }
   };
 
-  const handleAnswerChange = (questionId: string, value: string) => {
-    setAnswers(prev => ({ ...prev, [questionId]: value }));
-  };
-
-  const handleNextQuestion = () => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
-    } else {
-      handleGenerateDocument();
-    }
-  };
-
-  const handlePrevQuestion = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev - 1);
-    }
-  };
-
   const handleGenerateDocument = async () => {
     if (!selectedTemplate) return;
-
     setStep("generating");
     setLoading(true);
 
     try {
-      const projectName = projects.find(p => p.id === selectedProject)?.name;
-
+      const projectName = projects.find((p) => p.id === selectedProject)?.name;
       const { data, error } = await supabase.functions.invoke("generate-document", {
         body: {
           action: "generate_document",
@@ -204,12 +188,7 @@ export const DocumentGeneratorDialog = ({
       });
 
       if (error) throw error;
-
-      if (data.error) {
-        toast.error(data.error);
-        setStep("questions");
-        return;
-      }
+      if (data.error) { toast.error(data.error); setStep("questions"); return; }
 
       setGeneratedDocument(data.document);
       setStep("complete");
@@ -222,29 +201,17 @@ export const DocumentGeneratorDialog = ({
     }
   };
 
-  const handleDownloadPDF = () => {
-    if (!generatedDocument) return;
-    generateDocumentPDF(generatedDocument, organisation?.name);
-    toast.success("PDF downloaded successfully");
-  };
-
-  const handleDownloadDOCX = async () => {
-    if (!generatedDocument) return;
-    await generateDocumentDOCX(generatedDocument, organisation?.name);
-    toast.success("Word document downloaded successfully");
+  const handleNextQuestion = () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex((prev) => prev + 1);
+    } else {
+      handleGenerateDocument();
+    }
   };
 
   const currentQuestion = questions[currentQuestionIndex];
-  const progress = questions.length > 0 
-    ? ((currentQuestionIndex + 1) / questions.length) * 100 
-    : 0;
-
-  const isCurrentAnswerValid = () => {
-    if (!currentQuestion) return true;
-    if (!currentQuestion.required) return true;
-    const answer = answers[currentQuestion.id];
-    return answer && answer.trim().length > 0;
-  };
+  const progress = questions.length > 0 ? ((currentQuestionIndex + 1) / questions.length) * 100 : 0;
+  const isCurrentAnswerValid = !currentQuestion?.required || !!answers[currentQuestion?.id]?.trim();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -254,24 +221,13 @@ export const DocumentGeneratorDialog = ({
             <Sparkles className="h-5 w-5 text-primary" />
             AI Document Generator
           </DialogTitle>
-          <DialogDescription>
-            Generate customised safety documents for your site
-          </DialogDescription>
+          <DialogDescription>Generate customised safety documents for your site</DialogDescription>
         </DialogHeader>
 
         <AnimatePresence mode="wait">
-          {/* Step 1: Select Template */}
           {step === "select_template" && (
-            <motion.div
-              key="select_template"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="space-y-4"
-            >
-              <p className="text-sm text-muted-foreground">
-                Choose a document template to generate:
-              </p>
+            <motion.div key="select_template" {...SLIDE} className="space-y-4">
+              <p className="text-sm text-muted-foreground">Choose a document template to generate:</p>
               <div className="grid gap-3">
                 {TEMPLATES.map((template) => (
                   <button
@@ -292,66 +248,38 @@ export const DocumentGeneratorDialog = ({
             </motion.div>
           )}
 
-          {/* Step 2: Select Project */}
           {step === "select_project" && (
-            <motion.div
-              key="select_project"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="space-y-4"
-            >
+            <motion.div key="select_project" {...SLIDE} className="space-y-4">
               <div className="space-y-2">
                 <Label>Select Project (Optional)</Label>
                 <Select value={selectedProject} onValueChange={setSelectedProject}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a project" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select a project" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">No specific project</SelectItem>
                     {projects.map((project) => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.name}
-                      </SelectItem>
+                      <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
-                  Selecting a project will pre-fill some information
-                </p>
+                <p className="text-xs text-muted-foreground">Selecting a project will pre-fill some information</p>
               </div>
-
               <div className="flex justify-between pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setStep("select_template")}
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back
+                <Button variant="outline" onClick={() => setStep("select_template")}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />Back
                 </Button>
                 <Button onClick={handleProjectSelected}>
-                  Continue
-                  <ArrowRight className="h-4 w-4 ml-2" />
+                  Continue<ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>
             </motion.div>
           )}
 
-          {/* Step 3: Questions */}
           {step === "questions" && (
-            <motion.div
-              key="questions"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="space-y-4"
-            >
+            <motion.div key="questions" {...SLIDE} className="space-y-4">
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-12 gap-4">
                   <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                  <p className="text-sm text-muted-foreground">
-                    AI is preparing your questions...
-                  </p>
+                  <p className="text-sm text-muted-foreground">AI is preparing your questions...</p>
                 </div>
               ) : currentQuestion ? (
                 <>
@@ -363,115 +291,38 @@ export const DocumentGeneratorDialog = ({
                     <Progress value={progress} className="h-2" />
                   </div>
 
-                  <motion.div
-                    key={currentQuestion.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="space-y-3"
-                  >
+                  <motion.div key={currentQuestion.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
                     <Label className="text-base">
                       {currentQuestion.question}
-                      {currentQuestion.required && (
-                        <span className="text-destructive ml-1">*</span>
-                      )}
+                      {currentQuestion.required && <span className="text-destructive ml-1">*</span>}
                     </Label>
-
-                    {currentQuestion.type === "text" && (
-                      <Input
-                        value={answers[currentQuestion.id] || ""}
-                        onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
-                        placeholder={currentQuestion.placeholder}
-                      />
-                    )}
-
-                    {currentQuestion.type === "textarea" && (
-                      <Textarea
-                        value={answers[currentQuestion.id] || ""}
-                        onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
-                        placeholder={currentQuestion.placeholder}
-                        rows={4}
-                      />
-                    )}
-
-                    {currentQuestion.type === "select" && currentQuestion.options && (
-                      <Select
-                        value={answers[currentQuestion.id] || ""}
-                        onValueChange={(value) => handleAnswerChange(currentQuestion.id, value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select an option" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {currentQuestion.options.map((option) => (
-                            <SelectItem key={option} value={option}>
-                              {option}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-
-                    {currentQuestion.type === "number" && (
-                      <Input
-                        type="number"
-                        value={answers[currentQuestion.id] || ""}
-                        onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
-                        placeholder={currentQuestion.placeholder}
-                      />
-                    )}
-
-                    {currentQuestion.type === "date" && (
-                      <Input
-                        type="date"
-                        value={answers[currentQuestion.id] || ""}
-                        onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
-                      />
-                    )}
+                    <QuestionInput
+                      question={currentQuestion}
+                      value={answers[currentQuestion.id] || ""}
+                      onChange={(v) => setAnswers((prev) => ({ ...prev, [currentQuestion.id]: v }))}
+                    />
                   </motion.div>
 
                   <div className="flex justify-between pt-4">
-                    <Button
-                      variant="outline"
-                      onClick={handlePrevQuestion}
-                      disabled={currentQuestionIndex === 0}
-                    >
-                      <ArrowLeft className="h-4 w-4 mr-2" />
-                      Previous
+                    <Button variant="outline" onClick={() => setCurrentQuestionIndex((p) => p - 1)} disabled={currentQuestionIndex === 0}>
+                      <ArrowLeft className="h-4 w-4 mr-2" />Previous
                     </Button>
-                    <Button
-                      onClick={handleNextQuestion}
-                      disabled={!isCurrentAnswerValid()}
-                    >
-                      {currentQuestionIndex === questions.length - 1 ? (
-                        <>
-                          <Sparkles className="h-4 w-4 mr-2" />
-                          Generate Document
-                        </>
-                      ) : (
-                        <>
-                          Next
-                          <ArrowRight className="h-4 w-4 ml-2" />
-                        </>
-                      )}
+                    <Button onClick={handleNextQuestion} disabled={!isCurrentAnswerValid}>
+                      {currentQuestionIndex === questions.length - 1
+                        ? <><Sparkles className="h-4 w-4 mr-2" />Generate Document</>
+                        : <>Next<ArrowRight className="h-4 w-4 ml-2" /></>
+                      }
                     </Button>
                   </div>
                 </>
               ) : (
-                <p className="text-center text-muted-foreground py-8">
-                  No questions available
-                </p>
+                <p className="text-center text-muted-foreground py-8">No questions available</p>
               )}
             </motion.div>
           )}
 
-          {/* Step 4: Generating */}
           {step === "generating" && (
-            <motion.div
-              key="generating"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="flex flex-col items-center justify-center py-12 gap-4"
-            >
+            <motion.div key="generating" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center py-12 gap-4">
               <div className="relative">
                 <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
                   <Sparkles className="h-8 w-8 text-primary" />
@@ -480,66 +331,39 @@ export const DocumentGeneratorDialog = ({
               </div>
               <div className="text-center">
                 <h3 className="font-semibold text-foreground">Generating Your Document</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  AI is creating a customised document based on your answers...
-                </p>
+                <p className="text-sm text-muted-foreground mt-1">AI is creating a customised document based on your answers...</p>
               </div>
             </motion.div>
           )}
 
-          {/* Step 5: Complete */}
           {step === "complete" && generatedDocument && (
-            <motion.div
-              key="complete"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="space-y-6"
-            >
+            <motion.div key="complete" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6">
               <div className="flex flex-col items-center text-center gap-3">
                 <div className="h-14 w-14 rounded-full bg-success/10 flex items-center justify-center">
                   <CheckCircle className="h-7 w-7 text-success" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-foreground">Document Ready!</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {generatedDocument.title}
-                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">{generatedDocument.title}</p>
                 </div>
               </div>
 
               <div className="bg-muted/50 rounded-xl p-4 space-y-2">
                 <p className="text-sm font-medium text-foreground">Document Preview:</p>
-                <p className="text-xs text-muted-foreground">
-                  Reference: {generatedDocument.reference}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Sections: {generatedDocument.sections?.length || 0}
-                </p>
+                <p className="text-xs text-muted-foreground">Reference: {generatedDocument.reference}</p>
+                <p className="text-xs text-muted-foreground">Sections: {generatedDocument.sections?.length || 0}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <Button
-                  variant="outline"
-                  onClick={handleDownloadPDF}
-                  className="w-full"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download PDF
+                <Button variant="outline" onClick={() => { generateDocumentPDF(generatedDocument, organisation?.name); toast.success("PDF downloaded successfully"); }} className="w-full">
+                  <Download className="h-4 w-4 mr-2" />Download PDF
                 </Button>
-                <Button
-                  onClick={handleDownloadDOCX}
-                  className="w-full"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download Word
+                <Button onClick={async () => { await generateDocumentDOCX(generatedDocument, organisation?.name); toast.success("Word document downloaded successfully"); }} className="w-full">
+                  <Download className="h-4 w-4 mr-2" />Download Word
                 </Button>
               </div>
 
-              <Button
-                variant="ghost"
-                onClick={() => setStep("select_template")}
-                className="w-full"
-              >
+              <Button variant="ghost" onClick={() => setStep("select_template")} className="w-full">
                 Generate Another Document
               </Button>
             </motion.div>
