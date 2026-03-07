@@ -95,7 +95,7 @@ export default function TrainingGuide() {
 
           <SubTitle>Creating Your Account</SubTitle>
           <ol className="list-decimal pl-6 space-y-2 text-muted-foreground">
-            <li>Visit sitesafepro.co.uk and click <strong>Sign Up</strong> in the top right corner.</li>
+            <li>Visit <strong>sitesafe.cloud</strong> and click <strong>Sign Up</strong> in the top right corner.</li>
             <li>Enter your full name, email address, phone number, and choose a password.</li>
             <li>Click <strong>Create Account</strong>. You will be logged in automatically.</li>
             <li>You will be taken to the Onboarding wizard.</li>
