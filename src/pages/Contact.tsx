@@ -223,7 +223,7 @@ export default function Contact() {
               <Link to="/documentation">View Documentation</Link>
             </Button>
             <Button asChild variant="outline">
-              <a href="mailto:support@sitesafe.cloud">Email Support</a>
+              <Link to="/contact">Contact Support</Link>
             </Button>
           </div>
         </section>
