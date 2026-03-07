@@ -227,11 +227,9 @@ export default function Help() {
               <p className="text-sm text-muted-foreground mb-4">
                 Frequently asked questions about features, pricing, compliance, and troubleshooting.
               </p>
-              <Button asChild variant="secondary" className="w-full">
-                <a href="/docs/SiteSafePro_FAQ_Guide.docx" download>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download FAQ Guide
-                </a>
+              <Button variant="secondary" className="w-full" onClick={generateFaqGuidePdf}>
+                <Download className="mr-2 h-4 w-4" />
+                Download FAQ Guide (PDF)
               </Button>
             </CardContent>
           </Card>
