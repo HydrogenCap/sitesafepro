@@ -140,7 +140,7 @@ const NavSection = ({ group, isActive, onItemClick, defaultOpen = true }: NavSec
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             }`}
           >
-            <item.icon className="h-4 w-4" />
+            <item.icon className="h-4 w-4" aria-hidden="true" />
             {item.label}
           </Link>
         ))}
@@ -166,7 +166,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   if (authLoading || subLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" role="status" aria-label="Loading" />
       </div>
     );
   }
@@ -182,7 +182,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         Skip to content
       </a>
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex md:w-64 flex-col bg-card border-r border-border">
+      <aside className="hidden md:flex md:w-64 flex-col bg-card border-r border-border" aria-label="Navigation">
         <div className="p-6 border-b border-border">
           <Link to="/">
             <Logo />
@@ -205,7 +205,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             }`}
           >
-            <HelpCircle className="h-4 w-4" />
+            <HelpCircle className="h-4 w-4" aria-hidden="true" />
             Help & Support
           </Link>
           <Link
@@ -216,7 +216,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             }`}
           >
-            <Settings className="h-4 w-4" />
+            <Settings className="h-4 w-4" aria-hidden="true" />
             Settings
           </Link>
           {hasRole("owner") && (
@@ -228,7 +228,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   : "text-purple-600 hover:bg-purple-500/10 hover:text-purple-700"
               }`}
             >
-              <Crown className="h-4 w-4" />
+              <Crown className="h-4 w-4" aria-hidden="true" />
               Admin Panel
             </Link>
           )}
@@ -236,7 +236,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             onClick={() => signOut()}
             className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground w-full transition-colors"
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-4 w-4" aria-hidden="true" />
             Sign Out
           </button>
         </div>
@@ -247,6 +247,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         <div
           className="fixed inset-0 bg-black/50 z-40 md:hidden"
           onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
         />
       )}
 
@@ -255,13 +256,15 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         className={`fixed inset-y-0 left-0 w-64 bg-card border-r border-border z-50 transform transition-transform md:hidden overflow-y-auto ${
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
+        aria-label="Navigation"
+        aria-hidden={!mobileMenuOpen}
       >
         <div className="p-6 border-b border-border flex items-center justify-between sticky top-0 bg-card">
           <Link to="/" onClick={() => setMobileMenuOpen(false)}>
             <Logo />
           </Link>
-          <button onClick={() => setMobileMenuOpen(false)}>
-            <X className="h-5 w-5 text-muted-foreground" />
+          <button onClick={() => setMobileMenuOpen(false)} aria-label="Close navigation menu">
+            <X className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
           </button>
         </div>
 
@@ -286,7 +289,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             }`}
           >
-            <HelpCircle className="h-4 w-4" />
+            <HelpCircle className="h-4 w-4" aria-hidden="true" />
             Help & Support
           </Link>
           <Link
@@ -298,7 +301,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             }`}
           >
-            <Settings className="h-4 w-4" />
+            <Settings className="h-4 w-4" aria-hidden="true" />
             Settings
           </Link>
           {hasRole("owner") && (
@@ -311,7 +314,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   : "text-purple-600 hover:bg-purple-500/10 hover:text-purple-700"
               }`}
             >
-              <Crown className="h-4 w-4" />
+              <Crown className="h-4 w-4" aria-hidden="true" />
               Admin Panel
             </Link>
           )}
@@ -322,7 +325,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             }}
             className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground w-full transition-colors"
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-4 w-4" aria-hidden="true" />
             Sign Out
           </button>
         </div>
@@ -334,7 +337,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         {isTrialing && (
           <div className="bg-accent text-accent-foreground px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4" />
+              <AlertTriangle className="h-4 w-4" aria-hidden="true" />
               <span className="text-sm font-medium">
                 You're on a 14-day free trial. {trialDaysRemaining} days remaining.
               </span>
@@ -349,15 +352,15 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
         {/* Mobile header */}
         <header className="bg-card border-b border-border px-4 py-3 flex items-center justify-between md:hidden">
-          <button onClick={() => setMobileMenuOpen(true)}>
-            <Menu className="h-6 w-6 text-foreground" />
+          <button onClick={() => setMobileMenuOpen(true)} aria-label="Open navigation menu" aria-expanded={mobileMenuOpen}>
+            <Menu className="h-6 w-6 text-foreground" aria-hidden="true" />
           </button>
           <Link to="/">
             <Logo />
           </Link>
-          <button className="relative p-2 text-muted-foreground hover:text-foreground">
-            <Bell className="h-5 w-5" />
-            <span className="absolute top-1 right-1 h-2 w-2 bg-accent rounded-full" />
+          <button className="relative p-2 text-muted-foreground hover:text-foreground" aria-label="Notifications">
+            <Bell className="h-5 w-5" aria-hidden="true" />
+            <span className="absolute top-1 right-1 h-2 w-2 bg-accent rounded-full" aria-hidden="true" />
           </button>
         </header>
 
