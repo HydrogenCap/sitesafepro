@@ -307,11 +307,7 @@ export default function Incidents() {
       fetchData();
     } catch (error) {
       console.error("Error updating status:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update incident status",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to update incident status" });
     }
   };
 
