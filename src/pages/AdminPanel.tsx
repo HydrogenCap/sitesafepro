@@ -522,7 +522,7 @@ export default function AdminPanel() {
   };
 
   const handleToggleStatus = (member: OrgMember, orgId: string) => {
-    if (member.status === "invited") { toast({ title: "Invite resent", description: `Re-sent to ${member.profile?.email}` }); return; }
+    if (member.status === "invited") { toast.success("Invite resent", { description: `Re-sent to ${member.profile?.email}` }); return; }
     setConfirmAction({ type: member.status === "active" ? "deactivate" : "reactivate", member, orgId });
   };
 
