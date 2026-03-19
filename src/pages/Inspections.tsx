@@ -77,7 +77,7 @@ export default function Inspections() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { canAccess } = useSubscription();
-  const { toast } = useToast();
+  
   const [inspections, setInspections] = useState<Inspection[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
