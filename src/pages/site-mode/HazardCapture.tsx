@@ -9,14 +9,14 @@ import { enqueue } from '@/offline/queue';
 import { useSync } from '@/offline/SyncContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrg } from '@/hooks/useOrg';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 
 export default function HazardCapture() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { membership } = useOrg();
-  const { toast } = useToast();
+  
   const { triggerSync } = useSync();
   const [location, setLocation] = useState('');
   const [description, setDescription] = useState('');
@@ -27,7 +27,7 @@ export default function HazardCapture() {
 
   const useGps = () => {
         if (!navigator.geolocation) {
-                toast({ title: 'GPS unavailable', description: 'Geolocation is not supported on this device', variant: 'destructive' });
+                toast.error('GPS unavailable', { description: 'Geolocation is not supported on this device' });
                 return;
         }
         setLocating(true);
@@ -37,7 +37,7 @@ export default function HazardCapture() {
                           setLocating(false);
                 },
                 () => {
-                          toast({ title: 'GPS error', description: 'Could not get location', variant: 'destructive' });
+                          toast.error('GPS error', { description: 'Could not get location' });
                           setLocating(false);
                 },
           { timeout: 10000 }
@@ -89,11 +89,11 @@ export default function HazardCapture() {
                           userId: user.id,
                 });
 
-                toast({ title: 'Hazard saved offline' });
+                toast.success('Hazard saved offline');
                 if (navigator.onLine) triggerSync();
                 navigate('/site-mode');
         } catch (err: any) {
-                toast({ title: 'Failed', description: err.message, variant: 'destructive' });
+                toast.error('Failed', { description: err.message });
         } finally {
                 setSaving(false);
         }

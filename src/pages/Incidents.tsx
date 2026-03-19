@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -114,7 +114,7 @@ const RIDDOR_GUIDANCE = {
 export default function Incidents() {
   const { user } = useAuth();
   const { canAccess } = useSubscription();
-  const { toast } = useToast();
+  
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -198,11 +198,7 @@ export default function Incidents() {
     if (!organisationId || !user) return;
 
     if (!formData.title || !formData.description || !formData.project_id) {
-      toast({
-        title: "Missing required fields",
-        description: "Please provide a project, title and description",
-        variant: "destructive",
-      });
+      toast.error("Missing required fields", { description: "Please provide a project, title and description" });
       return;
     }
 
@@ -246,13 +242,11 @@ export default function Incidents() {
         description: `Incident reported: ${formData.title}${isRiddorReportable ? ' (RIDDOR reportable)' : ''}`,
       });
 
-      toast({
-        title: "Incident reported",
-        description: isRiddorReportable
-          ? "This incident may be RIDDOR reportable. Please review and report within required timeframes."
-          : "The incident has been recorded",
-        variant: isRiddorReportable ? "destructive" : "default",
-      });
+      if (isRiddorReportable) {
+        toast.error("Incident reported", { description: "This incident may be RIDDOR reportable. Please review and report within required timeframes." });
+      } else {
+        toast.success("Incident reported", { description: "The incident has been recorded" });
+      }
 
       setDialogOpen(false);
       setFormData({
@@ -273,11 +267,7 @@ export default function Incidents() {
       fetchData();
     } catch (error) {
       console.error("Error creating incident:", error);
-      toast({
-        title: "Error",
-        description: "Failed to report incident",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to report incident" });
     }
   };
 
@@ -312,19 +302,12 @@ export default function Incidents() {
         });
       }
 
-      toast({
-        title: "Status updated",
-        description: `Incident status changed to ${STATUS_CONFIG[newStatus as keyof typeof STATUS_CONFIG]?.label || newStatus}`,
-      });
+      toast.success("Status updated", { description: `Incident status changed to ${STATUS_CONFIG[newStatus as keyof typeof STATUS_CONFIG]?.label || newStatus}` });
 
       fetchData();
     } catch (error) {
       console.error("Error updating status:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update incident status",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to update incident status" });
     }
   };
 
@@ -354,11 +337,11 @@ export default function Incidents() {
         description: `RIDDOR report submitted with reference ${riddorReference}`,
       });
 
-      toast({ title: "RIDDOR submission recorded", description: `Reference: ${riddorReference}` });
+      toast.success("RIDDOR submission recorded", { description: `Reference: ${riddorReference}` });
       fetchData();
     } catch (error) {
       console.error("Error recording RIDDOR:", error);
-      toast({ title: "Error", description: "Failed to record RIDDOR submission", variant: "destructive" });
+      toast.error("Error", { description: "Failed to record RIDDOR submission" });
     }
   };
 

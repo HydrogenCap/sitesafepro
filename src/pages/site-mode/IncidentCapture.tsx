@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
@@ -23,7 +23,7 @@ const SEVERITY_OPTIONS = [
 export default function IncidentCapture() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { toast } = useToast();
+  
   const [saving, setSaving] = useState(false);
   const [locating, setLocating] = useState(false);
   const [organisationId, setOrganisationId] = useState<string | null>(null);
@@ -62,7 +62,7 @@ export default function IncidentCapture() {
 
   const useGps = () => {
     if (!navigator.geolocation) {
-      toast({ title: 'GPS unavailable', description: 'Geolocation is not supported on this device', variant: 'destructive' });
+      toast.error('GPS unavailable', { description: 'Geolocation is not supported on this device' });
       return;
     }
     setLocating(true);
@@ -72,7 +72,7 @@ export default function IncidentCapture() {
         setLocating(false);
       },
       () => {
-        toast({ title: 'GPS error', description: 'Could not get location', variant: 'destructive' });
+        toast.error('GPS error', { description: 'Could not get location' });
         setLocating(false);
       },
       { timeout: 10000 }
@@ -82,7 +82,7 @@ export default function IncidentCapture() {
   const handleSave = async () => {
     if (!user || !organisationId) return;
     if (!form.title.trim() || !form.description.trim()) {
-      toast({ title: 'Missing fields', description: 'Title and description are required', variant: 'destructive' });
+      toast.error('Missing fields', { description: 'Title and description are required' });
       return;
     }
 
@@ -107,17 +107,15 @@ export default function IncidentCapture() {
 
       if (error) throw error;
 
-      toast({
-        title: 'Incident reported',
-        description: isRiddor
-          ? 'RIDDOR reportable — report to HSE immediately'
-          : 'Incident recorded. Add more details from the Incidents page.',
-        variant: isRiddor ? 'destructive' : 'default',
-      });
+      if (isRiddor) {
+        toast.error('Incident reported', { description: 'RIDDOR reportable — report to HSE immediately' });
+      } else {
+        toast.success('Incident reported', { description: 'Incident recorded. Add more details from the Incidents page.' });
+      }
       navigate('/site-mode');
     } catch (err) {
       console.error(err);
-      toast({ title: 'Error', description: 'Failed to save incident', variant: 'destructive' });
+      toast.error('Error', { description: 'Failed to save incident' });
     } finally {
       setSaving(false);
     }

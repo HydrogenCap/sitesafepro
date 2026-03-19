@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -79,7 +79,7 @@ const PPE_OPTIONS = [
 export default function Permits() {
   const { user } = useAuth();
   const { canAccess } = useSubscription();
-  const { toast } = useToast();
+  
   const [permits, setPermits] = useState<Permit[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -165,11 +165,7 @@ export default function Permits() {
     if (!organisationId || !user) return;
 
     if (!formData.title || !formData.work_to_be_done) {
-      toast({
-        title: "Missing required fields",
-        description: "Please fill in the title and work description",
-        variant: "destructive",
-      });
+      toast.error("Missing required fields", { description: "Please fill in the title and work description" });
       return;
     }
 
@@ -194,10 +190,7 @@ export default function Permits() {
 
       if (error) throw error;
 
-      toast({
-        title: "Permit created",
-        description: "The permit to work has been created as a draft",
-      });
+      toast.success("Permit created", { description: "The permit to work has been created as a draft" });
 
       setDialogOpen(false);
       setFormData({
@@ -216,11 +209,7 @@ export default function Permits() {
       fetchData();
     } catch (error) {
       console.error("Error creating permit:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create permit",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to create permit" });
     }
   };
 
@@ -245,19 +234,12 @@ export default function Permits() {
 
       if (error) throw error;
 
-      toast({
-        title: "Status updated",
-        description: `Permit status changed to ${STATUS_BADGES[newStatus]?.label || newStatus}`,
-      });
+      toast.success("Status updated", { description: `Permit status changed to ${STATUS_BADGES[newStatus]?.label || newStatus}` });
 
       fetchData();
     } catch (error) {
       console.error("Error updating status:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update permit status",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to update permit status" });
     }
   };
 

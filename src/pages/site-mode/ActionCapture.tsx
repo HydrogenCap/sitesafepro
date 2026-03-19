@@ -9,7 +9,7 @@ import { enqueue } from '@/offline/queue';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrg } from '@/hooks/useOrg';
 import { useSync } from '@/offline/SyncContext';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 
 export default function ActionCapture() {
@@ -17,7 +17,7 @@ export default function ActionCapture() {
   const { user } = useAuth();
   const { membership } = useOrg();
   const { triggerSync } = useSync();
-  const { toast } = useToast();
+  
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('medium');
@@ -42,11 +42,11 @@ export default function ActionCapture() {
         },
         userId: user.id,
       });
-      toast({ title: 'Action saved offline' });
+      toast.success('Action saved offline');
       if (navigator.onLine) triggerSync();
       navigate('/site-mode');
     } catch (err: any) {
-      toast({ title: 'Failed', description: err.message, variant: 'destructive' });
+      toast.error('Failed', { description: err.message });
     } finally {
       setSaving(false);
     }

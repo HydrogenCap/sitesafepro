@@ -7,7 +7,7 @@ import { enqueue } from '@/offline/queue';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrg } from '@/hooks/useOrg';
 import { useSync } from '@/offline/SyncContext';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import ReactSignatureCanvas from 'react-signature-canvas';
 
@@ -16,7 +16,7 @@ export default function SignatureCapture() {
   const { user } = useAuth();
   const { membership } = useOrg();
   const { triggerSync } = useSync();
-  const { toast } = useToast();
+  
   const sigRef = useRef<ReactSignatureCanvas>(null);
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
@@ -49,15 +49,15 @@ export default function SignatureCapture() {
         },
         userId: user.id,
       });
-      toast({ title: 'Signature saved offline' });
+      toast.success('Signature saved offline');
       if (navigator.onLine) triggerSync();
       navigate('/site-mode');
     } catch (err: any) {
-      toast({ title: 'Failed', description: err.message, variant: 'destructive' });
+      toast.error('Failed', { description: err.message });
     } finally {
       setSaving(false);
     }
-  }, [user, membership, name, navigate, triggerSync, toast]);
+  }, [user, membership, name, navigate, triggerSync]);
 
   return (
     <div className="min-h-screen bg-background">

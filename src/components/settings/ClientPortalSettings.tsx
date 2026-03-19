@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { InviteClientDialog } from "@/components/client/InviteClientDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -56,7 +56,7 @@ const roleLabels: Record<string, string> = {
 export default function ClientPortalSettings() {
   const { user } = useAuth();
   const { tier } = useSubscription();
-  const { toast } = useToast();
+  
   const queryClient = useQueryClient();
 
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);

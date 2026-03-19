@@ -7,7 +7,7 @@ import { useSync } from '@/offline/SyncContext';
 import { enqueue } from '@/offline/queue';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrg } from '@/hooks/useOrg';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 
 export default function PhotoCapture() {
@@ -15,7 +15,7 @@ export default function PhotoCapture() {
   const { user } = useAuth();
   const { membership } = useOrg();
   const { triggerSync } = useSync();
-  const { toast } = useToast();
+  
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -32,9 +32,9 @@ export default function PhotoCapture() {
       setStream(ms);
       if (videoRef.current) videoRef.current.srcObject = ms;
     } catch {
-      toast({ title: 'Camera unavailable', description: 'Check browser permissions.', variant: 'destructive' });
+      toast.error('Camera unavailable', { description: 'Check browser permissions.' });
     }
-  }, [toast]);
+  }, []);
 
   const MAX_PHOTO_BYTES = 2 * 1024 * 1024; // 2 MB
 
@@ -57,13 +57,13 @@ export default function PhotoCapture() {
     }
 
     if (dataUrl.length * 0.75 > MAX_PHOTO_BYTES) {
-      toast({ title: 'Photo too large', description: 'Could not compress below 2 MB. Try moving closer or reducing resolution.', variant: 'destructive' });
+      toast.error('Photo too large', { description: 'Could not compress below 2 MB. Try moving closer or reducing resolution.' });
     }
 
     setCaptured(dataUrl);
     stream?.getTracks().forEach(t => t.stop());
     setStream(null);
-  }, [stream, toast]);
+  }, [stream]);
 
   const retake = useCallback(() => {
     setCaptured(null);
@@ -96,15 +96,15 @@ export default function PhotoCapture() {
         capturedOffline: !navigator.onLine,
       });
 
-      toast({ title: 'Photo saved offline', description: 'Will sync when connected.' });
+      toast.success('Photo saved offline', { description: 'Will sync when connected.' });
       if (navigator.onLine) triggerSync();
       navigate('/site-mode');
     } catch (err: any) {
-      toast({ title: 'Failed to save', description: err.message, variant: 'destructive' });
+      toast.error('Failed to save', { description: err.message });
     } finally {
       setSaving(false);
     }
-  }, [captured, caption, user, membership, navigate, triggerSync, toast]);
+  }, [captured, caption, user, membership, navigate, triggerSync]);
 
   useEffect(() => {
     startCamera();

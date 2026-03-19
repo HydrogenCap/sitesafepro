@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Logo } from "@/components/landing/Logo";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { ArrowLeft, Mail, CheckCircle, Loader2 } from "lucide-react";
 
 const emailSchema = z.string().email("Please enter a valid email address");
@@ -18,7 +18,7 @@ const ForgotPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,17 +41,10 @@ const ForgotPassword = () => {
       if (error) throw error;
 
       setIsSubmitted(true);
-      toast({
-        title: "Reset link sent",
-        description: "Check your email for a password reset link.",
-      });
+      toast.success("Reset link sent", { description: "Check your email for a password reset link." });
     } catch (err: any) {
       console.error("Password reset error:", err);
-      toast({
-        title: "Error",
-        description: "Failed to send reset email. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to send reset email. Please try again." });
     } finally {
       setIsLoading(false);
     }

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Loader2, Upload, Building2, MapPin, Phone, Palette, Save, Globe } from "lucide-react";
 
 interface Organisation {
@@ -20,7 +20,7 @@ interface Organisation {
 
 export default function OrganisationSettings() {
   const { user } = useAuth();
-  const { toast } = useToast();
+  
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);

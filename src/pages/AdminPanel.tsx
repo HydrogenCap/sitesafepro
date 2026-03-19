@@ -27,7 +27,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { format, differenceInDays, addDays } from "date-fns";
 import {
   Users, Building2, Search, Shield, UserX, UserCheck, RefreshCw,
@@ -275,7 +275,7 @@ export default function AdminPanel() {
   const { user } = useAuth();
   const { hasRole, loading: orgLoading } = useOrg();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  
 
   const [orgs, setOrgs] = useState<Organisation[]>([]);
   const [loading, setLoading] = useState(true);

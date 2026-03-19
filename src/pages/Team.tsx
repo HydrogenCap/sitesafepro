@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { UserPlus } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import {
   TeamStatsCards,
   TeamMembersTable,
@@ -18,7 +18,7 @@ import {
 export default function Team() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
@@ -72,11 +72,7 @@ export default function Team() {
       setMembers(membersData as unknown as TeamMember[]);
     } catch (error: unknown) {
       console.error("Error fetching members:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load team members",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to load team members" });
     } finally {
       setLoading(false);
     }
@@ -90,16 +86,9 @@ export default function Team() {
 
       if (error) throw error;
 
-      toast({
-        title: "Invitation resent",
-        description: `A new invitation has been sent to ${email}`,
-      });
+      toast.success("Invitation resent", { description: `A new invitation has been sent to ${email}` });
     } catch (error: unknown) {
-      toast({
-        title: "Error",
-        description: "Failed to resend invitation",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to resend invitation" });
     }
   };
 
@@ -116,16 +105,9 @@ export default function Team() {
         m.id === memberId ? { ...m, role: newRole } : m
       ));
 
-      toast({
-        title: "Role updated",
-        description: "Member role has been updated successfully",
-      });
+      toast.success("Role updated", { description: "Member role has been updated successfully" });
     } catch (error: unknown) {
-      toast({
-        title: "Error",
-        description: "Failed to update role",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to update role" });
     }
   };
 
@@ -142,16 +124,9 @@ export default function Team() {
         m.id === memberId ? { ...m, status: "deactivated" as MemberStatus } : m
       ));
 
-      toast({
-        title: "Member deactivated",
-        description: "The team member has been deactivated",
-      });
+      toast.success("Member deactivated", { description: "The team member has been deactivated" });
     } catch (error: unknown) {
-      toast({
-        title: "Error",
-        description: "Failed to deactivate member",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to deactivate member" });
     }
   };
 

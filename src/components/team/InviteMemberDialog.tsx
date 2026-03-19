@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Mail, UserPlus, Loader2 } from "lucide-react";
 
 type MemberRole = "admin" | "site_manager" | "contractor" | "client_viewer";
@@ -43,7 +43,7 @@ export default function InviteMemberDialog({
   organisationId,
   onInviteSent,
 }: InviteMemberDialogProps) {
-  const { toast } = useToast();
+  
   const { logActivity } = useActivityLog();
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");

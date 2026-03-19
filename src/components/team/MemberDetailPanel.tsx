@@ -27,7 +27,7 @@ import {
   Save
 } from "lucide-react";
 import { TeamMember, MemberRole, roleLabels, roleColors, rolePermissions } from "./types";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 interface MemberDetailPanelProps {
   member: TeamMember | null;
@@ -66,7 +66,7 @@ export function MemberDetailPanel({
   onDeactivate,
   onResendInvite,
 }: MemberDetailPanelProps) {
-  const { toast } = useToast();
+  
   const [selectedRole, setSelectedRole] = useState<MemberRole | null>(null);
 
   if (!member) return null;
@@ -84,10 +84,7 @@ export function MemberDetailPanel({
 
   const handleResendInvite = () => {
     onResendInvite(member.id, member.profile?.email || "");
-    toast({
-      title: "Invitation resent",
-      description: `A new invitation has been sent to ${member.profile?.email}`,
-    });
+    toast.success("Invitation resent", { description: `A new invitation has been sent to ${member.profile?.email}` });
   };
 
   return (

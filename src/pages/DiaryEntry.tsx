@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   ArrowLeft, Save, CheckCircle, Cloud, Sun, Users, Hammer, 
@@ -55,7 +55,7 @@ export default function DiaryEntry() {
   const { id: projectId, date } = useParams<{ id: string; date: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { toast } = useToast();
+  
   const queryClient = useQueryClient();
   
   const [entry, setEntry] = useState<Partial<SiteDiaryEntry>>(defaultEntry);
@@ -212,11 +212,7 @@ export default function DiaryEntry() {
       queryClient.invalidateQueries({ queryKey: ['site-diary-entries', projectId] });
     },
     onError: (error) => {
-      toast({
-        title: "Error saving entry",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error("Error saving entry", { description: error.message });
     },
   });
 
@@ -225,7 +221,7 @@ export default function DiaryEntry() {
     try {
       await saveMutation.mutateAsync(entry);
       if (showToast) {
-        toast({ title: "Entry saved" });
+        toast.success("Entry saved");
       }
     } finally {
       setIsSaving(false);
@@ -243,7 +239,7 @@ export default function DiaryEntry() {
     setIsSaving(true);
     try {
       await saveMutation.mutateAsync(completedEntry);
-      toast({ title: "Entry marked as complete" });
+      toast.success("Entry marked as complete");
       navigate(`/projects/${projectId}/diary`);
     } finally {
       setIsSaving(false);
@@ -311,11 +307,7 @@ export default function DiaryEntry() {
   const fetchWeatherWithAI = async () => {
     const location = project?.address || project?.name;
     if (!location) {
-      toast({
-        title: "Location required",
-        description: "Please add a project address to fetch weather data.",
-        variant: "destructive",
-      });
+      toast.error("Location required", { description: "Please add a project address to fetch weather data." });
       return;
     }
 
@@ -342,17 +334,10 @@ export default function DiaryEntry() {
         weather_impact: data.weather_impact || prev.weather_impact,
       }));
 
-      toast({
-        title: "Weather populated",
-        description: "AI has filled in the weather information based on your location.",
-      });
+      toast.success("Weather populated", { description: "AI has filled in the weather information based on your location." });
     } catch (error: any) {
       console.error('Error fetching weather:', error);
-      toast({
-        title: "Failed to fetch weather",
-        description: error.message || "Please try again or enter manually.",
-        variant: "destructive",
-      });
+      toast.error("Failed to fetch weather", { description: error.message || "Please try again or enter manually." });
     } finally {
       setIsFetchingWeather(false);
     }

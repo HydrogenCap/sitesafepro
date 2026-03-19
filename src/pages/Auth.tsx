@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/landing/Logo";
 import { Eye, EyeOff, Loader2, ArrowRight } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { lovable } from "@/integrations/lovable/index";
 import { PasswordStrength } from "@/components/auth/PasswordStrength";
 import { Separator } from "@/components/ui/separator";
@@ -44,7 +44,7 @@ const AuthPage = () => {
   
   const { signIn, signUp, user, loading } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  
 
   // Redirect authenticated users to dashboard
   useEffect(() => {
@@ -61,11 +61,7 @@ const AuthPage = () => {
       });
       if (error) throw error;
     } catch (error: any) {
-      toast({
-        title: "Google sign in failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error("Google sign in failed", { description: error.message });
       setIsGoogleLoading(false);
     }
   };
@@ -93,20 +89,15 @@ const AuthPage = () => {
     setIsLoading(false);
 
     if (error) {
-      toast({
-        title: "Sign in failed",
+      toast.error("Sign in failed", {
         description: error.message === "Invalid login credentials" 
           ? "Invalid email or password. Please try again."
           : error.message,
-        variant: "destructive",
       });
       return;
     }
 
-    toast({
-      title: "Welcome back!",
-      description: "You've successfully signed in.",
-    });
+    toast.success("Welcome back!", { description: "You've successfully signed in." });
     navigate("/dashboard");
   };
 
@@ -126,18 +117,11 @@ const AuthPage = () => {
         ? "An account with this email already exists. Please sign in instead."
         : error.message;
       
-      toast({
-        title: "Sign up failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast.error("Sign up failed", { description: errorMessage });
       return;
     }
 
-    toast({
-      title: "Account created!",
-      description: "Please check your email to verify your account before signing in.",
-    });
+    toast.success("Account created!", { description: "Please check your email to verify your account before signing in." });
     setIsSignUp(false);
   };
 

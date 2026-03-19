@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   Download,
@@ -48,7 +48,7 @@ const RESULT_CONFIG: Record<string, { label: string; variant: "default" | "destr
 export default function InspectionDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  
   const queryClient = useQueryClient();
   const [exporting, setExporting] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -109,9 +109,9 @@ export default function InspectionDetail() {
         }
       }
 
-      toast({ title: "PDF ready", description: "Use your browser's print dialog to save as PDF." });
+      toast.success("PDF ready", { description: "Use your browser's print dialog to save as PDF." });
     } catch (err: any) {
-      toast({ title: "Export failed", description: err.message, variant: "destructive" });
+      toast.error("Export failed", { description: err.message });
     } finally {
       setExporting(false);
     }
@@ -139,9 +139,9 @@ export default function InspectionDetail() {
       if (updateError) throw updateError;
 
       queryClient.invalidateQueries({ queryKey: ["inspection", id] });
-      toast({ title: "Photos uploaded", description: `${newPaths.length} photo(s) added successfully.` });
+      toast.success("Photos uploaded", { description: `${newPaths.length} photo(s) added successfully.` });
     } catch (err: any) {
-      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+      toast.error("Upload failed", { description: err.message });
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";

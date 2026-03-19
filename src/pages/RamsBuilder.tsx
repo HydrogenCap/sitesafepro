@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { RamsProgressBar } from "@/components/rams/RamsProgressBar";
 import { RamsFormData } from "@/components/rams/types";
 import { Json } from "@/integrations/supabase/types";
@@ -53,7 +53,7 @@ export default function RamsBuilder() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { toast } = useToast();
+  
   const isEditing = !!id;
 
   const [currentStep, setCurrentStep] = useState(1);
@@ -135,11 +135,11 @@ export default function RamsBuilder() {
       return data;
     },
     onSuccess: (data) => {
-      toast({ title: "RAMS saved successfully" });
+      toast.success("RAMS saved successfully");
       navigate(`/rams/${data.id}`);
     },
     onError: (error) => {
-      toast({ title: "Error saving RAMS", description: error.message, variant: "destructive" });
+      toast.error("Error saving RAMS", { description: error.message });
     },
   });
 

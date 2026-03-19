@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { 
   Loader2, 
   CreditCard, 
@@ -35,7 +35,7 @@ interface OrganisationBilling {
 
 export default function SubscriptionSettings() {
   const { user } = useAuth();
-  const { toast } = useToast();
+  
   const [loading, setLoading] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
   const [organisation, setOrganisation] = useState<OrganisationBilling | null>(null);
