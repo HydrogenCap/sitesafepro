@@ -126,11 +126,7 @@ export default function Team() {
 
       toast.success("Member deactivated", { description: "The team member has been deactivated" });
     } catch (error: unknown) {
-      toast({
-        title: "Error",
-        description: "Failed to deactivate member",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to deactivate member" });
     }
   };
 

@@ -128,11 +128,7 @@ export default function AcceptInvite() {
       toast.success("Account created!", { description: "You can now sign in." });
     } catch (err: any) {
       console.error("Error accepting invite:", err);
-      toast({
-        title: "Error",
-        description: err.message || "Failed to accept invitation",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: err.message || "Failed to accept invitation" });
     } finally {
       setSubmitting(false);
     }
