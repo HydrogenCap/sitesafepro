@@ -302,10 +302,7 @@ export default function Incidents() {
         });
       }
 
-      toast({
-        title: "Status updated",
-        description: `Incident status changed to ${STATUS_CONFIG[newStatus as keyof typeof STATUS_CONFIG]?.label || newStatus}`,
-      });
+      toast.success("Status updated", { description: `Incident status changed to ${STATUS_CONFIG[newStatus as keyof typeof STATUS_CONFIG]?.label || newStatus}` });
 
       fetchData();
     } catch (error) {
