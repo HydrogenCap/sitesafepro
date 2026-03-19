@@ -111,11 +111,7 @@ export default function SubscriptionSettings() {
       }
     } catch (error: any) {
       console.error("Error opening portal:", error);
-      toast({
-        title: "Error",
-        description: "Failed to open billing portal",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to open billing portal" });
     } finally {
       setPortalLoading(false);
     }
