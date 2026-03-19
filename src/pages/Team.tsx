@@ -107,11 +107,7 @@ export default function Team() {
 
       toast.success("Role updated", { description: "Member role has been updated successfully" });
     } catch (error: unknown) {
-      toast({
-        title: "Error",
-        description: "Failed to update role",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to update role" });
     }
   };
 
