@@ -39,13 +39,13 @@ export async function sendNotification(params: SendNotificationParams) {
 
     if (error) {
       console.error("Error sending notification:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: (error instanceof Error ? error.message : "Unknown error") };
     }
 
     return { success: true, results: data?.results };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error sending notification:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: (error instanceof Error ? error.message : "Unknown error") };
   }
 }
 
@@ -73,12 +73,12 @@ export async function sendWhatsAppReminder(
 
     if (error) {
       console.error("Error sending WhatsApp:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: (error instanceof Error ? error.message : "Unknown error") };
     }
 
     return { success: data?.success ?? false, messageId: data?.messageId, error: data?.error };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error sending WhatsApp:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: (error instanceof Error ? error.message : "Unknown error") };
   }
 }

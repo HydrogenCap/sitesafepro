@@ -153,7 +153,7 @@ export default function DeliverTalk() {
       if (orgData) {
         setOrgId(orgData.organisation_id);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching template:", error);
       toast.error("Failed to load template");
       navigate("/toolbox-talks");
@@ -195,7 +195,7 @@ export default function DeliverTalk() {
       setQrToken(token);
       setStep("deliver");
       toast.success("Talk started");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error starting talk:", error);
       toast.error("Failed to start talk");
     } finally {
@@ -299,7 +299,7 @@ export default function DeliverTalk() {
 
       toast.success("Toolbox talk completed!");
       navigate(`/toolbox-talks/${talkId}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error completing talk:", error);
       toast.error("Failed to complete talk");
     } finally {

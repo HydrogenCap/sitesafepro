@@ -167,7 +167,7 @@ export default function ToolboxTalks() {
       } else {
         setDeliveredTalks([]);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching toolbox talks:", error);
       toast.error("Failed to load toolbox talks");
     } finally {
@@ -216,7 +216,7 @@ export default function ToolboxTalks() {
       setNewContent("");
       setNewDuration(15);
       fetchData();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error creating template:", error);
       toast.error("Failed to create template");
     }

@@ -60,7 +60,7 @@ export default function ProfileSettings() {
 
       if (error) throw error;
       setProfile(data);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching profile:", error);
       toast.error("Error", { description: "Failed to load profile" });
     } finally {
@@ -95,7 +95,7 @@ export default function ProfileSettings() {
       if (error) throw error;
 
       toast.success("Profile updated", { description: "Your profile has been saved successfully" });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error saving profile:", error);
       toast.error("Error", { description: "Failed to save profile" });
     } finally {
@@ -146,7 +146,7 @@ export default function ProfileSettings() {
       setProfile((prev) => prev ? { ...prev, avatar_url: urlData.publicUrl } : null);
 
       toast.success("Avatar updated", { description: "Your profile picture has been updated" });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error uploading avatar:", error);
       toast.error("Upload failed", { description: "Failed to upload avatar" });
     } finally {

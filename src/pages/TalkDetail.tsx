@@ -116,7 +116,7 @@ export default function TalkDetail() {
 
       if (attendeesError) throw attendeesError;
       setAttendees(attendeesData || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching talk:", error);
       toast.error("Failed to load talk details");
     } finally {

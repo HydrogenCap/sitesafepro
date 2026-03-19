@@ -212,7 +212,7 @@ export default function DiaryEntry() {
       queryClient.invalidateQueries({ queryKey: ['site-diary-entries', projectId] });
     },
     onError: (error) => {
-      toast.error("Error saving entry", { description: error.message });
+      toast.error("Error saving entry", { description: (error instanceof Error ? error.message : "Unknown error") });
     },
   });
 
@@ -335,9 +335,9 @@ export default function DiaryEntry() {
       }));
 
       toast.success("Weather populated", { description: "AI has filled in the weather information based on your location." });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching weather:', error);
-      toast.error("Failed to fetch weather", { description: error.message || "Please try again or enter manually." });
+      toast.error("Failed to fetch weather", { description: (error instanceof Error ? error.message : "Unknown error") || "Please try again or enter manually." });
     } finally {
       setIsFetchingWeather(false);
     }

@@ -89,7 +89,7 @@ export default function SubscriptionSettings() {
         .eq("status", "active");
 
       setMemberCount(memberCountData || 0);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching billing data:", error);
       toast.error("Error", { description: "Failed to load subscription details" });
     } finally {
@@ -109,7 +109,7 @@ export default function SubscriptionSettings() {
       if (data?.url) {
         window.location.href = data.url;
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error opening portal:", error);
       toast.error("Error", { description: "Failed to open billing portal" });
     } finally {
@@ -128,7 +128,7 @@ export default function SubscriptionSettings() {
       if (data?.url) {
         window.location.href = data.url;
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error creating checkout:", error);
       toast.error("Error", { description: "Failed to start upgrade process" });
     }

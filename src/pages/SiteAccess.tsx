@@ -108,7 +108,7 @@ export default function SiteAccess() {
 
       if (visitsError) throw visitsError;
       setVisits(visitsData as SiteVisit[] || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("Failed to load site access data");
       console.error(error);
     } finally {
@@ -171,7 +171,7 @@ export default function SiteAccess() {
       setNewCodeName("Main Entrance");
       setSelectedProjectId("");
       toast.success("Access code created successfully");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("Failed to create access code");
       console.error(error);
     }
@@ -190,7 +190,7 @@ export default function SiteAccess() {
         code.id === codeId ? { ...code, is_active: !isActive } : code
       ));
       toast.success(`Access code ${!isActive ? "activated" : "deactivated"}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("Failed to update access code");
       console.error(error);
     }
@@ -207,7 +207,7 @@ export default function SiteAccess() {
 
       setAccessCodes(accessCodes.filter(code => code.id !== codeId));
       toast.success("Access code deleted");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("Failed to delete access code");
       console.error(error);
     }
@@ -232,7 +232,7 @@ export default function SiteAccess() {
         visit.id === visitId ? { ...visit, checked_out_at: new Date().toISOString() } : visit
       ));
       toast.success("Visitor checked out");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("Failed to check out visitor");
       console.error(error);
     }

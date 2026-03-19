@@ -40,7 +40,7 @@ export function BulkReminderDialog({ expiringCount, expiredCount }: BulkReminder
         toast.info(data.message || "No reminders needed to be sent");
       }
       setOpen(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error sending reminders:", error);
       toast.error("Failed to send reminders");
     } finally {
