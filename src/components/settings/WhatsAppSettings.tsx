@@ -226,7 +226,7 @@ export default function WhatsAppSettings() {
             <p className="text-muted-foreground mb-4">
               WhatsApp notifications are available on Professional and Enterprise plans.
             </p>
-            <Button onClick={() => toast({ title: "Upgrade", description: "Visit Subscription settings to upgrade" })}>
+            <Button onClick={() => toast.info("Upgrade", { description: "Visit Subscription settings to upgrade" })}>
               Upgrade to Professional
             </Button>
           </div>

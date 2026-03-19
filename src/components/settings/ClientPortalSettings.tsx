@@ -121,20 +121,13 @@ export default function ClientPortalSettings() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({
-        title: "Client Deactivated",
-        description: "The client no longer has access to the portal.",
-      });
+      toast.success("Client Deactivated", { description: "The client no longer has access to the portal." });
       queryClient.invalidateQueries({ queryKey: ["client-portal-users"] });
       setDeactivateDialogOpen(false);
       setSelectedClient(null);
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to deactivate client",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: error.message || "Failed to deactivate client" });
     },
   });
 
@@ -148,18 +141,11 @@ export default function ClientPortalSettings() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({
-        title: "Client Reactivated",
-        description: "The client now has access to the portal.",
-      });
+      toast.success("Client Reactivated", { description: "The client now has access to the portal." });
       queryClient.invalidateQueries({ queryKey: ["client-portal-users"] });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to reactivate client",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: error.message || "Failed to reactivate client" });
     },
   });
 

@@ -145,17 +145,10 @@ export default function ProfileSettings() {
 
       setProfile((prev) => prev ? { ...prev, avatar_url: urlData.publicUrl } : null);
 
-      toast({
-        title: "Avatar updated",
-        description: "Your profile picture has been updated",
-      });
+      toast.success("Avatar updated", { description: "Your profile picture has been updated" });
     } catch (error: any) {
       console.error("Error uploading avatar:", error);
-      toast({
-        title: "Upload failed",
-        description: "Failed to upload avatar",
-        variant: "destructive",
-      });
+      toast.error("Upload failed", { description: "Failed to upload avatar" });
     } finally {
       setUploading(false);
     }

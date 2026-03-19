@@ -130,11 +130,7 @@ export default function SubscriptionSettings() {
       }
     } catch (error: any) {
       console.error("Error creating checkout:", error);
-      toast({
-        title: "Error",
-        description: "Failed to start upgrade process",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to start upgrade process" });
     }
   };
 

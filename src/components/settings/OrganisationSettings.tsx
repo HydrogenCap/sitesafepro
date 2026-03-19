@@ -132,17 +132,10 @@ export default function OrganisationSettings() {
 
       setOrganisation((prev) => prev ? { ...prev, logo_url: urlData.publicUrl } : null);
 
-      toast({
-        title: "Logo updated",
-        description: "Your organisation logo has been updated",
-      });
+      toast.success("Logo updated", { description: "Your organisation logo has been updated" });
     } catch (error: any) {
       console.error("Error uploading logo:", error);
-      toast({
-        title: "Upload failed",
-        description: "Failed to upload logo",
-        variant: "destructive",
-      });
+      toast.error("Upload failed", { description: "Failed to upload logo" });
     } finally {
       setUploading(false);
     }

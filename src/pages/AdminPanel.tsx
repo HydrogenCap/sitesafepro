@@ -640,11 +640,11 @@ export default function AdminPanel() {
       const inserts = targetOrgs.map((o) => ({ organisation_id: o.id, actor_id: user!.id, activity_type: "settings_updated" as const, entity_type: "broadcast", description: `📢 ${broadcast.subject || "Platform Announcement"}: ${broadcast.message}`, metadata: { broadcast: true, subject: broadcast.subject, message: broadcast.message } }));
       if (inserts.length > 0) await supabase.from("activity_logs").insert(inserts as any);
       await logAdminAction(user!.id, "BROADCAST", "broadcast", null, null, { subject: broadcast.subject, tier: broadcast.tier, org_count: inserts.length });
-      toast({ title: "Broadcast sent", description: `Delivered to ${inserts.length} organisation${inserts.length !== 1 ? "s" : ""}.` });
+      toast.success("Broadcast sent", { description: `Delivered to ${inserts.length} organisation${inserts.length !== 1 ? "s" : ""}.` });
       setBroadcastOpen(false);
       setBroadcast({ subject: "", message: "", tier: "all" });
     } catch (err: any) {
-      toast({ title: "Broadcast failed", description: err.message, variant: "destructive" });
+      toast.error("Broadcast failed", { description: err.message });
     } finally {
       setBroadcasting(false);
     }

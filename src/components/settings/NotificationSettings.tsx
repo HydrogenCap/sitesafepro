@@ -186,16 +186,9 @@ export default function NotificationSettings() {
 
       if (error) throw error;
       
-      toast({
-        title: "Preferences saved",
-        description: "Your notification preferences have been updated",
-      });
+      toast.success("Preferences saved", { description: "Your notification preferences have been updated" });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save preferences",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to save preferences" });
     } finally {
       setSaving(false);
     }
