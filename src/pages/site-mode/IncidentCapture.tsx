@@ -107,13 +107,11 @@ export default function IncidentCapture() {
 
       if (error) throw error;
 
-      toast({
-        title: 'Incident reported',
-        description: isRiddor
-          ? 'RIDDOR reportable — report to HSE immediately'
-          : 'Incident recorded. Add more details from the Incidents page.',
-        variant: isRiddor ? 'destructive' : 'default',
-      });
+      if (isRiddor) {
+        toast.error('Incident reported', { description: 'RIDDOR reportable — report to HSE immediately' });
+      } else {
+        toast.success('Incident reported', { description: 'Incident recorded. Add more details from the Incidents page.' });
+      }
       navigate('/site-mode');
     } catch (err) {
       console.error(err);
