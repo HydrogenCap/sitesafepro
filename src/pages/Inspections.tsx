@@ -232,10 +232,7 @@ export default function Inspections() {
         await supabase.from("inspection_items").insert(itemsToInsert);
       }
 
-      toast({
-        title: "Inspection created",
-        description: "The inspection has been recorded",
-      });
+      toast.success("Inspection created", { description: "The inspection has been recorded" });
 
       setDialogOpen(false);
       setFormData({
