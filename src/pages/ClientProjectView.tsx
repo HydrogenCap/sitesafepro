@@ -112,13 +112,9 @@ export default function ClientProjectView() {
   const { data: diaryEntries } = useQuery({
     queryKey: ["client-project-diary", id],
     queryFn: async () => {
-      const selectColumns = clientUser?.can_view_workforce
-        ? "id, entry_date, status, weather_morning, weather_afternoon, temperature_high, workforce_total"
-        : "id, entry_date, status, weather_morning, weather_afternoon, temperature_high";
-
       const { data, error } = await supabase
         .from("site_diary_entries")
-        .select(selectColumns)
+        .select("id, entry_date, status, weather_morning, weather_afternoon, temperature_high, workforce_total")
         .eq("project_id", id)
         .order("entry_date", { ascending: false })
         .limit(30);

@@ -93,7 +93,7 @@ export const useClientProjects = () => {
           // Get latest diary entry for workforce
           const { data: diaryEntry } = await supabase
             .from("site_diary_entries")
-            .select(clientUser.can_view_workforce ? "entry_date, workforce_total" : "entry_date")
+            .select("entry_date, workforce_total")
             .eq("project_id", project.id)
             .order("entry_date", { ascending: false })
             .limit(1)
