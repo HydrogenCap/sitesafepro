@@ -62,11 +62,7 @@ export default function ProfileSettings() {
       setProfile(data);
     } catch (error: any) {
       console.error("Error fetching profile:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load profile",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to load profile" });
     } finally {
       setLoading(false);
     }
