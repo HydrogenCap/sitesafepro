@@ -27,7 +27,7 @@ export default function HazardCapture() {
 
   const useGps = () => {
         if (!navigator.geolocation) {
-                toast({ title: 'GPS unavailable', description: 'Geolocation is not supported on this device', variant: 'destructive' });
+                toast.error('GPS unavailable', { description: 'Geolocation is not supported on this device' });
                 return;
         }
         setLocating(true);
