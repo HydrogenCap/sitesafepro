@@ -339,10 +339,7 @@ export default function DiaryEntry() {
       toast.success("Weather populated", { description: "AI has filled in the weather information based on your location." });
     } catch (error: any) {
       console.error('Error fetching weather:', error);
-      toast({
-        title: "Failed to fetch weather",
-        description: error.message || "Please try again or enter manually.",
-        variant: "destructive",
+      toast.error("Failed to fetch weather", { description: error.message || "Please try again or enter manually." });
       });
     } finally {
       setIsFetchingWeather(false);

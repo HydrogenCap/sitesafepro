@@ -141,7 +141,7 @@ export default function InspectionDetail() {
       queryClient.invalidateQueries({ queryKey: ["inspection", id] });
       toast.success("Photos uploaded", { description: `${newPaths.length} photo(s) added successfully.` });
     } catch (err: any) {
-      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+      toast.error("Upload failed", { description: err.message });
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";

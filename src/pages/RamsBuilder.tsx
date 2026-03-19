@@ -139,7 +139,7 @@ export default function RamsBuilder() {
       navigate(`/rams/${data.id}`);
     },
     onError: (error) => {
-      toast({ title: "Error saving RAMS", description: error.message, variant: "destructive" });
+      toast.error("Error saving RAMS", { description: error.message });
     },
   });
 
