@@ -24,7 +24,7 @@ interface Profile {
 
 export default function ProfileSettings() {
   const { user } = useAuth();
-  const { toast } = useToast();
+  
   const { organisation } = useSubscription();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

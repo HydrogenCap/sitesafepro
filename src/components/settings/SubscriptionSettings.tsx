@@ -35,7 +35,7 @@ interface OrganisationBilling {
 
 export default function SubscriptionSettings() {
   const { user } = useAuth();
-  const { toast } = useToast();
+  
   const [loading, setLoading] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
   const [organisation, setOrganisation] = useState<OrganisationBilling | null>(null);

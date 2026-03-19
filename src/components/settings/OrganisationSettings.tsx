@@ -20,7 +20,7 @@ interface Organisation {
 
 export default function OrganisationSettings() {
   const { user } = useAuth();
-  const { toast } = useToast();
+  
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);

@@ -56,7 +56,7 @@ const roleLabels: Record<string, string> = {
 export default function ClientPortalSettings() {
   const { user } = useAuth();
   const { tier } = useSubscription();
-  const { toast } = useToast();
+  
   const queryClient = useQueryClient();
 
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);

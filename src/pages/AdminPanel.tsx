@@ -275,7 +275,7 @@ export default function AdminPanel() {
   const { user } = useAuth();
   const { hasRole, loading: orgLoading } = useOrg();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  
 
   const [orgs, setOrgs] = useState<Organisation[]>([]);
   const [loading, setLoading] = useState(true);

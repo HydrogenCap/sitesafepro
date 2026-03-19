@@ -84,10 +84,7 @@ export function MemberDetailPanel({
 
   const handleResendInvite = () => {
     onResendInvite(member.id, member.profile?.email || "");
-    toast({
-      title: "Invitation resent",
-      description: `A new invitation has been sent to ${member.profile?.email}`,
-    });
+    toast.success("Invitation resent", { description: `A new invitation has been sent to ${member.profile?.email}` });
   };
 
   return (

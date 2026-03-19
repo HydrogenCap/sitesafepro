@@ -50,7 +50,7 @@ interface MessageStats {
 }
 
 export default function WhatsAppSettings() {
-  const { toast } = useToast();
+  
   const { user } = useAuth();
   const { canAccess, organisation } = useSubscription();
   

@@ -54,7 +54,7 @@ export function InviteClientDialog({
   preselectedProjectId,
 }: InviteClientDialogProps) {
   const { user } = useAuth();
-  const { toast } = useToast();
+  
   const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({

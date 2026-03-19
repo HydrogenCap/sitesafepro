@@ -24,7 +24,7 @@ interface NotificationPreference {
 }
 
 export default function NotificationSettings() {
-  const { toast } = useToast();
+  
   const { user } = useAuth();
   const { organisation } = useSubscription();
   

@@ -43,7 +43,7 @@ export default function InviteMemberDialog({
   organisationId,
   onInviteSent,
 }: InviteMemberDialogProps) {
-  const { toast } = useToast();
+  
   const { logActivity } = useActivityLog();
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
