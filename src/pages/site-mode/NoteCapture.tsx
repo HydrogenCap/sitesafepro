@@ -16,7 +16,7 @@ export default function NoteCapture() {
   const { user } = useAuth();
   const { membership } = useOrg();
   const { triggerSync } = useSync();
-  const { toast } = useToast();
+  
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [saving, setSaving] = useState(false);
