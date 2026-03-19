@@ -72,11 +72,7 @@ export default function Team() {
       setMembers(membersData as unknown as TeamMember[]);
     } catch (error: unknown) {
       console.error("Error fetching members:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load team members",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to load team members" });
     } finally {
       setLoading(false);
     }
