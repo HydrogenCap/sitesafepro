@@ -100,7 +100,7 @@ export default function PhotoCapture() {
       if (navigator.onLine) triggerSync();
       navigate('/site-mode');
     } catch (err: any) {
-      toast({ title: 'Failed to save', description: err.message, variant: 'destructive' });
+      toast.error('Failed to save', { description: err.message });
     } finally {
       setSaving(false);
     }
