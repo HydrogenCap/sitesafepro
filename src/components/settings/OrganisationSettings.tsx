@@ -96,20 +96,12 @@ export default function OrganisationSettings() {
 
     // Validate file
     if (!file.type.startsWith("image/")) {
-      toast({
-        title: "Invalid file",
-        description: "Please upload an image file",
-        variant: "destructive",
-      });
+      toast.error("Invalid file", { description: "Please upload an image file" });
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Logo must be less than 5MB",
-        variant: "destructive",
-      });
+      toast.error("File too large", { description: "Logo must be less than 5MB" });
       return;
     }
 
