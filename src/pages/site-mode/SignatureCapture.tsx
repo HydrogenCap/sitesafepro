@@ -53,7 +53,7 @@ export default function SignatureCapture() {
       if (navigator.onLine) triggerSync();
       navigate('/site-mode');
     } catch (err: any) {
-      toast({ title: 'Failed', description: err.message, variant: 'destructive' });
+      toast.error('Failed', { description: err.message });
     } finally {
       setSaving(false);
     }
