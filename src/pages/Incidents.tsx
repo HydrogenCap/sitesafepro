@@ -242,13 +242,11 @@ export default function Incidents() {
         description: `Incident reported: ${formData.title}${isRiddorReportable ? ' (RIDDOR reportable)' : ''}`,
       });
 
-      toast({
-        title: "Incident reported",
-        description: isRiddorReportable
-          ? "This incident may be RIDDOR reportable. Please review and report within required timeframes."
-          : "The incident has been recorded",
-        variant: isRiddorReportable ? "destructive" : "default",
-      });
+      if (isRiddorReportable) {
+        toast.error("Incident reported", { description: "This incident may be RIDDOR reportable. Please review and report within required timeframes." });
+      } else {
+        toast.success("Incident reported", { description: "The incident has been recorded" });
+      }
 
       setDialogOpen(false);
       setFormData({
