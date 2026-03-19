@@ -16,7 +16,7 @@ export default function SignatureCapture() {
   const { user } = useAuth();
   const { membership } = useOrg();
   const { triggerSync } = useSync();
-  const { toast } = useToast();
+  
   const sigRef = useRef<ReactSignatureCanvas>(null);
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
