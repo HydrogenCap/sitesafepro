@@ -308,7 +308,6 @@ export default function DiaryEntry() {
     const location = project?.address || project?.name;
     if (!location) {
       toast.error("Location required", { description: "Please add a project address to fetch weather data." });
-      });
       return;
     }
 
