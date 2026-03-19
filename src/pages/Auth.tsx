@@ -61,11 +61,7 @@ const AuthPage = () => {
       });
       if (error) throw error;
     } catch (error: any) {
-      toast({
-        title: "Google sign in failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error("Google sign in failed", { description: error.message });
       setIsGoogleLoading(false);
     }
   };
