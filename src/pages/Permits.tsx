@@ -239,11 +239,7 @@ export default function Permits() {
       fetchData();
     } catch (error) {
       console.error("Error updating status:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update permit status",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to update permit status" });
     }
   };
 

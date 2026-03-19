@@ -341,7 +341,7 @@ export default function Incidents() {
       fetchData();
     } catch (error) {
       console.error("Error recording RIDDOR:", error);
-      toast({ title: "Error", description: "Failed to record RIDDOR submission", variant: "destructive" });
+      toast.error("Error", { description: "Failed to record RIDDOR submission" });
     }
   };
 
