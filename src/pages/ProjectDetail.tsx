@@ -235,9 +235,7 @@ const ProjectDetail = () => {
         navigate("/team");
         break;
       case "New Permit":
-        toast.info("Permits module coming soon", {
-          description: "This feature is available in the Professional tier.",
-        });
+        navigate(`/permits?project=${id}`);
         break;
     }
   };
