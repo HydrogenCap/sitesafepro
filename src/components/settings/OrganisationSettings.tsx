@@ -58,11 +58,7 @@ export default function OrganisationSettings() {
       setOrganisation(orgData);
     } catch (error: any) {
       console.error("Error fetching organisation:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load organisation details",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to load organisation details" });
     } finally {
       setLoading(false);
     }
