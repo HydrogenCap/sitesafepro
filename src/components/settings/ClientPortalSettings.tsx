@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { InviteClientDialog } from "@/components/client/InviteClientDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -56,7 +56,7 @@ const roleLabels: Record<string, string> = {
 export default function ClientPortalSettings() {
   const { user } = useAuth();
   const { tier } = useSubscription();
-  const { toast } = useToast();
+  
   const queryClient = useQueryClient();
 
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
@@ -121,19 +121,16 @@ export default function ClientPortalSettings() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({
-        title: "Client Deactivated",
+      toast.success("Client Deactivated", {
         description: "The client no longer has access to the portal.",
       });
       queryClient.invalidateQueries({ queryKey: ["client-portal-users"] });
       setDeactivateDialogOpen(false);
       setSelectedClient(null);
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to deactivate client",
-        variant: "destructive",
+    onError: (error: unknown) => {
+      toast.error("Error", {
+        description: error instanceof Error ? error.message : "Failed to deactivate client",
       });
     },
   });
@@ -148,17 +145,14 @@ export default function ClientPortalSettings() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({
-        title: "Client Reactivated",
+      toast.success("Client Reactivated", {
         description: "The client now has access to the portal.",
       });
       queryClient.invalidateQueries({ queryKey: ["client-portal-users"] });
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to reactivate client",
-        variant: "destructive",
+    onError: (error: unknown) => {
+      toast.error("Error", {
+        description: error instanceof Error ? error.message : "Failed to reactivate client",
       });
     },
   });
@@ -177,17 +171,14 @@ export default function ClientPortalSettings() {
       return data;
     },
     onSuccess: () => {
-      toast({
-        title: "Invitation Resent",
+      toast.success("Invitation Resent", {
         description: "A fresh client portal invite has been sent.",
       });
       queryClient.invalidateQueries({ queryKey: ["client-portal-users"] });
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to resend invitation",
-        variant: "destructive",
+    onError: (error: unknown) => {
+      toast.error("Error", {
+        description: error instanceof Error ? error.message : "Failed to resend invitation",
       });
     },
   });

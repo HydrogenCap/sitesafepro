@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -54,7 +54,7 @@ export function InviteClientDialog({
   preselectedProjectId,
 }: InviteClientDialogProps) {
   const { user } = useAuth();
-  const { toast } = useToast();
+  
   const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
@@ -173,19 +173,16 @@ export function InviteClientDialog({
       return { inviteToken, emailSent: emailResult?.emailSent };
     },
     onSuccess: () => {
-      toast({
-        title: "Invitation Sent",
+      toast.success("Invitation Sent", {
         description: `Client invitation sent to ${formData.email}`,
       });
       queryClient.invalidateQueries({ queryKey: ["client-portal-users"] });
       onOpenChange(false);
       resetForm();
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to send invitation",
-        variant: "destructive",
+    onError: (error: unknown) => {
+      toast.error("Error", {
+        description: error instanceof Error ? error.message : "Failed to send invitation",
       });
     },
   });

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Loader2, CheckCircle, XCircle, Building2, Shield, HardHat, FileCheck } from "lucide-react";
 import { Logo } from "@/components/landing/Logo";
 import { COMPLIANCE_DOC_LABELS } from "@/types/contractor";
@@ -27,7 +27,7 @@ interface InviteInfo {
 export default function AcceptInvite() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  
 
   const token = searchParams.get("token");
 
@@ -126,11 +126,11 @@ export default function AcceptInvite() {
     e.preventDefault();
 
     if (password !== confirmPassword) {
-      toast({ title: "Passwords don't match", variant: "destructive" });
+      toast.error("Passwords don't match");
       return;
     }
     if (password.length < 8) {
-      toast({ title: "Password must be at least 8 characters", variant: "destructive" });
+      toast.error("Password must be at least 8 characters");
       return;
     }
 
@@ -151,13 +151,11 @@ export default function AcceptInvite() {
       if (data?.error) throw new Error(data.error);
 
       setSuccess(true);
-      toast({ title: "Account created!", description: "You can now sign in." });
-    } catch (err: any) {
+      toast.success("Account created!", { description: "You can now sign in." });
+    } catch (err: unknown) {
       console.error("Error accepting invite:", err);
-      toast({
-        title: "Error",
-        description: err.message || "Failed to accept invitation",
-        variant: "destructive",
+      toast.error("Error", {
+        description: err instanceof Error ? err.message : "Failed to accept invitation",
       });
     } finally {
       setSubmitting(false);

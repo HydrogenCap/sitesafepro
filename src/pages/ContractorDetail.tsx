@@ -370,7 +370,7 @@ const ContractorDetail = () => {
           <TabsContent value="activity">
             <div className="bg-card rounded-xl border border-border p-6">
               <p className="text-muted-foreground text-center py-8">
-                Activity feed coming soon...
+                No activity recorded for this contractor yet.
               </p>
             </div>
           </TabsContent>
