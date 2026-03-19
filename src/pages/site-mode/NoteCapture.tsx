@@ -36,7 +36,7 @@ export default function NoteCapture() {
         },
         userId: user.id,
       });
-      toast({ title: 'Note saved offline' });
+      toast.success('Note saved offline');
       if (navigator.onLine) triggerSync();
       navigate('/site-mode');
     } catch (err: any) {
