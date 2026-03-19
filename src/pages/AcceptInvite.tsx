@@ -103,7 +103,7 @@ export default function AcceptInvite() {
     e.preventDefault();
 
     if (password !== confirmPassword) {
-      toast({ title: "Passwords don't match", variant: "destructive" });
+      toast.error("Passwords don't match");
       return;
     }
     if (password.length < 8) {
