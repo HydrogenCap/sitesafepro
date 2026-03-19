@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useOrg } from "@/hooks/useOrg";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,6 +46,7 @@ interface SiteVisit {
 
 export default function SiteAccess() {
   const { user } = useAuth();
+  const { membership } = useOrg();
   const { logActivity } = useActivityLog();
   const [accessCodes, setAccessCodes] = useState<AccessCode[]>([]);
   const [visits, setVisits] = useState<SiteVisit[]>([]);
@@ -56,7 +58,7 @@ export default function SiteAccess() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [membership?.orgId]);
 
   const fetchData = async () => {
     setLoading(true);

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useOrg } from "@/hooks/useOrg";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,6 +66,7 @@ interface InductionCompletion {
 
 export default function Inductions() {
   const { user } = useAuth();
+  const { membership } = useOrg();
   const [templates, setTemplates] = useState<InductionTemplate[]>([]);
   const [completions, setCompletions] = useState<InductionCompletion[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -87,7 +89,7 @@ export default function Inductions() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [membership?.orgId]);
 
   const fetchData = async () => {
     setLoading(true);

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useOrg } from "@/hooks/useOrg";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,6 +29,7 @@ interface Step1Props {
 
 export function Step1ProjectDetails({ formData, updateFormData }: Step1Props) {
   const { user } = useAuth();
+  const { membership } = useOrg();
 
   // Fetch projects
   const { data: projects } = useQuery({
@@ -72,7 +74,7 @@ export function Step1ProjectDetails({ formData, updateFormData }: Step1Props) {
       };
       generateReference();
     }
-  }, []);
+  }, [formData.ramsReference, membership?.orgId]);
 
   // Auto-fill project details when project is selected
   const handleProjectChange = (projectId: string) => {

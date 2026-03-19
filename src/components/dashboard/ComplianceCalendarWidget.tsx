@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useOrg } from "@/hooks/useOrg";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +34,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export function ComplianceCalendarWidget() {
   const navigate = useNavigate();
+  const { membership } = useOrg();
   const [docs, setDocs] = useState<ExpiringDoc[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -62,7 +64,7 @@ export function ComplianceCalendarWidget() {
       setLoading(false);
     };
     fetchExpiring();
-  }, []);
+  }, [membership?.orgId]);
 
   const now = new Date();
   const getDaysRemaining = (dateStr: string) => {
