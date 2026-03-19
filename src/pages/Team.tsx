@@ -86,10 +86,7 @@ export default function Team() {
 
       if (error) throw error;
 
-      toast({
-        title: "Invitation resent",
-        description: `A new invitation has been sent to ${email}`,
-      });
+      toast.success("Invitation resent", { description: `A new invitation has been sent to ${email}` });
     } catch (error: unknown) {
       toast({
         title: "Error",
