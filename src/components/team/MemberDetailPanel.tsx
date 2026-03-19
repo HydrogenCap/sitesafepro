@@ -27,7 +27,7 @@ import {
   Save
 } from "lucide-react";
 import { TeamMember, MemberRole, roleLabels, roleColors, rolePermissions } from "./types";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 interface MemberDetailPanelProps {
   member: TeamMember | null;
