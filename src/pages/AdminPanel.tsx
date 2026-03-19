@@ -566,7 +566,7 @@ export default function AdminPanel() {
         .single();
 
       if (profileError || !ownerProfile) {
-        toast({ title: "Owner not found", description: "The owner must have an existing account before you can create an organisation for them.", variant: "destructive" });
+        toast.error("Owner not found", { description: "The owner must have an existing account before you can create an organisation for them." });
         setCreatingOrg(false);
         return;
       }
