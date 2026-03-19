@@ -502,12 +502,12 @@ export default function AdminPanel() {
       setOnboardingOrgs(builtOnboarding);
 
     } catch (err: any) {
-      toast({ title: "Failed to load admin data", description: err.message, variant: "destructive" });
+      toast.error("Failed to load admin data", { description: err.message });
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [toast]);
+  }, []);
 
   useEffect(() => { if (!orgLoading && hasRole("owner")) fetchData(); }, [orgLoading, hasRole, fetchData]);
   const handleRefresh = () => { setRefreshing(true); fetchData(); };
