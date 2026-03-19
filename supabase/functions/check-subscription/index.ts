@@ -60,7 +60,6 @@ serve(async (req) => {
     if (isOwnerEmail(user.email)) {
       logStep("Owner email detected, granting Enterprise override", { email: user.email });
 
-      // Update organisation with enterprise tier
       const { data: memberData } = await supabaseClient
         .from('organisation_members')
         .select('organisation_id')
@@ -90,6 +89,47 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
+    }
+
+    // [P1 FIX] Check database trial status before querying Stripe
+    const { data: memberData } = await supabaseClient
+      .from('organisation_members')
+      .select('organisation_id')
+      .eq('profile_id', user.id)
+      .eq('status', 'active')
+      .single();
+
+    if (memberData) {
+      const { data: orgData } = await supabaseClient
+        .from('organisations')
+        .select('subscription_status, subscription_tier, trial_ends_at')
+        .eq('id', memberData.organisation_id)
+        .single();
+
+      if (orgData?.subscription_status === 'trialing' && orgData.trial_ends_at) {
+        const trialEnd = new Date(orgData.trial_ends_at);
+        if (trialEnd > new Date()) {
+          logStep("Active trial found in database", {
+            tier: orgData.subscription_tier,
+            trialEndsAt: orgData.trial_ends_at,
+          });
+          return new Response(JSON.stringify({
+            subscribed: true,
+            tier: orgData.subscription_tier || 'enterprise',
+            subscription_end: orgData.trial_ends_at,
+            stripe_customer_id: null,
+            stripe_subscription_id: null,
+            trial: true,
+          }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        } else {
+          logStep("Trial expired, falling through to Stripe check", {
+            trialEndsAt: orgData.trial_ends_at,
+          });
+        }
+      }
     }
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });

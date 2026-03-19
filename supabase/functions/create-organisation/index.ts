@@ -27,12 +27,50 @@ serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
+    // [P0 FIX] Verify caller identity via JWT
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "No authorization header provided" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (authError || !authData.user) {
+      return new Response(
+        JSON.stringify({ error: "Authentication failed" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const body = await req.json();
     const userId = requireUUID(body.userId, "userId");
     const companyName = requireString(body.companyName, "companyName", { maxLength: 200 });
     const phone = optionalString(body.phone, "phone", { maxLength: 30 });
     const email = optionalString(body.email, "email", { maxLength: 255 });
     const fullName = optionalString(body.fullName, "fullName", { maxLength: 100 });
+
+    // [P0 FIX] Ensure the authenticated caller matches the requested userId,
+    // unless the caller is a platform admin (owner role in any org)
+    if (authData.user.id !== userId) {
+      const { data: adminCheck } = await supabaseAdmin
+        .from('organisation_members')
+        .select('role')
+        .eq('profile_id', authData.user.id)
+        .eq('role', 'owner')
+        .eq('status', 'active')
+        .limit(1);
+
+      if (!adminCheck || adminCheck.length === 0) {
+        console.error(`Auth mismatch: caller ${authData.user.id} tried to create org for ${userId}`);
+        return new Response(
+          JSON.stringify({ error: "You can only create an organisation for your own account" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      console.log(`Admin ${authData.user.id} creating org on behalf of ${userId}`);
+    }
 
     console.log(`Creating organisation for user ${userId}, company: ${companyName}`);
 
