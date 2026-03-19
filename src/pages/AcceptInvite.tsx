@@ -107,7 +107,7 @@ export default function AcceptInvite() {
       return;
     }
     if (password.length < 8) {
-      toast({ title: "Password must be at least 8 characters", variant: "destructive" });
+      toast.error("Password must be at least 8 characters");
       return;
     }
 
