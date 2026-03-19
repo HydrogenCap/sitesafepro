@@ -115,7 +115,7 @@ export default function IncidentCapture() {
       navigate('/site-mode');
     } catch (err) {
       console.error(err);
-      toast({ title: 'Error', description: 'Failed to save incident', variant: 'destructive' });
+      toast.error('Error', { description: 'Failed to save incident' });
     } finally {
       setSaving(false);
     }

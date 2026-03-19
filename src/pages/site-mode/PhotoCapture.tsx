@@ -104,7 +104,7 @@ export default function PhotoCapture() {
     } finally {
       setSaving(false);
     }
-  }, [captured, caption, user, membership, navigate, triggerSync, toast]);
+  }, [captured, caption, user, membership, navigate, triggerSync]);
 
   useEffect(() => {
     startCamera();
