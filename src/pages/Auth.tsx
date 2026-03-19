@@ -89,12 +89,10 @@ const AuthPage = () => {
     setIsLoading(false);
 
     if (error) {
-      toast({
-        title: "Sign in failed",
+      toast.error("Sign in failed", {
         description: error.message === "Invalid login credentials" 
           ? "Invalid email or password. Please try again."
           : error.message,
-        variant: "destructive",
       });
       return;
     }
