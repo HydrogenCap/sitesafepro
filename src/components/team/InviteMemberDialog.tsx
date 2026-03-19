@@ -54,11 +54,7 @@ export default function InviteMemberDialog({
     e.preventDefault();
     
     if (!organisationId) {
-      toast({
-        title: "Error",
-        description: "Organisation not found",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Organisation not found" });
       return;
     }
 
