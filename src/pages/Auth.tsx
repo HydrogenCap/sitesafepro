@@ -121,10 +121,7 @@ const AuthPage = () => {
       return;
     }
 
-    toast({
-      title: "Account created!",
-      description: "Please check your email to verify your account before signing in.",
-    });
+    toast.success("Account created!", { description: "Please check your email to verify your account before signing in." });
     setIsSignUp(false);
   };
 
