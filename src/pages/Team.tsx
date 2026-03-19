@@ -18,7 +18,7 @@ import {
 export default function Team() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
