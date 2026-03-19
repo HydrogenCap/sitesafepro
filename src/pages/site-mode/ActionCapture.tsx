@@ -42,7 +42,7 @@ export default function ActionCapture() {
         },
         userId: user.id,
       });
-      toast({ title: 'Action saved offline' });
+      toast.success('Action saved offline');
       if (navigator.onLine) triggerSync();
       navigate('/site-mode');
     } catch (err: any) {
