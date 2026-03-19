@@ -57,7 +57,7 @@ export default function SignatureCapture() {
     } finally {
       setSaving(false);
     }
-  }, [user, membership, name, navigate, triggerSync, toast]);
+  }, [user, membership, name, navigate, triggerSync]);
 
   return (
     <div className="min-h-screen bg-background">
