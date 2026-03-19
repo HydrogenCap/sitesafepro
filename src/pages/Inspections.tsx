@@ -250,11 +250,7 @@ export default function Inspections() {
       fetchData();
     } catch (error) {
       console.error("Error creating inspection:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create inspection",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to create inspection" });
     }
   };
 
