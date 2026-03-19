@@ -198,11 +198,7 @@ export default function Incidents() {
     if (!organisationId || !user) return;
 
     if (!formData.title || !formData.description || !formData.project_id) {
-      toast({
-        title: "Missing required fields",
-        description: "Please provide a project, title and description",
-        variant: "destructive",
-      });
+      toast.error("Missing required fields", { description: "Please provide a project, title and description" });
       return;
     }
 
