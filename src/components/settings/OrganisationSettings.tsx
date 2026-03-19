@@ -81,17 +81,10 @@ export default function OrganisationSettings() {
 
       if (error) throw error;
 
-      toast({
-        title: "Settings saved",
-        description: "Organisation details have been updated",
-      });
+      toast.success("Settings saved", { description: "Organisation details have been updated" });
     } catch (error: any) {
       console.error("Error saving organisation:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save organisation settings",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to save organisation settings" });
     } finally {
       setSaving(false);
     }
