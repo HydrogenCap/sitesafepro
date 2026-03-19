@@ -240,7 +240,7 @@ export default function DiaryEntry() {
     setIsSaving(true);
     try {
       await saveMutation.mutateAsync(completedEntry);
-      toast({ title: "Entry marked as complete" });
+      toast.success("Entry marked as complete");
       navigate(`/projects/${projectId}/diary`);
     } finally {
       setIsSaving(false);
