@@ -63,7 +63,7 @@ export default function PhotoCapture() {
     setCaptured(dataUrl);
     stream?.getTracks().forEach(t => t.stop());
     setStream(null);
-  }, [stream, toast]);
+  }, [stream]);
 
   const retake = useCallback(() => {
     setCaptured(null);
