@@ -9,7 +9,7 @@ import { enqueue } from '@/offline/queue';
 import { useSync } from '@/offline/SyncContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrg } from '@/hooks/useOrg';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 
 export default function HazardCapture() {
