@@ -44,7 +44,7 @@ const AuthPage = () => {
   
   const { signIn, signUp, user, loading } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  
 
   // Redirect authenticated users to dashboard
   useEffect(() => {
