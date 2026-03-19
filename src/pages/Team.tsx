@@ -124,10 +124,7 @@ export default function Team() {
         m.id === memberId ? { ...m, status: "deactivated" as MemberStatus } : m
       ));
 
-      toast({
-        title: "Member deactivated",
-        description: "The team member has been deactivated",
-      });
+      toast.success("Member deactivated", { description: "The team member has been deactivated" });
     } catch (error: unknown) {
       toast({
         title: "Error",
