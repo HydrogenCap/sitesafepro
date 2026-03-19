@@ -1,0 +1,168 @@
+import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, AlertTriangle, Check, Camera, X, MapPin, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { enqueue } from '@/offline/queue';
+import { useSync } from '@/offline/SyncContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useOrg } from '@/hooks/useOrg';
+import { useToast } from '@/hooks/use-toast';
+import { v4 as uuid } from 'uuid';
+
+export default function HazardCapture() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { membership } = useOrg();
+  const { toast } = useToast();
+  const { triggerSync } = useSync();
+  const [location, setLocation] = useState('');
+  const [description, setDescription] = useState('');
+  const [locating, setLocating] = useState(false);
+  const [severity, setSeverity] = useState('high');
+  const [saving, setSaving] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+  const useGps = () => {
+        if (!navigator.geolocation) {
+                toast({ title: 'GPS unavailable', description: 'Geolocation is not supported on this device', variant: 'destructive' });
+                return;
+        }
+        setLocating(true);
+        navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                          setLocation(`${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`);
+                          setLocating(false);
+                },
+                () => {
+                          toast({ title: 'GPS error', description: 'Could not get location', variant: 'destructive' });
+                          setLocating(false);
+                },
+          { timeout: 10000 }
+              );
+  };
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoFile(file);
+    const reader = new FileReader();
+    reader.onload = () => setPhotoPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const removePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const save = async () => {
+        if (!user || !membership || !description.trim()) return;
+        setSaving(true);
+        try {
+                let blobData: { data: ArrayBuffer; mimeType: string; fileName: string } | undefined;
+                if (photoFile) {
+                          const ab = await photoFile.arrayBuffer();
+                          blobData = { data: ab, mimeType: photoFile.type, fileName: photoFile.name };
+                }
+
+                await enqueue({
+                          type: 'site_hazard',
+                          orgId: membership.orgId,
+                          payload: {
+                                      id: uuid(),
+                                      organisation_id: membership.orgId,
+                                      project_id: null,
+                                      reported_by: user.id,
+                                      severity,
+                                      description,
+                                      location: location || null,
+                                      photo_mime_type: photoFile?.type ?? null,
+                                      reported_at: new Date().toISOString(),
+                          },
+                          ...(blobData ? { blob: blobData } : {}),
+                          userId: user.id,
+                });
+
+                toast({ title: 'Hazard saved offline' });
+                if (navigator.onLine) triggerSync();
+                navigate('/site-mode');
+        } catch (err: any) {
+                toast({ title: 'Failed', description: err.message, variant: 'destructive' });
+        } finally {
+                setSaving(false);
+        }
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-10 border-b bg-background px-4 py-3 flex items-center gap-3">
+        <button onClick={() => navigate(-1)}><ArrowLeft className="h-5 w-5 text-muted-foreground" /></button>
+        <AlertTriangle className="h-5 w-5 text-destructive" />
+        <h1 className="font-bold flex-1">Report Hazard</h1>
+    h  </header>
+      <div className="p-4 space-y-4 max-w-lg mx-auto">
+        <div className="flex gap-2">
+          <Input placeholder="Location on site" value={location} onChange={e => setLocation(e.target.value)} className="flex-1" />
+          <Button type="button" size="icon" variant="outline" onClick={useGps} disabled={locating} className="shrink-0">
+            {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
+          </Button>
+        </div>
+        <Select value={severity} onValueChange={setSeverity}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="low">Low</SelectItem>
+            <SelectItem value="medium">Medium</SelectItem>
+            <SelectItem value="high">High</SelectItem>
+            <SelectItem value="critical">Critical</SelectItem>
+          </SelectContent>
+        </Select>
+        <Textarea placeholder="Describe the hazard…" rows={5} value={description} onChange={e => setDescription(e.target.value)} />
+
+        {/* Photo capture */}
+        <div className="space-y-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handlePhotoCapture}
+            className="hidden"
+          />
+          {photoPreview ? (
+            <div className="relative">
+              <img src={photoPreview} alt="Hazard photo" className="w-full rounded-lg max-h-48 object-cover" />
+              <Button
+                size="icon"
+                variant="destructive"
+                className="absolute top-2 right-2 h-7 w-7"
+                onClick={removePhoto}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Camera className="h-4 w-4 mr-2" />
+              Attach Photo
+            </Button>
+          )}
+        </div>
+
+        <Button className="w-full" onClick={save} disabled={saving || !description.trim()}>
+          <Check className="h-4 w-4 mr-1.5" />
+          {saving ? 'Saving…' : 'Report Hazard'}
+        </Button>
+      </div>
+    </div>
+  );
+}

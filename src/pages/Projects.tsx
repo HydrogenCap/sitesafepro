@@ -1,0 +1,298 @@
+import { useState } from "react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useNavigate, Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useProjects, useDeleteProject, useArchiveProject } from "@/hooks/useProjects";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import {
+  Plus,
+  Search,
+  FolderOpen,
+  MapPin,
+  Calendar,
+  Users,
+  MoreVertical,
+  Building2,
+  AlertCircle,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+const Projects = () => {
+  const { projectLimit, loading: subLoading } = useSubscription();
+  const { data: projects = [], isLoading } = useProjects();
+  const deleteProject = useDeleteProject();
+  const archiveProject = useArchiveProject();
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+
+  const filteredProjects = projects.filter(
+    (project) =>
+      project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      project.address?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      project.client_name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const activeProjects = projects.filter((p) => p.status === "active" || p.status === "setup");
+  const canCreateProject = activeProjects.length < projectLimit;
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "setup":
+        return "bg-blue-500/10 text-blue-600";
+      case "active":
+        return "bg-success/10 text-success";
+      case "completed":
+        return "bg-primary/10 text-primary";
+      case "archived":
+        return "bg-muted text-muted-foreground";
+      default:
+        return "bg-muted text-muted-foreground";
+    }
+  };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "Not set";
+    return new Date(dateString).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const handleArchive = (e: React.MouseEvent, projectId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    archiveProject.mutate(projectId);
+  };
+
+  const handleDelete = (e: React.MouseEvent, projectId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDeleteTarget(projectId);
+  };
+
+  if (subLoading || isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <DashboardLayout>
+      <div className="p-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Projects</h1>
+            <p className="text-sm text-muted-foreground">
+              {activeProjects.length} of {projectLimit === 999 ? "∞" : projectLimit} active projects
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1 sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search projects..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            {canCreateProject ? (
+              <Button asChild>
+                <Link to="/projects/new">
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Project
+                </Link>
+              </Button>
+            ) : (
+              <Button disabled title="Project limit reached">
+                <Plus className="h-4 w-4 mr-2" />
+                New Project
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Limit warning */}
+        {!canCreateProject && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-accent/10 border border-accent/20 rounded-lg p-4 mb-6 flex items-center gap-3"
+          >
+            <AlertCircle className="h-5 w-5 text-accent" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-foreground">
+                Project limit reached
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Upgrade your plan to create more projects.
+              </p>
+            </div>
+            <Link to="/#pricing">
+              <Button variant="outline" size="sm">
+                Upgrade Plan
+              </Button>
+            </Link>
+          </motion.div>
+        )}
+
+        {/* Projects grid */}
+        {filteredProjects.length > 0 ? (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filteredProjects.map((project, index) => (
+              <motion.div
+                key={project.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <Link to={`/projects/${project.id}`}>
+                  <div className="bg-card rounded-xl overflow-hidden border border-border hover:border-primary/30 hover:shadow-md transition-all group">
+                    {project.image_url ? (
+                      <div className="h-32 w-full overflow-hidden">
+                        <img
+                          src={project.image_url}
+                          alt={project.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                    ) : (
+                      <div className="h-32 w-full bg-gradient-to-br from-secondary to-muted flex items-center justify-center">
+                        <Building2 className="h-12 w-12 text-muted-foreground/50" />
+                      </div>
+                    )}
+                    <div className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center group-hover:bg-primary transition-colors">
+                        <Building2 className="h-5 w-5 text-primary group-hover:text-primary-foreground transition-colors" />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-xs font-medium px-2.5 py-1 rounded-full ${getStatusColor(
+                            project.status
+                          )}`}
+                        >
+                          {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+                        </span>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              className="p-1 rounded hover:bg-muted"
+                              onClick={(e) => e.preventDefault()}
+                            >
+                              <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              navigate(`/projects/${project.id}`);
+                            }}>
+                              Edit Project
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => handleArchive(e, project.id)}>
+                              Archive
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="text-destructive"
+                              onClick={(e) => handleDelete(e, project.id)}
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+
+                    <h3 className="font-semibold text-foreground mb-2 line-clamp-1">
+                      {project.name}
+                    </h3>
+
+                    {project.address && (
+                      <div className="flex items-start gap-2 text-sm text-muted-foreground mb-3">
+                        <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                        <span className="line-clamp-2">{project.address}</span>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground pt-3 border-t border-border">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3.5 w-3.5" />
+                        <span>{formatDate(project.start_date)}</span>
+                      </div>
+                      {project.client_name && (
+                        <div className="flex items-center gap-1">
+                          <Users className="h-3.5 w-3.5" />
+                          <span className="truncate max-w-[100px]">{project.client_name}</span>
+                        </div>
+                      )}
+                    </div>
+                    </div>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-card rounded-xl border-2 border-dashed border-border p-12 text-center"
+          >
+            <div className="h-16 w-16 rounded-2xl bg-muted mx-auto mb-4 flex items-center justify-center">
+              <FolderOpen className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-2">
+              {searchQuery ? "No projects found" : "No projects yet"}
+            </h3>
+            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+              {searchQuery
+                ? "Try adjusting your search query"
+                : "Create your first project to start managing site safety compliance."}
+            </p>
+            {!searchQuery && canCreateProject && (
+              <Button asChild>
+                <Link to="/projects/new">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Your First Project
+                </Link>
+              </Button>
+            )}
+          </motion.div>
+        )}
+
+        <ConfirmDialog
+          open={!!deleteTarget}
+          onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+          title="Delete this project?"
+          description="This will permanently delete the project and all associated data. This action cannot be undone. For compliance purposes, consider archiving instead."
+          confirmText="DELETE"
+          confirmLabel="Delete Project"
+          variant="destructive"
+          onConfirm={() => {
+            if (deleteTarget) {
+              deleteProject.mutate(deleteTarget);
+              setDeleteTarget(null);
+            }
+          }}
+        />
+      </div>
+    </DashboardLayout>
+  );
+};
+
+export default Projects;
