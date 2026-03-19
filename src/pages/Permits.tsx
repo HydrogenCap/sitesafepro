@@ -190,10 +190,7 @@ export default function Permits() {
 
       if (error) throw error;
 
-      toast({
-        title: "Permit created",
-        description: "The permit to work has been created as a draft",
-      });
+      toast.success("Permit created", { description: "The permit to work has been created as a draft" });
 
       setDialogOpen(false);
       setFormData({
