@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useOrg } from "@/hooks/useOrg";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
