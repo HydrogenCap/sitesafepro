@@ -26,7 +26,7 @@ interface InviteInfo {
 export default function AcceptInvite() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  
 
   const token = searchParams.get("token");
 
