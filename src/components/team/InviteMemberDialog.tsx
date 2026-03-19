@@ -88,9 +88,9 @@ export default function InviteMemberDialog({
       setRole("contractor");
       onOpenChange(false);
       onInviteSent();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error sending invite:", error);
-      toast.error("Error", { description: error.message || "Failed to send invitation" });
+      toast.error("Error", { description: (error instanceof Error ? error.message : "Unknown error") || "Failed to send invitation" });
     } finally {
       setLoading(false);
     }

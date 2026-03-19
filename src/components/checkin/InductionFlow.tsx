@@ -164,9 +164,9 @@ export function InductionFlow({
       setTimeout(() => {
         onComplete(signatureData, result.completion?.id || "");
       }, 2000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Induction error:", error);
-      toast.error(error.message || "Failed to complete induction");
+      toast.error((error instanceof Error ? error.message : "Unknown error") || "Failed to complete induction");
     } finally {
       setSubmitting(false);
     }

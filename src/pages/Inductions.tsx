@@ -137,7 +137,7 @@ export default function Inductions() {
 
       if (completionsError) throw completionsError;
       setCompletions(completionsData as InductionCompletion[] || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("Failed to load induction data");
       console.error(error);
     } finally {
@@ -208,7 +208,7 @@ export default function Inductions() {
       setCreateDialogOpen(false);
       resetForm();
       toast.success("Induction template created with default questions");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("Failed to create template");
       console.error(error);
     }
@@ -237,7 +237,7 @@ export default function Inductions() {
       setEditDialogOpen(false);
       resetForm();
       toast.success("Template updated");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("Failed to update template");
       console.error(error);
     }
@@ -256,7 +256,7 @@ export default function Inductions() {
         t.id === templateId ? { ...t, is_active: !isActive } : t
       ));
       toast.success(`Template ${!isActive ? "activated" : "deactivated"}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("Failed to update template");
       console.error(error);
     }
@@ -275,7 +275,7 @@ export default function Inductions() {
 
       setTemplates(templates.filter(t => t.id !== templateId));
       toast.success("Template deleted");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("Failed to delete template");
       console.error(error);
     }
@@ -342,7 +342,7 @@ export default function Inductions() {
       setNewItemQuestion("");
       setNewItemDescription("");
       toast.success("Question added");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("Failed to add question");
       console.error(error);
     }
@@ -359,7 +359,7 @@ export default function Inductions() {
 
       setTemplateItems(templateItems.filter(i => i.id !== itemId));
       toast.success("Question removed");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("Failed to remove question");
       console.error(error);
     }

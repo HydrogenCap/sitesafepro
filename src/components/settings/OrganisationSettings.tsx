@@ -56,7 +56,7 @@ export default function OrganisationSettings() {
 
       if (orgError) throw orgError;
       setOrganisation(orgData);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching organisation:", error);
       toast.error("Error", { description: "Failed to load organisation details" });
     } finally {
@@ -82,7 +82,7 @@ export default function OrganisationSettings() {
       if (error) throw error;
 
       toast.success("Settings saved", { description: "Organisation details have been updated" });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error saving organisation:", error);
       toast.error("Error", { description: "Failed to save organisation settings" });
     } finally {
@@ -133,7 +133,7 @@ export default function OrganisationSettings() {
       setOrganisation((prev) => prev ? { ...prev, logo_url: urlData.publicUrl } : null);
 
       toast.success("Logo updated", { description: "Your organisation logo has been updated" });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error uploading logo:", error);
       toast.error("Upload failed", { description: "Failed to upload logo" });
     } finally {

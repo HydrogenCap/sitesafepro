@@ -60,8 +60,8 @@ const AuthPage = () => {
         redirect_uri: window.location.origin + "/dashboard",
       });
       if (error) throw error;
-    } catch (error: any) {
-      toast.error("Google sign in failed", { description: error.message });
+    } catch (error: unknown) {
+      toast.error("Google sign in failed", { description: (error instanceof Error ? error.message : "Unknown error") });
       setIsGoogleLoading(false);
     }
   };
@@ -90,9 +90,9 @@ const AuthPage = () => {
 
     if (error) {
       toast.error("Sign in failed", {
-        description: error.message === "Invalid login credentials" 
+        description: (error instanceof Error ? error.message : "Unknown error") === "Invalid login credentials" 
           ? "Invalid email or password. Please try again."
-          : error.message,
+          : (error instanceof Error ? error.message : "Unknown error"),
       });
       return;
     }
@@ -113,9 +113,9 @@ const AuthPage = () => {
     setIsLoading(false);
 
     if (error) {
-      const errorMessage = error.message.includes("User already registered")
+      const errorMessage = (error instanceof Error ? error.message : "Unknown error").includes("User already registered")
         ? "An account with this email already exists. Please sign in instead."
-        : error.message;
+        : (error instanceof Error ? error.message : "Unknown error");
       
       toast.error("Sign up failed", { description: errorMessage });
       return;

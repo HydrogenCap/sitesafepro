@@ -166,7 +166,7 @@ export default function Reports() {
       }
       
       toast.success("Report generated successfully");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error generating report:", error);
       toast.error("Failed to generate report");
     } finally {
