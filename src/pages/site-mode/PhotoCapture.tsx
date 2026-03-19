@@ -96,7 +96,7 @@ export default function PhotoCapture() {
         capturedOffline: !navigator.onLine,
       });
 
-      toast({ title: 'Photo saved offline', description: 'Will sync when connected.' });
+      toast.success('Photo saved offline', { description: 'Will sync when connected.' });
       if (navigator.onLine) triggerSync();
       navigate('/site-mode');
     } catch (err: any) {
