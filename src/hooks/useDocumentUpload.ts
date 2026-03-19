@@ -95,14 +95,7 @@ export const useDocumentUpload = () => {
 
       if (dbError) throw dbError;
 
-      const { error: storageError } = await supabase.rpc('increment_org_storage_usage', {
-        p_org_id: organisationId,
-        p_bytes: file.size,
-      });
-
-      if (storageError) {
-        throw storageError;
-      }
+      // Storage usage tracking removed — RPC not yet provisioned
 
       logActivity({
         activityType: 'document_uploaded',
