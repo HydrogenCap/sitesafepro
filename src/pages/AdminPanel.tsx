@@ -536,7 +536,7 @@ export default function AdminPanel() {
     await logAdminAction(user!.id, type === "deactivate" ? "DEACTIVATE_USER" : "REACTIVATE_USER", "organisation_member", member.id, orgId, { user_email: member.profile?.email });
     setOrgs((prev) => prev.map((o) => o.id === orgId ? { ...o, members: o.members.map((m) => m.id === member.id ? { ...m, status: newStatus } : m) } : o));
     setStats((prev) => ({ ...prev, activeUsers: type === "deactivate" ? prev.activeUsers - 1 : prev.activeUsers + 1, deactivatedUsers: type === "deactivate" ? prev.deactivatedUsers + 1 : prev.deactivatedUsers - 1 }));
-    toast({ title: type === "deactivate" ? "User deactivated" : "User reactivated" });
+    toast.success(type === "deactivate" ? "User deactivated" : "User reactivated");
   };
 
   const handleImpersonate = async (org: Organisation) => {
