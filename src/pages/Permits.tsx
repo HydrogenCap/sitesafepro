@@ -209,11 +209,7 @@ export default function Permits() {
       fetchData();
     } catch (error) {
       console.error("Error creating permit:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create permit",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to create permit" });
     }
   };
 
