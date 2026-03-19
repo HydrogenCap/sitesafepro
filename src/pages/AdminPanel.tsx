@@ -518,7 +518,7 @@ export default function AdminPanel() {
     if (error) { toast.error("Failed to update role", { description: error.message }); return; }
     await logAdminAction(user!.id, "ROLE_CHANGE", "organisation_member", memberId, orgId, { new_role: newRole, user_email: profile?.email });
     setOrgs((prev) => prev.map((o) => o.id === orgId ? { ...o, members: o.members.map((m) => m.id === memberId ? { ...m, role: newRole } : m) } : o));
-    toast({ title: "Role updated", description: `Changed to ${roleLabels[newRole]}` });
+    toast.success("Role updated", { description: `Changed to ${roleLabels[newRole]}` });
   };
 
   const handleToggleStatus = (member: OrgMember, orgId: string) => {
