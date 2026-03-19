@@ -308,10 +308,7 @@ export default function DiaryEntry() {
   const fetchWeatherWithAI = async () => {
     const location = project?.address || project?.name;
     if (!location) {
-      toast({
-        title: "Location required",
-        description: "Please add a project address to fetch weather data.",
-        variant: "destructive",
+      toast.error("Location required", { description: "Please add a project address to fetch weather data." });
       });
       return;
     }
