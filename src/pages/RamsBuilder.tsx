@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { RamsProgressBar } from "@/components/rams/RamsProgressBar";
 import { RamsFormData } from "@/components/rams/types";
 import { Json } from "@/integrations/supabase/types";
