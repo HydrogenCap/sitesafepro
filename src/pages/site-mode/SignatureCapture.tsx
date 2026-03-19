@@ -7,7 +7,7 @@ import { enqueue } from '@/offline/queue';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrg } from '@/hooks/useOrg';
 import { useSync } from '@/offline/SyncContext';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import ReactSignatureCanvas from 'react-signature-canvas';
 
