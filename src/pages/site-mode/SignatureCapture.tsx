@@ -49,7 +49,7 @@ export default function SignatureCapture() {
         },
         userId: user.id,
       });
-      toast({ title: 'Signature saved offline' });
+      toast.success('Signature saved offline');
       if (navigator.onLine) triggerSync();
       navigate('/site-mode');
     } catch (err: any) {
