@@ -57,7 +57,7 @@ export default function PhotoCapture() {
     }
 
     if (dataUrl.length * 0.75 > MAX_PHOTO_BYTES) {
-      toast({ title: 'Photo too large', description: 'Could not compress below 2 MB. Try moving closer or reducing resolution.', variant: 'destructive' });
+      toast.error('Photo too large', { description: 'Could not compress below 2 MB. Try moving closer or reducing resolution.' });
     }
 
     setCaptured(dataUrl);
