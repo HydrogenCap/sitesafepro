@@ -72,7 +72,7 @@ export default function IncidentCapture() {
         setLocating(false);
       },
       () => {
-        toast({ title: 'GPS error', description: 'Could not get location', variant: 'destructive' });
+        toast.error('GPS error', { description: 'Could not get location' });
         setLocating(false);
       },
       { timeout: 10000 }
