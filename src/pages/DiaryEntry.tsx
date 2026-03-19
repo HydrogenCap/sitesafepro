@@ -338,7 +338,6 @@ export default function DiaryEntry() {
     } catch (error: any) {
       console.error('Error fetching weather:', error);
       toast.error("Failed to fetch weather", { description: error.message || "Please try again or enter manually." });
-      });
     } finally {
       setIsFetchingWeather(false);
     }
