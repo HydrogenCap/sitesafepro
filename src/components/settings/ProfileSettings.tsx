@@ -109,20 +109,12 @@ export default function ProfileSettings() {
 
     // Validate file
     if (!file.type.startsWith("image/")) {
-      toast({
-        title: "Invalid file",
-        description: "Please upload an image file",
-        variant: "destructive",
-      });
+      toast.error("Invalid file", { description: "Please upload an image file" });
       return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Avatar must be less than 2MB",
-        variant: "destructive",
-      });
+      toast.error("File too large", { description: "Avatar must be less than 2MB" });
       return;
     }
 
