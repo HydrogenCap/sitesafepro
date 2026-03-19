@@ -623,10 +623,10 @@ export default function AdminPanel() {
         subscription_status: subOverride.status,
         trial_ends_at: updates.trial_ends_at as string | null,
       } : o));
-      toast({ title: "Subscription updated", description: `${subOverrideOrg.name} → ${subOverride.tier} / ${subOverride.status}` });
+      toast.success("Subscription updated", { description: `${subOverrideOrg.name} → ${subOverride.tier} / ${subOverride.status}` });
       setSubOverrideOrg(null);
     } catch (err: any) {
-      toast({ title: "Failed to update subscription", description: err.message, variant: "destructive" });
+      toast.error("Failed to update subscription", { description: err.message });
     } finally {
       setSavingSubOverride(false);
     }
