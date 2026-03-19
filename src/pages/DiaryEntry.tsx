@@ -213,7 +213,6 @@ export default function DiaryEntry() {
     },
     onError: (error) => {
       toast.error("Error saving entry", { description: error.message });
-      });
     },
   });
 
