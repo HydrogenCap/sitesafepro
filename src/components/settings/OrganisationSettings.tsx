@@ -58,11 +58,7 @@ export default function OrganisationSettings() {
       setOrganisation(orgData);
     } catch (error: any) {
       console.error("Error fetching organisation:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load organisation details",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to load organisation details" });
     } finally {
       setLoading(false);
     }
@@ -85,17 +81,10 @@ export default function OrganisationSettings() {
 
       if (error) throw error;
 
-      toast({
-        title: "Settings saved",
-        description: "Organisation details have been updated",
-      });
+      toast.success("Settings saved", { description: "Organisation details have been updated" });
     } catch (error: any) {
       console.error("Error saving organisation:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save organisation settings",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to save organisation settings" });
     } finally {
       setSaving(false);
     }
@@ -107,20 +96,12 @@ export default function OrganisationSettings() {
 
     // Validate file
     if (!file.type.startsWith("image/")) {
-      toast({
-        title: "Invalid file",
-        description: "Please upload an image file",
-        variant: "destructive",
-      });
+      toast.error("Invalid file", { description: "Please upload an image file" });
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Logo must be less than 5MB",
-        variant: "destructive",
-      });
+      toast.error("File too large", { description: "Logo must be less than 5MB" });
       return;
     }
 
@@ -151,17 +132,10 @@ export default function OrganisationSettings() {
 
       setOrganisation((prev) => prev ? { ...prev, logo_url: urlData.publicUrl } : null);
 
-      toast({
-        title: "Logo updated",
-        description: "Your organisation logo has been updated",
-      });
+      toast.success("Logo updated", { description: "Your organisation logo has been updated" });
     } catch (error: any) {
       console.error("Error uploading logo:", error);
-      toast({
-        title: "Upload failed",
-        description: "Failed to upload logo",
-        variant: "destructive",
-      });
+      toast.error("Upload failed", { description: "Failed to upload logo" });
     } finally {
       setUploading(false);
     }

@@ -170,16 +170,9 @@ export default function WhatsAppSettings() {
 
       if (error) throw error;
 
-      toast({
-        title: "Settings saved",
-        description: "WhatsApp settings have been updated",
-      });
+      toast.success("Settings saved", { description: "WhatsApp settings have been updated" });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save settings",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to save settings" });
     } finally {
       setSaving(false);
     }
@@ -189,10 +182,7 @@ export default function WhatsAppSettings() {
     if (!user?.email) return;
     
     setTesting(true);
-    toast({
-      title: "Test message",
-      description: "To test WhatsApp, you need to configure API credentials first. See the setup guide below.",
-    });
+    toast.info("Test message", { description: "To test WhatsApp, you need to configure API credentials first. See the setup guide below." });
     setTesting(false);
   };
 
@@ -236,7 +226,7 @@ export default function WhatsAppSettings() {
             <p className="text-muted-foreground mb-4">
               WhatsApp notifications are available on Professional and Enterprise plans.
             </p>
-            <Button onClick={() => toast({ title: "Upgrade", description: "Visit Subscription settings to upgrade" })}>
+            <Button onClick={() => toast.info("Upgrade", { description: "Visit Subscription settings to upgrade" })}>
               Upgrade to Professional
             </Button>
           </div>

@@ -54,11 +54,7 @@ export default function InviteMemberDialog({
     e.preventDefault();
     
     if (!organisationId) {
-      toast({
-        title: "Error",
-        description: "Organisation not found",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Organisation not found" });
       return;
     }
 
@@ -85,10 +81,7 @@ export default function InviteMemberDialog({
         description: activityDescriptions.member_invited(email),
       });
 
-      toast({
-        title: "Invitation sent!",
-        description: `An invitation has been sent to ${email}`,
-      });
+      toast.success("Invitation sent!", { description: `An invitation has been sent to ${email}` });
 
       setEmail("");
       setFullName("");
@@ -97,11 +90,7 @@ export default function InviteMemberDialog({
       onInviteSent();
     } catch (error: any) {
       console.error("Error sending invite:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to send invitation",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: error.message || "Failed to send invitation" });
     } finally {
       setLoading(false);
     }

@@ -62,11 +62,7 @@ export default function ProfileSettings() {
       setProfile(data);
     } catch (error: any) {
       console.error("Error fetching profile:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load profile",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to load profile" });
     } finally {
       setLoading(false);
     }
@@ -98,17 +94,10 @@ export default function ProfileSettings() {
 
       if (error) throw error;
 
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been saved successfully",
-      });
+      toast.success("Profile updated", { description: "Your profile has been saved successfully" });
     } catch (error: any) {
       console.error("Error saving profile:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save profile",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to save profile" });
     } finally {
       setSaving(false);
     }
@@ -120,20 +109,12 @@ export default function ProfileSettings() {
 
     // Validate file
     if (!file.type.startsWith("image/")) {
-      toast({
-        title: "Invalid file",
-        description: "Please upload an image file",
-        variant: "destructive",
-      });
+      toast.error("Invalid file", { description: "Please upload an image file" });
       return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Avatar must be less than 2MB",
-        variant: "destructive",
-      });
+      toast.error("File too large", { description: "Avatar must be less than 2MB" });
       return;
     }
 
@@ -164,17 +145,10 @@ export default function ProfileSettings() {
 
       setProfile((prev) => prev ? { ...prev, avatar_url: urlData.publicUrl } : null);
 
-      toast({
-        title: "Avatar updated",
-        description: "Your profile picture has been updated",
-      });
+      toast.success("Avatar updated", { description: "Your profile picture has been updated" });
     } catch (error: any) {
       console.error("Error uploading avatar:", error);
-      toast({
-        title: "Upload failed",
-        description: "Failed to upload avatar",
-        variant: "destructive",
-      });
+      toast.error("Upload failed", { description: "Failed to upload avatar" });
     } finally {
       setUploading(false);
     }

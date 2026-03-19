@@ -502,12 +502,12 @@ export default function AdminPanel() {
       setOnboardingOrgs(builtOnboarding);
 
     } catch (err: any) {
-      toast({ title: "Failed to load admin data", description: err.message, variant: "destructive" });
+      toast.error("Failed to load admin data", { description: err.message });
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [toast]);
+  }, []);
 
   useEffect(() => { if (!orgLoading && hasRole("owner")) fetchData(); }, [orgLoading, hasRole, fetchData]);
   const handleRefresh = () => { setRefreshing(true); fetchData(); };
@@ -515,14 +515,14 @@ export default function AdminPanel() {
 
   const handleUpdateRole = async (memberId: string, orgId: string, newRole: MemberRole, profile: OrgMember["profile"]) => {
     const { error } = await supabase.from("organisation_members").update({ role: newRole }).eq("id", memberId);
-    if (error) { toast({ title: "Failed to update role", description: error.message, variant: "destructive" }); return; }
+    if (error) { toast.error("Failed to update role", { description: error.message }); return; }
     await logAdminAction(user!.id, "ROLE_CHANGE", "organisation_member", memberId, orgId, { new_role: newRole, user_email: profile?.email });
     setOrgs((prev) => prev.map((o) => o.id === orgId ? { ...o, members: o.members.map((m) => m.id === memberId ? { ...m, role: newRole } : m) } : o));
-    toast({ title: "Role updated", description: `Changed to ${roleLabels[newRole]}` });
+    toast.success("Role updated", { description: `Changed to ${roleLabels[newRole]}` });
   };
 
   const handleToggleStatus = (member: OrgMember, orgId: string) => {
-    if (member.status === "invited") { toast({ title: "Invite resent", description: `Re-sent to ${member.profile?.email}` }); return; }
+    if (member.status === "invited") { toast.success("Invite resent", { description: `Re-sent to ${member.profile?.email}` }); return; }
     setConfirmAction({ type: member.status === "active" ? "deactivate" : "reactivate", member, orgId });
   };
 
@@ -532,11 +532,11 @@ export default function AdminPanel() {
     const newStatus: MemberStatus = type === "deactivate" ? "deactivated" : "active";
     const { error } = await supabase.from("organisation_members").update({ status: newStatus }).eq("id", member.id);
     setConfirmAction(null);
-    if (error) { toast({ title: "Failed", description: error.message, variant: "destructive" }); return; }
+    if (error) { toast.error("Failed", { description: error.message }); return; }
     await logAdminAction(user!.id, type === "deactivate" ? "DEACTIVATE_USER" : "REACTIVATE_USER", "organisation_member", member.id, orgId, { user_email: member.profile?.email });
     setOrgs((prev) => prev.map((o) => o.id === orgId ? { ...o, members: o.members.map((m) => m.id === member.id ? { ...m, status: newStatus } : m) } : o));
     setStats((prev) => ({ ...prev, activeUsers: type === "deactivate" ? prev.activeUsers - 1 : prev.activeUsers + 1, deactivatedUsers: type === "deactivate" ? prev.deactivatedUsers + 1 : prev.deactivatedUsers - 1 }));
-    toast({ title: type === "deactivate" ? "User deactivated" : "User reactivated" });
+    toast.success(type === "deactivate" ? "User deactivated" : "User reactivated");
   };
 
   const handleImpersonate = async (org: Organisation) => {
@@ -545,10 +545,10 @@ export default function AdminPanel() {
       const { data, error } = await supabase.functions.invoke("admin-impersonate", { body: { target_org_id: org.id } });
       if (error) throw error;
       await logAdminAction(user!.id, "IMPERSONATE_ORG", "organisation", org.id, org.id, { org_name: org.name });
-      toast({ title: `Viewing as ${org.name}`, description: "Session active. All actions are logged." });
+      toast.success(`Viewing as ${org.name}`, { description: "Session active. All actions are logged." });
       setImpersonateOrg(null);
     } catch {
-      toast({ title: "Backend function required", description: "Deploy supabase/functions/admin-impersonate/index.ts to enable impersonation.", variant: "destructive" });
+      toast.error("Backend function required", { description: "Deploy supabase/functions/admin-impersonate/index.ts to enable impersonation." });
     } finally {
       setImpersonating(false);
     }
@@ -566,7 +566,7 @@ export default function AdminPanel() {
         .single();
 
       if (profileError || !ownerProfile) {
-        toast({ title: "Owner not found", description: "The owner must have an existing account before you can create an organisation for them.", variant: "destructive" });
+        toast.error("Owner not found", { description: "The owner must have an existing account before you can create an organisation for them." });
         setCreatingOrg(false);
         return;
       }
@@ -584,12 +584,12 @@ export default function AdminPanel() {
       if (orgId) {
         await logAdminAction(user!.id, "CREATE_ORG", "organisation", orgId, orgId, { org_name: newOrg.name, owner_email: newOrg.ownerEmail });
       }
-      toast({ title: "Organisation created", description: `${newOrg.name} is live with a 14-day trial.` });
+      toast.success("Organisation created", { description: `${newOrg.name} is live with a 14-day trial.` });
       setCreateOrgOpen(false);
       setNewOrg({ name: "", ownerEmail: "" });
       fetchData();
     } catch (err: any) {
-      toast({ title: "Failed to create org", description: err.message, variant: "destructive" });
+      toast.error("Failed to create org", { description: err.message });
     } finally {
       setCreatingOrg(false);
     }
@@ -623,10 +623,10 @@ export default function AdminPanel() {
         subscription_status: subOverride.status,
         trial_ends_at: updates.trial_ends_at as string | null,
       } : o));
-      toast({ title: "Subscription updated", description: `${subOverrideOrg.name} → ${subOverride.tier} / ${subOverride.status}` });
+      toast.success("Subscription updated", { description: `${subOverrideOrg.name} → ${subOverride.tier} / ${subOverride.status}` });
       setSubOverrideOrg(null);
     } catch (err: any) {
-      toast({ title: "Failed to update subscription", description: err.message, variant: "destructive" });
+      toast.error("Failed to update subscription", { description: err.message });
     } finally {
       setSavingSubOverride(false);
     }
@@ -640,11 +640,11 @@ export default function AdminPanel() {
       const inserts = targetOrgs.map((o) => ({ organisation_id: o.id, actor_id: user!.id, activity_type: "settings_updated" as const, entity_type: "broadcast", description: `📢 ${broadcast.subject || "Platform Announcement"}: ${broadcast.message}`, metadata: { broadcast: true, subject: broadcast.subject, message: broadcast.message } }));
       if (inserts.length > 0) await supabase.from("activity_logs").insert(inserts as any);
       await logAdminAction(user!.id, "BROADCAST", "broadcast", null, null, { subject: broadcast.subject, tier: broadcast.tier, org_count: inserts.length });
-      toast({ title: "Broadcast sent", description: `Delivered to ${inserts.length} organisation${inserts.length !== 1 ? "s" : ""}.` });
+      toast.success("Broadcast sent", { description: `Delivered to ${inserts.length} organisation${inserts.length !== 1 ? "s" : ""}.` });
       setBroadcastOpen(false);
       setBroadcast({ subject: "", message: "", tier: "all" });
     } catch (err: any) {
-      toast({ title: "Broadcast failed", description: err.message, variant: "destructive" });
+      toast.error("Broadcast failed", { description: err.message });
     } finally {
       setBroadcasting(false);
     }
