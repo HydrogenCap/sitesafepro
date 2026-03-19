@@ -91,11 +91,7 @@ export default function SubscriptionSettings() {
       setMemberCount(memberCountData || 0);
     } catch (error: any) {
       console.error("Error fetching billing data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load subscription details",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to load subscription details" });
     } finally {
       setLoading(false);
     }
