@@ -27,6 +27,13 @@ Deno.serve(async (req) => {
     const { data: { user } } = await userClient.auth.getUser();
     if (!user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+    const { data: canManage, error: permissionError } = await userClient.rpc("can_manage_documents", {
+      p_org_id: org_id,
+    });
+    if (permissionError || !canManage) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     // Idempotency: check for existing export
     const { data: existing } = await admin
       .from("document_exports")

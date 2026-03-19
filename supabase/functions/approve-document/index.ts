@@ -25,6 +25,27 @@ Deno.serve(async (req) => {
     const { data: { user } } = await userClient.auth.getUser();
     if (!user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+    const { data: canManage, error: permissionError } = await userClient.rpc("can_manage_documents", {
+      p_org_id: org_id,
+    });
+    if (permissionError || !canManage) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const { data: version, error: versionError } = await admin
+      .from("document_versions")
+      .select("organisation_id")
+      .eq("id", version_id)
+      .single();
+
+    if (versionError || !version) {
+      return new Response(JSON.stringify({ error: "Version not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    if (version.organisation_id !== org_id) {
+      return new Response(JSON.stringify({ error: "Version does not belong to the supplied organisation" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const { data, error } = await admin.rpc("transition_document_version", {
       p_version_id: version_id,
       p_to_status: "approved",
