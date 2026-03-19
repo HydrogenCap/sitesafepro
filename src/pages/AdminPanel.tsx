@@ -532,7 +532,7 @@ export default function AdminPanel() {
     const newStatus: MemberStatus = type === "deactivate" ? "deactivated" : "active";
     const { error } = await supabase.from("organisation_members").update({ status: newStatus }).eq("id", member.id);
     setConfirmAction(null);
-    if (error) { toast({ title: "Failed", description: error.message, variant: "destructive" }); return; }
+    if (error) { toast.error("Failed", { description: error.message }); return; }
     await logAdminAction(user!.id, type === "deactivate" ? "DEACTIVATE_USER" : "REACTIVATE_USER", "organisation_member", member.id, orgId, { user_email: member.profile?.email });
     setOrgs((prev) => prev.map((o) => o.id === orgId ? { ...o, members: o.members.map((m) => m.id === member.id ? { ...m, status: newStatus } : m) } : o));
     setStats((prev) => ({ ...prev, activeUsers: type === "deactivate" ? prev.activeUsers - 1 : prev.activeUsers + 1, deactivatedUsers: type === "deactivate" ? prev.deactivatedUsers + 1 : prev.deactivatedUsers - 1 }));
