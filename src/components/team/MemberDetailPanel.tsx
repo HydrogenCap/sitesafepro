@@ -66,7 +66,7 @@ export function MemberDetailPanel({
   onDeactivate,
   onResendInvite,
 }: MemberDetailPanelProps) {
-  const { toast } = useToast();
+  
   const [selectedRole, setSelectedRole] = useState<MemberRole | null>(null);
 
   if (!member) return null;
