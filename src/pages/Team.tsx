@@ -105,10 +105,7 @@ export default function Team() {
         m.id === memberId ? { ...m, role: newRole } : m
       ));
 
-      toast({
-        title: "Role updated",
-        description: "Member role has been updated successfully",
-      });
+      toast.success("Role updated", { description: "Member role has been updated successfully" });
     } catch (error: unknown) {
       toast({
         title: "Error",
