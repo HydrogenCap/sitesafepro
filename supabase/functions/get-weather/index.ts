@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,6 +12,24 @@ serve(async (req) => {
   }
 
   try {
+    // Verify JWT
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     const { location, date } = await req.json();
     
     if (!location) {
@@ -54,31 +73,12 @@ For conditions, pick 1-3 from this list only: Clear, Sunny, Partly Cloudy, Cloud
               parameters: {
                 type: 'object',
                 properties: {
-                  weather_morning: {
-                    type: 'string',
-                    description: 'Morning weather description, e.g. "Cloudy, 8°C"'
-                  },
-                  weather_afternoon: {
-                    type: 'string', 
-                    description: 'Afternoon weather description, e.g. "Light rain, 12°C"'
-                  },
-                  temperature_high: {
-                    type: 'number',
-                    description: 'High temperature in Celsius'
-                  },
-                  temperature_low: {
-                    type: 'number',
-                    description: 'Low temperature in Celsius'
-                  },
-                  conditions: {
-                    type: 'array',
-                    items: { type: 'string' },
-                    description: 'Array of weather conditions from the allowed list'
-                  },
-                  weather_impact: {
-                    type: 'string',
-                    description: 'Potential impact on construction works, or "No significant impact expected" if weather is good'
-                  }
+                  weather_morning: { type: 'string', description: 'Morning weather description, e.g. "Cloudy, 8°C"' },
+                  weather_afternoon: { type: 'string', description: 'Afternoon weather description, e.g. "Light rain, 12°C"' },
+                  temperature_high: { type: 'number', description: 'High temperature in Celsius' },
+                  temperature_low: { type: 'number', description: 'Low temperature in Celsius' },
+                  conditions: { type: 'array', items: { type: 'string' }, description: 'Array of weather conditions from the allowed list' },
+                  weather_impact: { type: 'string', description: 'Potential impact on construction works, or "No significant impact expected" if weather is good' }
                 },
                 required: ['weather_morning', 'weather_afternoon', 'temperature_high', 'temperature_low', 'conditions'],
                 additionalProperties: false
@@ -92,16 +92,10 @@ For conditions, pick 1-3 from this list only: Clear, Sunny, Partly Cloudy, Cloud
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
       if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: 'AI credits exhausted. Please add funds to continue.' }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return new Response(JSON.stringify({ error: 'AI credits exhausted. Please add funds to continue.' }), { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
       const errorText = await response.text();
       console.error('AI gateway error:', response.status, errorText);
@@ -109,20 +103,13 @@ For conditions, pick 1-3 from this list only: Clear, Sunny, Partly Cloudy, Cloud
     }
 
     const data = await response.json();
-    console.log('AI response:', JSON.stringify(data));
-
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall?.function?.arguments) {
       throw new Error('No weather data returned from AI');
     }
 
     const weather = JSON.parse(toolCall.function.arguments);
-    console.log('Parsed weather:', weather);
-
-    return new Response(
-      JSON.stringify(weather),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify(weather), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   } catch (error) {
     console.error('Error in get-weather function:', error);

@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -6,12 +7,29 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
   try {
+    // Verify JWT
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     const { address } = await req.json();
 
     if (!address || address.trim().length < 5) {
@@ -64,9 +82,7 @@ Be specific with real place names and realistic estimates. If the address is not
       },
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'user', content: prompt }
-        ],
+        messages: [{ role: 'user', content: prompt }],
         temperature: 0.3,
         max_tokens: 1000,
       }),
@@ -92,9 +108,6 @@ Be specific with real place names and realistic estimates. If the address is not
       );
     }
 
-    console.log('AI Response:', content);
-
-    // Parse the JSON response, handling potential markdown code blocks
     let cleanedContent = content.trim();
     if (cleanedContent.startsWith('```json')) {
       cleanedContent = cleanedContent.slice(7);
@@ -117,14 +130,8 @@ Be specific with real place names and realistic estimates. If the address is not
       );
     }
 
-    console.log('Parsed emergency info:', emergencyInfo);
-
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        data: emergencyInfo,
-        source: 'ai_lookup'
-      }),
+      JSON.stringify({ success: true, data: emergencyInfo, source: 'ai_lookup' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

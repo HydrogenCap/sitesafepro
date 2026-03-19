@@ -6,96 +6,18 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Default templates configuration
 const DEFAULT_TEMPLATES = [
-  {
-    name: "Site Induction Register",
-    description: "Record of all personnel who have completed site induction",
-    category: "induction",
-    fileName: "Site_Induction_Register.docx",
-    requiresAcknowledgement: true,
-    autoGenerateOnGoLive: true,
-  },
-  {
-    name: "SubContractor RAMS Register",
-    description: "Register of all subcontractor Risk Assessments and Method Statements",
-    category: "registers",
-    fileName: "SubContractor_RAMS_Register.docx",
-    requiresAcknowledgement: false,
-    autoGenerateOnGoLive: true,
-  },
-  {
-    name: "COSHH Register",
-    description: "Control of Substances Hazardous to Health register",
-    category: "registers",
-    fileName: "COSHH_Register.docx",
-    requiresAcknowledgement: false,
-    autoGenerateOnGoLive: true,
-  },
-  {
-    name: "Permit to Work Forms",
-    description: "Authorisation forms for high-risk work activities",
-    category: "permits",
-    fileName: "Permit_to_Work_Forms.docx",
-    requiresAcknowledgement: true,
-    autoGenerateOnGoLive: true,
-  },
-  {
-    name: "Fire Risk Assessment",
-    description: "Site fire risk assessment documentation",
-    category: "safety",
-    fileName: "Fire_Risk_Assessment.docx",
-    requiresAcknowledgement: false,
-    autoGenerateOnGoLive: true,
-  },
-  {
-    name: "Accident & Incident Report",
-    description: "Form for reporting accidents and incidents on site",
-    category: "safety",
-    fileName: "Accident_Incident_Report.docx",
-    requiresAcknowledgement: false,
-    autoGenerateOnGoLive: true,
-  },
-  {
-    name: "Scaffold Inspection Register",
-    description: "Register for scaffold inspections and certifications",
-    category: "registers",
-    fileName: "Scaffold_Inspection_Register.docx",
-    requiresAcknowledgement: false,
-    autoGenerateOnGoLive: true,
-  },
-  {
-    name: "Lifting Equipment Register",
-    description: "Register of all lifting equipment and inspection records",
-    category: "registers",
-    fileName: "Lifting_Equipment_Register.docx",
-    requiresAcknowledgement: false,
-    autoGenerateOnGoLive: true,
-  },
-  {
-    name: "PAT Testing Register",
-    description: "Portable Appliance Testing register",
-    category: "registers",
-    fileName: "PAT_Testing_Register.docx",
-    requiresAcknowledgement: false,
-    autoGenerateOnGoLive: true,
-  },
-  {
-    name: "H&S File Contributions Log",
-    description: "Log of contributions to the Health & Safety file",
-    category: "registers",
-    fileName: "HS_File_Contributions_Log.docx",
-    requiresAcknowledgement: false,
-    autoGenerateOnGoLive: true,
-  },
-  {
-    name: "Welfare Facilities Checklist",
-    description: "Checklist for site welfare facilities compliance",
-    category: "safety",
-    fileName: "Welfare_Facilities_Checklist.docx",
-    requiresAcknowledgement: false,
-    autoGenerateOnGoLive: true,
-  },
+  { name: "Site Induction Register", description: "Record of all personnel who have completed site induction", category: "induction", fileName: "Site_Induction_Register.docx", requiresAcknowledgement: true, autoGenerateOnGoLive: true },
+  { name: "SubContractor RAMS Register", description: "Register of all subcontractor Risk Assessments and Method Statements", category: "registers", fileName: "SubContractor_RAMS_Register.docx", requiresAcknowledgement: false, autoGenerateOnGoLive: true },
+  { name: "COSHH Register", description: "Control of Substances Hazardous to Health register", category: "registers", fileName: "COSHH_Register.docx", requiresAcknowledgement: false, autoGenerateOnGoLive: true },
+  { name: "Permit to Work Forms", description: "Authorisation forms for high-risk work activities", category: "permits", fileName: "Permit_to_Work_Forms.docx", requiresAcknowledgement: true, autoGenerateOnGoLive: true },
+  { name: "Fire Risk Assessment", description: "Site fire risk assessment documentation", category: "safety", fileName: "Fire_Risk_Assessment.docx", requiresAcknowledgement: false, autoGenerateOnGoLive: true },
+  { name: "Accident & Incident Report", description: "Form for reporting accidents and incidents on site", category: "safety", fileName: "Accident_Incident_Report.docx", requiresAcknowledgement: false, autoGenerateOnGoLive: true },
+  { name: "Scaffold Inspection Register", description: "Register for scaffold inspections and certifications", category: "registers", fileName: "Scaffold_Inspection_Register.docx", requiresAcknowledgement: false, autoGenerateOnGoLive: true },
+  { name: "Lifting Equipment Register", description: "Register of all lifting equipment and inspection records", category: "registers", fileName: "Lifting_Equipment_Register.docx", requiresAcknowledgement: false, autoGenerateOnGoLive: true },
+  { name: "PAT Testing Register", description: "Portable Appliance Testing register", category: "registers", fileName: "PAT_Testing_Register.docx", requiresAcknowledgement: false, autoGenerateOnGoLive: true },
+  { name: "H&S File Contributions Log", description: "Log of contributions to the Health & Safety file", category: "registers", fileName: "HS_File_Contributions_Log.docx", requiresAcknowledgement: false, autoGenerateOnGoLive: true },
+  { name: "Welfare Facilities Checklist", description: "Checklist for site welfare facilities compliance", category: "safety", fileName: "Welfare_Facilities_Checklist.docx", requiresAcknowledgement: false, autoGenerateOnGoLive: true },
 ];
 
 interface SeedRequest {
@@ -110,46 +32,76 @@ serve(async (req) => {
   }
 
   try {
+    // Verify JWT - must be authenticated org admin/owner
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const supabaseAuth = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const userId = claimsData.claims.sub as string;
+
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    const { organisationId, userId, baseUrl }: SeedRequest = await req.json();
+    const { organisationId, baseUrl }: SeedRequest = await req.json();
 
-    if (!organisationId || !userId || !baseUrl) {
+    if (!organisationId || !baseUrl) {
       return new Response(
-        JSON.stringify({ error: "Missing organisationId, userId, or baseUrl" }),
+        JSON.stringify({ error: "Missing organisationId or baseUrl" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`Seeding default templates for organisation ${organisationId}`);
+    // Verify user is admin/owner of the org
+    const { data: membership } = await supabaseAdmin
+      .from('organisation_members')
+      .select('role')
+      .eq('profile_id', userId)
+      .eq('organisation_id', organisationId)
+      .eq('status', 'active')
+      .single();
+
+    if (!membership || !['owner', 'admin'].includes(membership.role)) {
+      return new Response(
+        JSON.stringify({ error: 'Insufficient permissions — must be org admin or owner' }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`Seeding default templates for organisation ${organisationId} by user ${userId}`);
 
     let successCount = 0;
     const errors: string[] = [];
 
     for (let i = 0; i < DEFAULT_TEMPLATES.length; i++) {
       const template = DEFAULT_TEMPLATES[i];
-
       try {
-        // Fetch the template file from the public URL
         const fileUrl = `${baseUrl}/templates/${template.fileName}`;
-        console.log(`Fetching template: ${fileUrl}`);
-
         const response = await fetch(fileUrl);
         if (!response.ok) {
-          console.error(`Failed to fetch ${template.fileName}: ${response.status}`);
           errors.push(`Failed to fetch ${template.name}`);
           continue;
         }
 
         const fileData = await response.arrayBuffer();
         const fileSize = fileData.byteLength;
-
-        // Upload to storage
         const filePath = `${organisationId}/${crypto.randomUUID()}.docx`;
+
         const { error: uploadError } = await supabaseAdmin.storage
           .from("document-templates")
           .upload(filePath, fileData, {
@@ -157,12 +109,10 @@ serve(async (req) => {
           });
 
         if (uploadError) {
-          console.error(`Upload error for ${template.name}:`, uploadError);
           errors.push(`Upload failed for ${template.name}`);
           continue;
         }
 
-        // Create template record
         const { error: insertError } = await supabaseAdmin
           .from("document_templates")
           .insert({
@@ -180,22 +130,16 @@ serve(async (req) => {
           });
 
         if (insertError) {
-          console.error(`Insert error for ${template.name}:`, insertError);
-          // Clean up uploaded file
           await supabaseAdmin.storage.from("document-templates").remove([filePath]);
           errors.push(`Database insert failed for ${template.name}`);
           continue;
         }
 
         successCount++;
-        console.log(`Successfully created template: ${template.name}`);
       } catch (err) {
-        console.error(`Error processing ${template.name}:`, err);
         errors.push(`Error processing ${template.name}`);
       }
     }
-
-    console.log(`Seeding complete: ${successCount} templates created, ${errors.length} errors`);
 
     return new Response(
       JSON.stringify({
