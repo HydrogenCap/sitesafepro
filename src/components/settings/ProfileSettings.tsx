@@ -94,17 +94,10 @@ export default function ProfileSettings() {
 
       if (error) throw error;
 
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been saved successfully",
-      });
+      toast.success("Profile updated", { description: "Your profile has been saved successfully" });
     } catch (error: any) {
       console.error("Error saving profile:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save profile",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to save profile" });
     } finally {
       setSaving(false);
     }
