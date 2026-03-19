@@ -114,7 +114,7 @@ const RIDDOR_GUIDANCE = {
 export default function Incidents() {
   const { user } = useAuth();
   const { canAccess } = useSubscription();
-  const { toast } = useToast();
+  
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
