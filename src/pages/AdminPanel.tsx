@@ -545,10 +545,10 @@ export default function AdminPanel() {
       const { data, error } = await supabase.functions.invoke("admin-impersonate", { body: { target_org_id: org.id } });
       if (error) throw error;
       await logAdminAction(user!.id, "IMPERSONATE_ORG", "organisation", org.id, org.id, { org_name: org.name });
-      toast({ title: `Viewing as ${org.name}`, description: "Session active. All actions are logged." });
+      toast.success(`Viewing as ${org.name}`, { description: "Session active. All actions are logged." });
       setImpersonateOrg(null);
     } catch {
-      toast({ title: "Backend function required", description: "Deploy supabase/functions/admin-impersonate/index.ts to enable impersonation.", variant: "destructive" });
+      toast.error("Backend function required", { description: "Deploy supabase/functions/admin-impersonate/index.ts to enable impersonation." });
     } finally {
       setImpersonating(false);
     }
