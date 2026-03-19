@@ -222,7 +222,7 @@ export default function DiaryEntry() {
     try {
       await saveMutation.mutateAsync(entry);
       if (showToast) {
-        toast({ title: "Entry saved" });
+        toast.success("Entry saved");
       }
     } finally {
       setIsSaving(false);
