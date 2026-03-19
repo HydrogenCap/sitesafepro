@@ -126,11 +126,11 @@ export default function AcceptInvite() {
     e.preventDefault();
 
     if (password !== confirmPassword) {
-      toast({ title: "Passwords don't match", variant: "destructive" });
+      toast.error("Passwords don't match");
       return;
     }
     if (password.length < 8) {
-      toast({ title: "Password must be at least 8 characters", variant: "destructive" });
+      toast.error("Password must be at least 8 characters");
       return;
     }
 
