@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/landing/Logo";
 import { Eye, EyeOff, Loader2, ArrowRight } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { lovable } from "@/integrations/lovable/index";
 import { PasswordStrength } from "@/components/auth/PasswordStrength";
 import { Separator } from "@/components/ui/separator";
