@@ -173,19 +173,16 @@ export function InviteClientDialog({
       return { inviteToken, emailSent: emailResult?.emailSent };
     },
     onSuccess: () => {
-      toast({
-        title: "Invitation Sent",
+      toast.success("Invitation Sent", {
         description: `Client invitation sent to ${formData.email}`,
       });
       queryClient.invalidateQueries({ queryKey: ["client-portal-users"] });
       onOpenChange(false);
       resetForm();
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to send invitation",
-        variant: "destructive",
+    onError: (error: unknown) => {
+      toast.error("Error", {
+        description: error instanceof Error ? error.message : "Failed to send invitation",
       });
     },
   });

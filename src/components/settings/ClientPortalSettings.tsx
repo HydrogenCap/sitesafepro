@@ -121,19 +121,16 @@ export default function ClientPortalSettings() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({
-        title: "Client Deactivated",
+      toast.success("Client Deactivated", {
         description: "The client no longer has access to the portal.",
       });
       queryClient.invalidateQueries({ queryKey: ["client-portal-users"] });
       setDeactivateDialogOpen(false);
       setSelectedClient(null);
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to deactivate client",
-        variant: "destructive",
+    onError: (error: unknown) => {
+      toast.error("Error", {
+        description: error instanceof Error ? error.message : "Failed to deactivate client",
       });
     },
   });
@@ -148,17 +145,14 @@ export default function ClientPortalSettings() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({
-        title: "Client Reactivated",
+      toast.success("Client Reactivated", {
         description: "The client now has access to the portal.",
       });
       queryClient.invalidateQueries({ queryKey: ["client-portal-users"] });
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to reactivate client",
-        variant: "destructive",
+    onError: (error: unknown) => {
+      toast.error("Error", {
+        description: error instanceof Error ? error.message : "Failed to reactivate client",
       });
     },
   });
@@ -177,17 +171,14 @@ export default function ClientPortalSettings() {
       return data;
     },
     onSuccess: () => {
-      toast({
-        title: "Invitation Resent",
+      toast.success("Invitation Resent", {
         description: "A fresh client portal invite has been sent.",
       });
       queryClient.invalidateQueries({ queryKey: ["client-portal-users"] });
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to resend invitation",
-        variant: "destructive",
+    onError: (error: unknown) => {
+      toast.error("Error", {
+        description: error instanceof Error ? error.message : "Failed to resend invitation",
       });
     },
   });
