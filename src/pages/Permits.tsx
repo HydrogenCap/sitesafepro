@@ -165,11 +165,7 @@ export default function Permits() {
     if (!organisationId || !user) return;
 
     if (!formData.title || !formData.work_to_be_done) {
-      toast({
-        title: "Missing required fields",
-        description: "Please fill in the title and work description",
-        variant: "destructive",
-      });
+      toast.error("Missing required fields", { description: "Please fill in the title and work description" });
       return;
     }
 
