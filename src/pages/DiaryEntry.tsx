@@ -212,10 +212,7 @@ export default function DiaryEntry() {
       queryClient.invalidateQueries({ queryKey: ['site-diary-entries', projectId] });
     },
     onError: (error) => {
-      toast({
-        title: "Error saving entry",
-        description: error.message,
-        variant: "destructive",
+      toast.error("Error saving entry", { description: error.message });
       });
     },
   });
