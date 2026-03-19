@@ -111,7 +111,7 @@ export default function InspectionDetail() {
 
       toast.success("PDF ready", { description: "Use your browser's print dialog to save as PDF." });
     } catch (err: any) {
-      toast({ title: "Export failed", description: err.message, variant: "destructive" });
+      toast.error("Export failed", { description: err.message });
     } finally {
       setExporting(false);
     }
