@@ -336,10 +336,7 @@ export default function DiaryEntry() {
         weather_impact: data.weather_impact || prev.weather_impact,
       }));
 
-      toast({
-        title: "Weather populated",
-        description: "AI has filled in the weather information based on your location.",
-      });
+      toast.success("Weather populated", { description: "AI has filled in the weather information based on your location." });
     } catch (error: any) {
       console.error('Error fetching weather:', error);
       toast({
