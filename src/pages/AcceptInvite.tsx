@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Loader2, CheckCircle, XCircle, Building2, Shield, HardHat, FileCheck } from "lucide-react";
 import { Logo } from "@/components/landing/Logo";
 import { COMPLIANCE_DOC_LABELS } from "@/types/contractor";
