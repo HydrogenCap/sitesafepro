@@ -48,7 +48,7 @@ const RESULT_CONFIG: Record<string, { label: string; variant: "default" | "destr
 export default function InspectionDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  
   const queryClient = useQueryClient();
   const [exporting, setExporting] = useState(false);
   const [uploading, setUploading] = useState(false);
