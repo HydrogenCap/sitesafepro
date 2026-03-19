@@ -36,13 +36,13 @@ export async function logAdminAction(
   entityId: string | null, orgId: string | null, metadata: Record<string, unknown> = {}
 ) {
   try {
-    await supabase.from("audit_events").insert({
+    await supabase.from("audit_events").insert([{
       action: `ADMIN_${action}`,
       actor_id: adminId,
       entity_type: entityType,
       entity_id: entityId,
       organisation_id: orgId,
       metadata: { ...metadata, _admin_action: true },
-    } as Record<string, unknown>);
+    }]);
   } catch { /* silent */ }
 }
