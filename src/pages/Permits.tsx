@@ -79,7 +79,7 @@ const PPE_OPTIONS = [
 export default function Permits() {
   const { user } = useAuth();
   const { canAccess } = useSubscription();
-  const { toast } = useToast();
+  
   const [permits, setPermits] = useState<Permit[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
