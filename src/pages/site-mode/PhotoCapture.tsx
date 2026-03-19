@@ -34,7 +34,7 @@ export default function PhotoCapture() {
     } catch {
       toast.error('Camera unavailable', { description: 'Check browser permissions.' });
     }
-  }, [toast]);
+  }, []);
 
   const MAX_PHOTO_BYTES = 2 * 1024 * 1024; // 2 MB
 
