@@ -88,11 +88,7 @@ export default function Team() {
 
       toast.success("Invitation resent", { description: `A new invitation has been sent to ${email}` });
     } catch (error: unknown) {
-      toast({
-        title: "Error",
-        description: "Failed to resend invitation",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to resend invitation" });
     }
   };
 
