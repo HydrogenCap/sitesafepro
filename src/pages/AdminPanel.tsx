@@ -558,10 +558,22 @@ export default function AdminPanel() {
     if (!newOrg.name.trim() || !newOrg.ownerEmail.trim()) return;
     setCreatingOrg(true);
     try {
-      // Use the edge function which runs with service role privileges (bypasses RLS)
+      // [P1 FIX] Look up the intended owner by email instead of using admin's ID
+      const { data: ownerProfile, error: profileError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("email", newOrg.ownerEmail.trim().toLowerCase())
+        .single();
+
+      if (profileError || !ownerProfile) {
+        toast({ title: "Owner not found", description: "The owner must have an existing account before you can create an organisation for them.", variant: "destructive" });
+        setCreatingOrg(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke("create-organisation", {
         body: {
-          userId: user!.id,
+          userId: ownerProfile.id,
           companyName: newOrg.name.trim(),
           email: newOrg.ownerEmail.trim(),
         },
