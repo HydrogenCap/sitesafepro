@@ -267,11 +267,7 @@ export default function Incidents() {
       fetchData();
     } catch (error) {
       console.error("Error creating incident:", error);
-      toast({
-        title: "Error",
-        description: "Failed to report incident",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to report incident" });
     }
   };
 
