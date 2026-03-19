@@ -66,6 +66,7 @@ interface InductionCompletion {
 
 export default function Inductions() {
   const { user } = useAuth();
+  const { membership } = useOrg();
   const [templates, setTemplates] = useState<InductionTemplate[]>([]);
   const [completions, setCompletions] = useState<InductionCompletion[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -88,7 +89,7 @@ export default function Inductions() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [membership?.orgId]);
 
   const fetchData = async () => {
     setLoading(true);

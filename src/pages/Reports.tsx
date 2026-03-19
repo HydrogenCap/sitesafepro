@@ -101,6 +101,7 @@ const DATE_PRESETS = [
 
 export default function Reports() {
   const { organisation } = useSubscription();
+  const { membership } = useOrg();
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedReportType, setSelectedReportType] = useState<ReportType>("site-visits");
   const [selectedProjectId, setSelectedProjectId] = useState<string>("all");
@@ -113,7 +114,7 @@ export default function Reports() {
 
   useEffect(() => {
     fetchProjects();
-  }, []);
+  }, [membership?.orgId]);
 
   const fetchProjects = async () => {
     try {

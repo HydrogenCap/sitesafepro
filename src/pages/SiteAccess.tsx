@@ -46,6 +46,7 @@ interface SiteVisit {
 
 export default function SiteAccess() {
   const { user } = useAuth();
+  const { membership } = useOrg();
   const { logActivity } = useActivityLog();
   const [accessCodes, setAccessCodes] = useState<AccessCode[]>([]);
   const [visits, setVisits] = useState<SiteVisit[]>([]);
@@ -57,7 +58,7 @@ export default function SiteAccess() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [membership?.orgId]);
 
   const fetchData = async () => {
     setLoading(true);

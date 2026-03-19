@@ -29,6 +29,7 @@ interface Step1Props {
 
 export function Step1ProjectDetails({ formData, updateFormData }: Step1Props) {
   const { user } = useAuth();
+  const { membership } = useOrg();
 
   // Fetch projects
   const { data: projects } = useQuery({
@@ -73,7 +74,7 @@ export function Step1ProjectDetails({ formData, updateFormData }: Step1Props) {
       };
       generateReference();
     }
-  }, []);
+  }, [formData.ramsReference, membership?.orgId]);
 
   // Auto-fill project details when project is selected
   const handleProjectChange = (projectId: string) => {

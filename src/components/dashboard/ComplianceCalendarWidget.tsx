@@ -34,6 +34,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export function ComplianceCalendarWidget() {
   const navigate = useNavigate();
+  const { membership } = useOrg();
   const [docs, setDocs] = useState<ExpiringDoc[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -63,7 +64,7 @@ export function ComplianceCalendarWidget() {
       setLoading(false);
     };
     fetchExpiring();
-  }, []);
+  }, [membership?.orgId]);
 
   const now = new Date();
   const getDaysRemaining = (dateStr: string) => {
