@@ -117,11 +117,7 @@ const AuthPage = () => {
         ? "An account with this email already exists. Please sign in instead."
         : error.message;
       
-      toast({
-        title: "Sign up failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast.error("Sign up failed", { description: errorMessage });
       return;
     }
 
