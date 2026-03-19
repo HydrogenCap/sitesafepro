@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getTemplateBaseUrl } from "../_shared/app-origin.ts";
+import { requireString, ValidationError, validationErrorResponse } from "../_shared/validation.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,8 +24,7 @@ const DEFAULT_TEMPLATES = [
 
 interface SeedRequest {
   organisationId: string;
-  userId: string;
-  baseUrl: string;
+  userId?: string;
 }
 
 serve(async (req) => {
@@ -50,7 +51,11 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const userId = claimsData.claims.sub as string;
+    const body: SeedRequest = await req.json();
+    const isServiceRole = claimsData.claims.role === "service_role";
+    const userId = isServiceRole
+      ? requireString(body.userId, "userId")
+      : claimsData.claims.sub as string;
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -58,14 +63,16 @@ serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    const { organisationId, baseUrl }: SeedRequest = await req.json();
+    const { organisationId } = body;
 
-    if (!organisationId || !baseUrl) {
+    if (!organisationId) {
       return new Response(
-        JSON.stringify({ error: "Missing organisationId or baseUrl" }),
+        JSON.stringify({ error: "Missing organisationId" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    const templateBaseUrl = getTemplateBaseUrl();
 
     // Verify user is admin/owner of the org
     const { data: membership } = await supabaseAdmin
@@ -91,7 +98,7 @@ serve(async (req) => {
     for (let i = 0; i < DEFAULT_TEMPLATES.length; i++) {
       const template = DEFAULT_TEMPLATES[i];
       try {
-        const fileUrl = `${baseUrl}/templates/${template.fileName}`;
+        const fileUrl = new URL(`/templates/${template.fileName}`, templateBaseUrl).toString();
         const response = await fetch(fileUrl);
         if (!response.ok) {
           errors.push(`Failed to fetch ${template.name}`);
@@ -151,6 +158,10 @@ serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return validationErrorResponse(error, corsHeaders);
+    }
+
     console.error("Unexpected error:", error);
     return new Response(
       JSON.stringify({ error: error.message }),

@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { requireString, ValidationError, validationErrorResponse } from "../_shared/validation.ts";
+import { getTrustedAppOrigin } from "../_shared/app-origin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -71,7 +72,7 @@ serve(async (req) => {
       logStep("No existing customer, will create on checkout");
     }
 
-    const origin = req.headers.get("origin") || "http://localhost:5173";
+    const appOrigin = getTrustedAppOrigin(req);
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
@@ -82,8 +83,8 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
-      success_url: `${origin}/settings?tab=subscription&checkout=success`,
-      cancel_url: `${origin}/settings?tab=subscription&checkout=cancelled`,
+      success_url: `${appOrigin}/settings?tab=subscription&checkout=success`,
+      cancel_url: `${appOrigin}/settings?tab=subscription&checkout=cancelled`,
       metadata: {
         user_id: user.id,
       },

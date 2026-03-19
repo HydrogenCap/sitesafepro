@@ -1,145 +1,303 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { enforceRateLimit } from "../_shared/rate-limit.ts";
+import {
+  requireString,
+  ValidationError,
+  validationErrorResponse,
+} from "../_shared/validation.ts";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
+const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
+const SEARCH_RADIUS_METERS = 30000;
+
+interface Coordinates {
+  lat: number;
+  lon: number;
+}
+
+interface GeocodedLocation extends Coordinates {
+  displayName: string;
+}
+
+interface OverpassElement {
+  id: number;
+  lat?: number;
+  lon?: number;
+  center?: Coordinates;
+  tags?: Record<string, string>;
+}
+
+function getRequestHeaders(): HeadersInit {
+  const contactEmail = Deno.env.get("CONTACT_EMAIL");
+  const userAgent = contactEmail
+    ? `SiteSafePro Emergency Lookup (${contactEmail})`
+    : "SiteSafePro Emergency Lookup";
+
+  return {
+    "Accept-Language": "en-GB,en;q=0.9",
+    "User-Agent": userAgent,
+  };
+}
+
+function getCoordinates(element: OverpassElement): Coordinates | null {
+  if (typeof element.lat === "number" && typeof element.lon === "number") {
+    return { lat: element.lat, lon: element.lon };
+  }
+
+  if (element.center) {
+    return element.center;
+  }
+
+  return null;
+}
+
+function toRadians(value: number): number {
+  return (value * Math.PI) / 180;
+}
+
+function distanceMiles(from: Coordinates, to: Coordinates): number {
+  const earthRadiusMeters = 6371000;
+  const dLat = toRadians(to.lat - from.lat);
+  const dLon = toRadians(to.lon - from.lon);
+  const lat1 = toRadians(from.lat);
+  const lat2 = toRadians(to.lat);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1) * Math.cos(lat2) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distanceMeters = earthRadiusMeters * c;
+  return distanceMeters / 1609.344;
+}
+
+function formatDistance(miles: number): string {
+  return `${miles.toFixed(1)} miles away`;
+}
+
+function formatAddress(tags?: Record<string, string>): string | null {
+  if (!tags) return null;
+
+  const streetLine = [tags["addr:housenumber"], tags["addr:street"]]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
+  const locality = [
+    streetLine || undefined,
+    tags["addr:city"],
+    tags["addr:town"],
+    tags["addr:village"],
+    tags["addr:postcode"],
+  ].filter((value, index, values) => Boolean(value) && values.indexOf(value) === index);
+
+  if (locality.length === 0) {
+    return null;
+  }
+
+  return locality.join(", ");
+}
+
+async function geocodeAddress(
+  address: string,
+  requestHeaders: HeadersInit,
+): Promise<GeocodedLocation | null> {
+  const url = new URL(NOMINATIM_URL);
+  url.searchParams.set("format", "jsonv2");
+  url.searchParams.set("limit", "1");
+  url.searchParams.set("countrycodes", "gb");
+  url.searchParams.set("q", address);
+
+  const response = await fetch(url.toString(), { headers: requestHeaders });
+  if (!response.ok) {
+    throw new Error(`Geocoding failed with status ${response.status}`);
+  }
+
+  const results = await response.json();
+  if (!Array.isArray(results) || results.length === 0) {
+    return null;
+  }
+
+  const match = results[0];
+  return {
+    lat: Number(match.lat),
+    lon: Number(match.lon),
+    displayName: String(match.display_name ?? address),
+  };
+}
+
+async function fetchNearestService(
+  query: string,
+  origin: Coordinates,
+  requestHeaders: HeadersInit,
+): Promise<{ element: OverpassElement; distance: number } | null> {
+  const response = await fetch(OVERPASS_URL, {
+    method: "POST",
+    headers: {
+      ...requestHeaders,
+      "Content-Type": "text/plain;charset=UTF-8",
+    },
+    body: query,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Emergency lookup failed with status ${response.status}`);
+  }
+
+  const payload = await response.json();
+  const elements = Array.isArray(payload?.elements) ? payload.elements as OverpassElement[] : [];
+
+  let bestMatch: { element: OverpassElement; distance: number } | null = null;
+
+  for (const element of elements) {
+    const coords = getCoordinates(element);
+    if (!coords) continue;
+
+    const distance = distanceMiles(origin, coords);
+    if (!bestMatch || distance < bestMatch.distance) {
+      bestMatch = { element, distance };
+    }
+  }
+
+  return bestMatch;
+}
+
+function buildHospitalQuery(coords: Coordinates): string {
+  return `
+[out:json][timeout:25];
+(
+  nwr(around:${SEARCH_RADIUS_METERS},${coords.lat},${coords.lon})["amenity"="hospital"]["emergency"="yes"];
+  nwr(around:${SEARCH_RADIUS_METERS},${coords.lat},${coords.lon})["healthcare"="hospital"]["emergency"="yes"];
+);
+out center tags;
+`;
+}
+
+function buildFireStationQuery(coords: Coordinates): string {
+  return `
+[out:json][timeout:25];
+(
+  nwr(around:${SEARCH_RADIUS_METERS},${coords.lat},${coords.lon})["amenity"="fire_station"];
+);
+out center tags;
+`;
+}
+
+function buildPoliceStationQuery(coords: Coordinates): string {
+  return `
+[out:json][timeout:25];
+(
+  nwr(around:${SEARCH_RADIUS_METERS},${coords.lat},${coords.lon})["amenity"="police"];
+);
+out center tags;
+`;
+}
+
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    // Verify JWT
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: authHeader } } }
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } },
     );
 
-    const token = authHeader.replace('Bearer ', '');
+    const token = authHeader.replace("Bearer ", "");
     const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
     if (claimsError || !claimsData?.claims) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const { address } = await req.json();
+    const userId = claimsData.claims.sub as string;
+    const rateLimit = await enforceRateLimit({
+      identifier: userId,
+      scope: "lookup-emergency-services",
+      limit: 20,
+      windowSeconds: 3600,
+    });
 
-    if (!address || address.trim().length < 5) {
+    if (!rateLimit.allowed) {
       return new Response(
-        JSON.stringify({ error: 'Please provide a valid site address' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+            "Retry-After": String(rateLimit.retryAfterSeconds),
+          },
+        },
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      console.error('LOVABLE_API_KEY not configured');
-      return new Response(
-        JSON.stringify({ error: 'AI service not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    const body = await req.json();
+    const address = requireString(body.address, "address", { minLength: 5, maxLength: 255 });
+    const requestHeaders = getRequestHeaders();
 
     console.log(`Looking up emergency services for address: ${address}`);
 
-    const prompt = `You are a UK emergency services locator assistant. Given a UK construction site address, provide the nearest emergency services information.
+    const geocoded = await geocodeAddress(address, requestHeaders);
+    if (!geocoded) {
+      return new Response(
+        JSON.stringify({ error: "Unable to geocode the supplied UK address" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
-For the address: "${address}"
+    const [hospital, fireStation, policeStation] = await Promise.all([
+      fetchNearestService(buildHospitalQuery(geocoded), geocoded, requestHeaders),
+      fetchNearestService(buildFireStationQuery(geocoded), geocoded, requestHeaders),
+      fetchNearestService(buildPoliceStationQuery(geocoded), geocoded, requestHeaders),
+    ]);
 
-Please provide realistic information for:
-1. Nearest A&E (Accident & Emergency) hospital
-2. Nearest Fire Station
-3. Nearest Police Station
-
-For UK addresses, use real NHS hospitals, fire stations, and police stations that would logically be near this location. If you're not certain of exact names, provide the most likely options based on the general area.
-
-Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
-{
-  "nearest_ae_name": "Hospital name with A&E department",
-  "nearest_ae_address": "Full address including postcode",
-  "nearest_ae_distance": "Estimated distance and drive time, e.g. '2.3 miles / ~8 mins by car'",
-  "nearest_fire_station_name": "Fire station name",
-  "nearest_fire_station_address": "Full address including postcode",
-  "nearest_police_station_name": "Police station name",
-  "nearest_police_station_address": "Full address including postcode"
-}
-
-Be specific with real place names and realistic estimates. If the address is not in the UK or is invalid, provide a helpful response with null values.`;
-
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.3,
-        max_tokens: 1000,
+    return new Response(
+      JSON.stringify({
+        success: true,
+        data: {
+          nearest_ae_name: hospital?.element.tags?.name ?? null,
+          nearest_ae_address: formatAddress(hospital?.element.tags) ?? null,
+          nearest_ae_distance: hospital ? formatDistance(hospital.distance) : null,
+          nearest_fire_station_name: fireStation?.element.tags?.name ?? null,
+          nearest_fire_station_address: formatAddress(fireStation?.element.tags) ?? null,
+          nearest_police_station_name: policeStation?.element.tags?.name ?? null,
+          nearest_police_station_address: formatAddress(policeStation?.element.tags) ?? null,
+        },
+        geocodedAddress: geocoded.displayName,
+        source: "openstreetmap_lookup",
       }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('AI Gateway error:', response.status, errorText);
-      return new Response(
-        JSON.stringify({ error: 'Failed to lookup emergency services' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const aiResponse = await response.json();
-    const content = aiResponse.choices?.[0]?.message?.content;
-
-    if (!content) {
-      console.error('No content in AI response:', aiResponse);
-      return new Response(
-        JSON.stringify({ error: 'No response from AI service' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    let cleanedContent = content.trim();
-    if (cleanedContent.startsWith('```json')) {
-      cleanedContent = cleanedContent.slice(7);
-    } else if (cleanedContent.startsWith('```')) {
-      cleanedContent = cleanedContent.slice(3);
-    }
-    if (cleanedContent.endsWith('```')) {
-      cleanedContent = cleanedContent.slice(0, -3);
-    }
-    cleanedContent = cleanedContent.trim();
-
-    let emergencyInfo;
-    try {
-      emergencyInfo = JSON.parse(cleanedContent);
-    } catch (parseError) {
-      console.error('Failed to parse AI response:', parseError, cleanedContent);
-      return new Response(
-        JSON.stringify({ error: 'Failed to parse emergency services data' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    return new Response(
-      JSON.stringify({ success: true, data: emergencyInfo, source: 'ai_lookup' }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-
   } catch (error) {
-    console.error('Error in lookup-emergency-services:', error);
+    if (error instanceof ValidationError) {
+      return validationErrorResponse(error, corsHeaders);
+    }
+
+    const errorMessage = error instanceof Error ? error.message : "Internal server error";
+    console.error("Error in lookup-emergency-services:", error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: errorMessage }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
