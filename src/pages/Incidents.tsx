@@ -337,7 +337,7 @@ export default function Incidents() {
         description: `RIDDOR report submitted with reference ${riddorReference}`,
       });
 
-      toast({ title: "RIDDOR submission recorded", description: `Reference: ${riddorReference}` });
+      toast.success("RIDDOR submission recorded", { description: `Reference: ${riddorReference}` });
       fetchData();
     } catch (error) {
       console.error("Error recording RIDDOR:", error);
