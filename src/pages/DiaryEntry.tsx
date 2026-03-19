@@ -55,7 +55,7 @@ export default function DiaryEntry() {
   const { id: projectId, date } = useParams<{ id: string; date: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { toast } = useToast();
+  
   const queryClient = useQueryClient();
   
   const [entry, setEntry] = useState<Partial<SiteDiaryEntry>>(defaultEntry);
