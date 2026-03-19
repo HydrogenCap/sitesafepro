@@ -82,7 +82,7 @@ export default function IncidentCapture() {
   const handleSave = async () => {
     if (!user || !organisationId) return;
     if (!form.title.trim() || !form.description.trim()) {
-      toast({ title: 'Missing fields', description: 'Title and description are required', variant: 'destructive' });
+      toast.error('Missing fields', { description: 'Title and description are required' });
       return;
     }
 
