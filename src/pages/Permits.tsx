@@ -234,10 +234,7 @@ export default function Permits() {
 
       if (error) throw error;
 
-      toast({
-        title: "Status updated",
-        description: `Permit status changed to ${STATUS_BADGES[newStatus]?.label || newStatus}`,
-      });
+      toast.success("Status updated", { description: `Permit status changed to ${STATUS_BADGES[newStatus]?.label || newStatus}` });
 
       fetchData();
     } catch (error) {
