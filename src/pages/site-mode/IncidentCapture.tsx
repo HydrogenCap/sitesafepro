@@ -23,7 +23,7 @@ const SEVERITY_OPTIONS = [
 export default function IncidentCapture() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { toast } = useToast();
+  
   const [saving, setSaving] = useState(false);
   const [locating, setLocating] = useState(false);
   const [organisationId, setOrganisationId] = useState<string | null>(null);
