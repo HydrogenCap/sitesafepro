@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import {
-  upsertQueueItem, getBlob, appendSyncLog,
+  upsertQueueItem, getBlob, appendSyncLog, getQueueItem,
 } from './db';
 import { getDueItems, markSyncing, markSynced, markFailed } from './queue';
 import { telemetry } from './telemetry';
@@ -149,7 +149,19 @@ class SyncEngine {
       if (conflict.type === 'concurrent_edit') {
         await this.log(item.id, 'item_conflict', 'concurrent_edit_needs_user');
         this.pendingConflicts.set(item.id, item);
-        await markFailed(this.userId!, item, 'Conflict: document was edited by another user while offline');
+        const now = Date.now();
+        await upsertQueueItem(this.userId!, {
+          ...item,
+          status: 'failed',
+          attempt_count: item.attempt_count + 1,
+          last_attempted_at: now,
+          next_retry_at: null,
+          error_message: 'Conflict: document was edited by another user while offline',
+          payload: {
+            ...item.payload,
+            _conflict_requires_resolution: true,
+          },
+        });
         return 'conflict_user';
       }
 
@@ -187,6 +199,7 @@ class SyncEngine {
     if (error) throw error;
     if (!data) return { type: 'version_deleted' };
     if (data.is_immutable) return { type: 'version_approved', serverVersion: data };
+    if (item.payload._force_overwrite === true) return { type: 'none' };
 
     const serverUpdatedMs = new Date(data.updated_at).getTime();
     if (serverUpdatedMs > item.captured_at) {
@@ -348,7 +361,7 @@ class SyncEngine {
     itemId: string,
     resolution: 'keep_mine' | 'keep_server' | 'skip'
   ): Promise<void> {
-    const item = this.pendingConflicts.get(itemId);
+    const item = this.pendingConflicts.get(itemId) ?? await getQueueItem(this.userId!, itemId);
     if (!item) return;
 
     this.pendingConflicts.delete(itemId);
@@ -365,7 +378,11 @@ class SyncEngine {
         attempt_count: 0,
         next_retry_at: null,
         error_message: null,
-        payload: { ...item.payload, _force_overwrite: true },
+        payload: {
+          ...item.payload,
+          _force_overwrite: true,
+          _conflict_requires_resolution: false,
+        },
       };
       await upsertQueueItem(this.userId!, updated);
     }

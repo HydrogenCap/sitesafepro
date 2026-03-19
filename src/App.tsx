@@ -1,4 +1,5 @@
 import { useEffect, lazy, Suspense } from "react";
+import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -55,6 +56,8 @@ const SiteDiary = lazy(() => import("./pages/SiteDiary"));
 const DiaryEntry = lazy(() => import("./pages/DiaryEntry"));
 const ClientDashboard = lazy(() => import("./pages/ClientDashboard"));
 const ClientProjectView = lazy(() => import("./pages/ClientProjectView"));
+const ClientDocumentView = lazy(() => import("./pages/ClientDocumentView"));
+const ClientRamsView = lazy(() => import("./pages/ClientRamsView"));
 const Contractors = lazy(() => import("./pages/Contractors"));
 const NewContractor = lazy(() => import("./pages/NewContractor"));
 const ContractorDetail = lazy(() => import("./pages/ContractorDetail"));
@@ -108,6 +111,7 @@ const App = () => {
       <ClientPortalProvider>
         <OrgProvider>
           <TooltipProvider>
+          <Toaster />
           <Sonner />
           <BrowserRouter>
             <Suspense fallback={<div className="flex h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>}>
@@ -129,11 +133,14 @@ const App = () => {
               <Route path="/check-in/:code" element={<CheckIn />} />
               <Route path="/toolbox-attendance/:token" element={<ToolboxAttendance />} />
               <Route path="/accept-invite" element={<AcceptInvite />} />
+              <Route path="/client/accept-invite" element={<AcceptInvite />} />
               <Route path="/contractor-upload/:token" element={<ContractorUpload />} />
               
               {/* Client Portal routes */}
               <Route path="/client" element={<ClientProtectedRoute><ClientDashboard /></ClientProtectedRoute>} />
               <Route path="/client/project/:id" element={<ClientProtectedRoute><ClientProjectView /></ClientProtectedRoute>} />
+              <Route path="/client/document/:id" element={<ClientProtectedRoute><ClientDocumentView /></ClientProtectedRoute>} />
+              <Route path="/client/rams/:id" element={<ClientProtectedRoute><ClientRamsView /></ClientProtectedRoute>} />
               
               {/* Protected routes */}
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -54,7 +54,7 @@ export function InviteClientDialog({
   preselectedProjectId,
 }: InviteClientDialogProps) {
   const { user } = useAuth();
-  
+  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
@@ -113,6 +113,22 @@ export function InviteClientDialog({
         throw new Error("Organisation not found");
       }
 
+      const { data: existingClient, error: existingClientError } = await supabase
+        .from("client_portal_users")
+        .select("id, organisation_id")
+        .eq("email", formData.email)
+        .eq("is_active", true)
+        .limit(1)
+        .maybeSingle();
+
+      if (existingClientError) {
+        throw existingClientError;
+      }
+
+      if (existingClient) {
+        throw new Error("This email is already linked to an active client portal account");
+      }
+
       // Generate invite token
       const inviteToken = crypto.randomUUID();
 
@@ -157,13 +173,20 @@ export function InviteClientDialog({
       return { inviteToken, emailSent: emailResult?.emailSent };
     },
     onSuccess: () => {
-      toast.success("Invitation Sent", { description: `Client invitation sent to ${formData.email}` });
+      toast({
+        title: "Invitation Sent",
+        description: `Client invitation sent to ${formData.email}`,
+      });
       queryClient.invalidateQueries({ queryKey: ["client-portal-users"] });
       onOpenChange(false);
       resetForm();
     },
     onError: (error: any) => {
-      toast.error("Error", { description: error.message || "Failed to send invitation" });
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send invitation",
+        variant: "destructive",
+      });
     },
   });
 

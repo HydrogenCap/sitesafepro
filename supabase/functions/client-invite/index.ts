@@ -6,6 +6,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const ALLOWED_INVITER_ROLES = new Set(["owner", "admin", "site_manager"]);
+
 // Helper to send client portal invitation email via Resend
 async function sendClientInviteEmail(
   to: string,
@@ -140,41 +142,267 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { action } = body;
 
-    console.log(`Client invite action: ${action}`);
-
-    // SEND - Send client portal invitation
-    if (action === "send") {
+    const getAuthenticatedUser = async () => {
       if (!authHeader) {
         throw new Error("Authentication required");
       }
 
-      const {
-        clientUserId,
-        email,
-        fullName,
-        companyName,
-        role,
-        organisationId,
-        inviteToken,
-        permissions,
-      } = body;
+      const supabaseClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+        global: { headers: { Authorization: authHeader } },
+      });
 
-      if (!email || !fullName || !companyName || !organisationId || !inviteToken) {
+      const { data: { user }, error } = await supabaseClient.auth.getUser();
+      if (error || !user) {
+        throw new Error("Invalid authentication");
+      }
+
+      return user;
+    };
+
+    const assertCanManageClientInvites = async (userId: string, organisationId: string) => {
+      const { data: member, error } = await supabaseAdmin
+        .from("organisation_members")
+        .select("role")
+        .eq("profile_id", userId)
+        .eq("organisation_id", organisationId)
+        .eq("status", "active")
+        .single();
+
+      if (error || !member || !ALLOWED_INVITER_ROLES.has(member.role)) {
+        throw new Error("You don't have access to this organisation");
+      }
+    };
+
+    const getClientInviteByToken = async (token: string) => {
+      const { data: clientUser, error } = await supabaseAdmin
+        .from("client_portal_users")
+        .select(`
+          id,
+          organisation_id,
+          profile_id,
+          email,
+          full_name,
+          company_name,
+          role,
+          invite_token,
+          invite_expires_at,
+          accepted_at,
+          can_view_documents,
+          can_view_rams,
+          can_view_actions,
+          can_view_diary,
+          can_view_workforce,
+          can_view_incidents,
+          can_download_reports,
+          organisations!client_portal_users_organisation_id_fkey (name)
+        `)
+        .eq("invite_token", token)
+        .single();
+
+      if (error || !clientUser) {
+        throw new Error("Invalid or expired invitation");
+      }
+
+      if (!clientUser.invite_token || clientUser.accepted_at) {
+        throw new Error("This invitation has already been used");
+      }
+
+      if (
+        clientUser.invite_expires_at &&
+        new Date(clientUser.invite_expires_at).getTime() < Date.now()
+      ) {
+        throw new Error("Invalid or expired invitation");
+      }
+
+      return clientUser;
+    };
+
+    console.log(`Client invite action: ${action}`);
+
+    // VALIDATE - Check whether a client portal token is still valid (public)
+    if (action === "validate") {
+      const { token } = body;
+
+      if (!token) {
+        return new Response(
+          JSON.stringify({ valid: false, message: "No token provided" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      try {
+        const clientUser = await getClientInviteByToken(token);
+        const permissionLabels: Record<string, string> = {
+          can_view_documents: "View Documents",
+          can_view_rams: "View RAMS",
+          can_view_actions: "View Corrective Actions",
+          can_view_diary: "View Site Diary",
+          can_view_workforce: "View Workforce Data",
+          can_view_incidents: "View Incidents",
+          can_download_reports: "Download Reports",
+        };
+
+        const permissions = Object.entries(permissionLabels)
+          .filter(([key]) => (clientUser as Record<string, unknown>)[key] === true)
+          .map(([_, label]) => label);
+
+        return new Response(
+          JSON.stringify({
+            valid: true,
+            invite: {
+              organisationName: (clientUser.organisations as any)?.name || "Unknown",
+              role: clientUser.role,
+              email: clientUser.email,
+              companyName: clientUser.company_name,
+              permissions,
+            },
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (error) {
+        const safeMessage = sanitizeErrorMessage(error);
+        return new Response(
+          JSON.stringify({ valid: false, message: safeMessage }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // ACCEPT - Accept invitation and link/create the auth user (public)
+    if (action === "accept") {
+      const { token, password } = body;
+
+      if (!token || !password) {
+        throw new Error("Token and password are required");
+      }
+
+      const clientUser = await getClientInviteByToken(token);
+
+      let resolvedUserId = clientUser.profile_id;
+
+      const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email: clientUser.email,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: clientUser.full_name,
+          company_name: clientUser.company_name,
+        },
+      });
+
+      if (authError) {
+        const duplicateEmail = authError.message.toLowerCase().includes("already");
+        if (!duplicateEmail) {
+          console.error("Error creating client portal user:", authError);
+          throw new Error(authError.message);
+        }
+
+        const { data: existingProfile, error: profileError } = await supabaseAdmin
+          .from("profiles")
+          .select("id")
+          .eq("email", clientUser.email)
+          .maybeSingle();
+
+        if (profileError || !existingProfile) {
+          throw new Error("Unable to link this invitation to the existing account");
+        }
+
+        resolvedUserId = existingProfile.id;
+      } else if (authUser.user?.id) {
+        resolvedUserId = authUser.user.id;
+      }
+
+      if (!resolvedUserId) {
+        throw new Error("Unable to activate this invitation");
+      }
+
+      const { data: existingClientAccess, error: existingClientAccessError } = await supabaseAdmin
+        .from("client_portal_users")
+        .select("id, organisation_id")
+        .eq("profile_id", resolvedUserId)
+        .eq("is_active", true)
+        .neq("id", clientUser.id)
+        .limit(1)
+        .maybeSingle();
+
+      if (existingClientAccessError) {
+        throw new Error("Unable to verify existing client portal access");
+      }
+
+      if (existingClientAccess) {
+        throw new Error("This account is already linked to another active client portal");
+      }
+
+      const { error: updateError } = await supabaseAdmin
+        .from("client_portal_users")
+        .update({
+          profile_id: resolvedUserId,
+          accepted_at: new Date().toISOString(),
+          invite_token: null,
+          invite_expires_at: null,
+        })
+        .eq("id", clientUser.id);
+
+      if (updateError) {
+        console.error("Error activating client portal access:", updateError);
+        throw new Error("Failed to activate client portal access");
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, message: "Client portal account created successfully" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // SEND - Send client portal invitation
+    if (action === "send") {
+      const user = await getAuthenticatedUser();
+      const { clientUserId, organisationId } = body;
+
+      if (!clientUserId || !organisationId) {
         throw new Error("Missing required fields for invitation");
+      }
+
+      await assertCanManageClientInvites(user.id, organisationId);
+
+      const { data: clientUser, error: clientError } = await supabaseAdmin
+        .from("client_portal_users")
+        .select(`
+          id,
+          email,
+          full_name,
+          company_name,
+          role,
+          organisation_id,
+          invite_token,
+          can_view_documents,
+          can_view_rams,
+          can_view_actions,
+          can_view_diary,
+          can_view_workforce,
+          can_view_incidents,
+          can_download_reports
+        `)
+        .eq("id", clientUserId)
+        .eq("organisation_id", organisationId)
+        .single();
+
+      if (clientError || !clientUser || !clientUser.invite_token) {
+        throw new Error("Client user not found");
       }
 
       // Get the organisation name
       const { data: org } = await supabaseAdmin
         .from("organisations")
         .select("name")
-        .eq("id", organisationId)
+        .eq("id", clientUser.organisation_id)
         .single();
 
       const orgName = org?.name || "Your Organisation";
       
       // Build the invite URL
       const origin = req.headers.get("origin") || "https://sitesafepro.lovable.app";
-      const inviteUrl = `${origin}/client/accept-invite?token=${inviteToken}`;
+      const inviteUrl = `${origin}/client/accept-invite?token=${clientUser.invite_token}`;
 
       // Build permissions list for email
       const permissionLabels: Record<string, string> = {
@@ -187,22 +415,22 @@ Deno.serve(async (req) => {
         can_download_reports: "Download Reports",
       };
 
-      const activePermissions = Object.entries(permissions || {})
-        .filter(([_, enabled]) => enabled)
-        .map(([key]) => permissionLabels[key] || key);
+      const activePermissions = Object.entries(permissionLabels)
+        .filter(([key]) => (clientUser as Record<string, unknown>)[key] === true)
+        .map(([_, label]) => label);
 
       // Send the invitation email
       const emailSent = await sendClientInviteEmail(
-        email,
-        fullName,
-        companyName,
+        clientUser.email,
+        clientUser.full_name,
+        clientUser.company_name,
         orgName,
-        role,
+        clientUser.role,
         inviteUrl,
         activePermissions
       );
 
-      console.log(`Client invitation processed for ${email}. Email sent: ${emailSent}`);
+      console.log(`Client invitation processed for ${clientUser.email}. Email sent: ${emailSent}`);
 
       return new Response(
         JSON.stringify({
@@ -217,18 +445,12 @@ Deno.serve(async (req) => {
 
     // RESEND - Resend client portal invitation
     if (action === "resend") {
-      if (!authHeader) {
-        throw new Error("Authentication required");
-      }
-
-      const { clientUserId, email } = body;
+      const user = await getAuthenticatedUser();
+      const { clientUserId } = body;
 
       if (!clientUserId) {
         throw new Error("Client user ID required");
       }
-
-      // Generate a new invite token
-      const newToken = crypto.randomUUID();
 
       // Get client user details
       const { data: clientUser, error: clientError } = await supabaseAdmin
@@ -240,6 +462,7 @@ Deno.serve(async (req) => {
           company_name,
           role,
           organisation_id,
+          accepted_at,
           can_view_documents,
           can_view_rams,
           can_view_actions,
@@ -255,6 +478,15 @@ Deno.serve(async (req) => {
       if (clientError || !clientUser) {
         throw new Error("Client user not found");
       }
+
+      if (clientUser.accepted_at) {
+        throw new Error("This invitation has already been accepted");
+      }
+
+      await assertCanManageClientInvites(user.id, clientUser.organisation_id);
+
+      // Generate a new invite token
+      const newToken = crypto.randomUUID();
 
       // Update the invite token with expiry
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -326,18 +558,39 @@ Deno.serve(async (req) => {
 
 // Helper function to sanitize error messages
 function sanitizeErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    const message = error.message.toLowerCase();
-    // Map known safe errors to user-friendly messages
-    if (message.includes("authentication required")) {
-      return "Authentication required";
+    if (error instanceof Error) {
+      const message = error.message.toLowerCase();
+      // Map known safe errors to user-friendly messages
+      if (message.includes("authentication required")) {
+        return "Authentication required";
     }
-    if (message.includes("missing required fields")) {
-      return "Please fill in all required fields";
+    if (message.includes("invalid authentication")) {
+      return "Invalid authentication";
     }
-    if (message.includes("client user not found")) {
-      return "Client user not found";
-    }
+      if (message.includes("missing required fields")) {
+        return "Please fill in all required fields";
+      }
+      if (message.includes("token and password are required")) {
+        return "Token and password are required";
+      }
+      if (message.includes("invalid or expired invitation")) {
+        return "Invalid or expired invitation";
+      }
+      if (message.includes("already been used")) {
+        return "This invitation has already been used";
+      }
+      if (message.includes("already been accepted")) {
+        return "This invitation has already been accepted";
+      }
+      if (message.includes("client user not found")) {
+        return "Client user not found";
+      }
+      if (message.includes("already linked to another active client portal")) {
+        return "This email is already linked to another active client portal";
+      }
+      if (message.includes("don't have access")) {
+        return "You don't have access to this organisation";
+      }
     if (message.includes("unknown action")) {
       return "Invalid request";
     }

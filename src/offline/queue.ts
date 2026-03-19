@@ -4,6 +4,10 @@ import type { QueueItem, QueueItemType, BlobEntry } from './types';
 
 const CLIENT_VERSION = import.meta.env.VITE_APP_VERSION ?? 'dev';
 
+function requiresConflictResolution(item: QueueItem): boolean {
+  return item.payload._conflict_requires_resolution === true;
+}
+
 interface EnqueueOptions {
   type: QueueItemType;
   orgId: string;
@@ -122,8 +126,15 @@ export async function getDueItems(userId: string): Promise<QueueItem[]> {
   const allActive = await getAllQueueItems(userId, ['queued', 'failed']);
   const now = Date.now();
   return allActive.filter(
-    item => item.next_retry_at === null || item.next_retry_at <= now
+    item =>
+      !requiresConflictResolution(item) &&
+      (item.next_retry_at === null || item.next_retry_at <= now)
   );
+}
+
+export async function getPendingConflictItems(userId: string): Promise<QueueItem[]> {
+  const failedItems = await getAllQueueItems(userId, 'failed');
+  return failedItems.filter(requiresConflictResolution);
 }
 
 export async function getQueueCounts(userId: string): Promise<{

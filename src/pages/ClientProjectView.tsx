@@ -112,9 +112,13 @@ export default function ClientProjectView() {
   const { data: diaryEntries } = useQuery({
     queryKey: ["client-project-diary", id],
     queryFn: async () => {
+      const selectColumns = clientUser?.can_view_workforce
+        ? "id, entry_date, status, weather_morning, weather_afternoon, temperature_high, workforce_total"
+        : "id, entry_date, status, weather_morning, weather_afternoon, temperature_high";
+
       const { data, error } = await supabase
         .from("site_diary_entries")
-        .select("*")
+        .select(selectColumns)
         .eq("project_id", id)
         .order("entry_date", { ascending: false })
         .limit(30);
@@ -363,7 +367,7 @@ export default function ClientProjectView() {
                             variant="ghost"
                             onClick={() => {
                               logActivity("viewed_document", "document", doc.id, doc.name);
-                              navigate(`/documents/${doc.id}`);
+                              navigate(`/client/document/${doc.id}`);
                             }}
                           >
                             <Eye className="h-4 w-4" />
@@ -422,7 +426,7 @@ export default function ClientProjectView() {
                             variant="ghost"
                             onClick={() => {
                               logActivity("viewed_rams", "rams", ram.id, ram.title);
-                              navigate(`/rams/${ram.id}`);
+                              navigate(`/client/rams/${ram.id}`);
                             }}
                           >
                             <Eye className="h-4 w-4" />
@@ -507,8 +511,9 @@ export default function ClientProjectView() {
               <CardContent>
                 <div className="space-y-4">
                   {diaryEntries?.map((entry) => {
-                    const workforceEntries = entry.workforce_entries as any[] || [];
-                    const totalWorkforce = workforceEntries.reduce((sum, e) => sum + (e.count || 0), 0);
+                    const totalWorkforce = clientUser?.can_view_workforce
+                      ? ((entry as { workforce_total?: number | null }).workforce_total ?? 0)
+                      : null;
                     
                     return (
                       <div
@@ -527,10 +532,12 @@ export default function ClientProjectView() {
                           </Badge>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                          <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                            <span>{totalWorkforce} workers</span>
-                          </div>
+                          {clientUser?.can_view_workforce && (
+                            <div className="flex items-center gap-2">
+                              <Users className="h-4 w-4 text-muted-foreground" />
+                              <span>{totalWorkforce} workers</span>
+                            </div>
+                          )}
                           {entry.weather_morning && (
                             <div>
                               <span className="text-muted-foreground">AM: </span>

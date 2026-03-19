@@ -6,12 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle, XCircle, Building2, Shield, HardHat, FileCheck } from "lucide-react";
 import { Logo } from "@/components/landing/Logo";
 import { COMPLIANCE_DOC_LABELS } from "@/types/contractor";
 
-type InviteType = "team" | "contractor";
+type InviteType = "team" | "contractor" | "client";
 
 interface InviteInfo {
   type: InviteType;
@@ -21,12 +21,13 @@ interface InviteInfo {
   email: string;
   companyName?: string;
   requiredDocs?: string[];
+  permissions?: string[];
 }
 
 export default function AcceptInvite() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  
+  const { toast } = useToast();
 
   const token = searchParams.get("token");
 
@@ -50,6 +51,25 @@ export default function AcceptInvite() {
 
   const validateInvite = async () => {
     try {
+      // Try client-invite first
+      const { data: clientData, error: clientErr } = await supabase.functions.invoke(
+        "client-invite",
+        { body: { action: "validate", token } }
+      );
+
+      if (!clientErr && clientData?.valid) {
+        setInviteInfo({
+          type: "client",
+          organisationName: clientData.invite.organisationName,
+          role: clientData.invite.role,
+          email: clientData.invite.email,
+          companyName: clientData.invite.companyName,
+          permissions: clientData.invite.permissions,
+        });
+        setLoading(false);
+        return;
+      }
+
       // Try contractor-invite first
       const { data: contractorData, error: contractorErr } = await supabase.functions.invoke(
         "contractor-invite",
@@ -89,7 +109,10 @@ export default function AcceptInvite() {
 
       // Both failed
       const msg =
-        contractorData?.message || teamData?.message || "This invitation is no longer valid";
+        clientData?.message ||
+        contractorData?.message ||
+        teamData?.message ||
+        "This invitation is no longer valid";
       setError(msg);
     } catch (err: any) {
       console.error("Error validating invite:", err);
@@ -103,19 +126,22 @@ export default function AcceptInvite() {
     e.preventDefault();
 
     if (password !== confirmPassword) {
-      toast.error("Passwords don't match");
+      toast({ title: "Passwords don't match", variant: "destructive" });
       return;
     }
     if (password.length < 8) {
-      toast.error("Password must be at least 8 characters");
+      toast({ title: "Password must be at least 8 characters", variant: "destructive" });
       return;
     }
 
     setSubmitting(true);
 
     try {
-      const functionName =
-        inviteInfo?.type === "contractor" ? "contractor-invite" : "team-invite";
+      const functionName = inviteInfo?.type === "client"
+        ? "client-invite"
+        : inviteInfo?.type === "contractor"
+          ? "contractor-invite"
+          : "team-invite";
 
       const { data, error } = await supabase.functions.invoke(functionName, {
         body: { action: "accept", token, password, fullName: fullName || undefined },
@@ -125,10 +151,14 @@ export default function AcceptInvite() {
       if (data?.error) throw new Error(data.error);
 
       setSuccess(true);
-      toast.success("Account created!", { description: "You can now sign in." });
+      toast({ title: "Account created!", description: "You can now sign in." });
     } catch (err: any) {
       console.error("Error accepting invite:", err);
-      toast.error("Error", { description: err.message || "Failed to accept invitation" });
+      toast({
+        title: "Error",
+        description: err.message || "Failed to accept invitation",
+        variant: "destructive",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -140,6 +170,10 @@ export default function AcceptInvite() {
     site_manager: "Site Manager",
     contractor: "Contractor",
     client_viewer: "Client Viewer",
+    client: "Client",
+    principal_designer: "Principal Designer",
+    cdm_advisor: "CDM Advisor",
+    building_control: "Building Control",
   };
 
   // ── Loading ──
@@ -183,7 +217,9 @@ export default function AcceptInvite() {
             <p className="text-muted-foreground">
               {inviteInfo?.type === "contractor"
                 ? "Your contractor account is ready. Sign in to upload your compliance documents and view your projects."
-                : "Your account has been created. You can now sign in."}
+                : inviteInfo?.type === "client"
+                  ? "Your client portal account is ready. Sign in to view your assigned projects."
+                  : "Your account has been created. You can now sign in."}
             </p>
             <Button className="w-full" onClick={() => navigate("/auth")}>
               Sign In
@@ -196,6 +232,7 @@ export default function AcceptInvite() {
 
   // ── Accept Form ──
   const isContractor = inviteInfo?.type === "contractor";
+  const isClientInvite = inviteInfo?.type === "client";
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
@@ -207,15 +244,19 @@ export default function AcceptInvite() {
           <CardTitle className="flex items-center justify-center gap-2">
             {isContractor ? (
               <HardHat className="h-5 w-5 text-primary" />
+            ) : isClientInvite ? (
+              <Building2 className="h-5 w-5 text-primary" />
             ) : (
               <CheckCircle className="h-5 w-5 text-green-500" />
             )}
-            {isContractor ? "Contractor Invitation" : "You're Invited!"}
+            {isContractor ? "Contractor Invitation" : isClientInvite ? "Client Portal Invitation" : "You're Invited!"}
           </CardTitle>
           <CardDescription>
             {isContractor
               ? `Set up your account to manage compliance for ${inviteInfo?.companyName}`
-              : "You've been invited to join an organisation"}
+              : isClientInvite
+                ? "Set up your client portal account to view project progress and compliance"
+                : "You've been invited to join an organisation"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -247,6 +288,22 @@ export default function AcceptInvite() {
               </div>
             )}
           </div>
+
+          {isClientInvite && inviteInfo?.permissions && inviteInfo.permissions.length > 0 && (
+            <div className="border border-border rounded-lg p-4 mb-6">
+              <div className="flex items-center gap-2 mb-2">
+                <FileCheck className="h-4 w-4 text-primary" />
+                <p className="text-sm font-medium">Portal access includes:</p>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {inviteInfo.permissions.map((permission) => (
+                  <Badge key={permission} variant="secondary" className="text-xs">
+                    {permission}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Required docs preview for contractors */}
           {isContractor && inviteInfo?.requiredDocs && inviteInfo.requiredDocs.length > 0 && (
@@ -322,7 +379,7 @@ export default function AcceptInvite() {
                   Creating Account...
                 </>
               ) : (
-                "Accept & Create Account"
+                isClientInvite ? "Accept & Create Client Account" : "Accept & Create Account"
               )}
             </Button>
           </form>

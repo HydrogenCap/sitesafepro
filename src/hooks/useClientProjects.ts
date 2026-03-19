@@ -7,7 +7,7 @@ interface ProjectStats {
   acknowledgedCount: number;
   openActions: number;
   overdueActions: number;
-  lastWorkforceCount: number;
+  lastWorkforceCount: number | null;
   lastWorkforceDate: string | null;
   diaryMissingDays: number;
   ramsApproved: number;
@@ -93,7 +93,7 @@ export const useClientProjects = () => {
           // Get latest diary entry for workforce
           const { data: diaryEntry } = await supabase
             .from("site_diary_entries")
-            .select("entry_date, workforce_entries")
+            .select(clientUser.can_view_workforce ? "entry_date, workforce_total" : "entry_date")
             .eq("project_id", project.id)
             .order("entry_date", { ascending: false })
             .limit(1)
@@ -114,10 +114,9 @@ export const useClientProjects = () => {
           const diaryMissingDays = Math.max(0, expectedDays - (diaryCount || 0));
 
           // Calculate workforce count from JSONB
-          let lastWorkforceCount = 0;
-          if (diaryEntry?.workforce_entries) {
-            const entries = diaryEntry.workforce_entries as any[];
-            lastWorkforceCount = entries.reduce((sum, e) => sum + (e.count || 0), 0);
+          let lastWorkforceCount: number | null = null;
+          if (clientUser.can_view_workforce) {
+            lastWorkforceCount = diaryEntry?.workforce_total ?? 0;
           }
 
           // Calculate compliance score

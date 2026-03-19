@@ -95,18 +95,13 @@ export const useDocumentUpload = () => {
 
       if (dbError) throw dbError;
 
-      // Update organisation storage usage
-      const { data: orgData } = await supabase
-        .from('organisations')
-        .select('storage_used_bytes')
-        .eq('id', organisationId)
-        .single();
+      const { error: storageError } = await supabase.rpc('increment_org_storage_usage', {
+        p_org_id: organisationId,
+        p_bytes: file.size,
+      });
 
-      if (orgData) {
-        await supabase
-          .from('organisations')
-          .update({ storage_used_bytes: (orgData.storage_used_bytes || 0) + file.size })
-          .eq('id', organisationId);
+      if (storageError) {
+        throw storageError;
       }
 
       logActivity({

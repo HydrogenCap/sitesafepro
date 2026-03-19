@@ -30,10 +30,30 @@ Deno.serve(async (req) => {
     const { data: { user } } = await userClient.auth.getUser();
     if (!user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+    const { data: isMember, error: membershipError } = await userClient.rpc("is_org_member_current", {
+      p_org_id: org_id,
+    });
+    if (membershipError || !isMember) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     let storagePath: string;
     let ttl: number;
 
     if (bucket === "exports") {
+      const { data: canManage, error: permissionError } = await userClient.rpc("can_manage_documents", {
+        p_org_id: org_id,
+      });
+      if (permissionError || !canManage) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       if (!export_id) {
         return new Response(JSON.stringify({ error: "export_id required for exports bucket" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -52,6 +72,13 @@ Deno.serve(async (req) => {
       if (!path) {
         return new Response(JSON.stringify({ error: "path required" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const expectedPrefix = `org/${org_id}/`;
+      if (!path.startsWith(expectedPrefix)) {
+        return new Response(JSON.stringify({ error: "Path is outside the requested organisation" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
       storagePath = path;
       ttl = EVIDENCE_TTL_SECONDS;

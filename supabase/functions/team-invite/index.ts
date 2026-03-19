@@ -244,7 +244,9 @@ Deno.serve(async (req) => {
         throw new Error("No email associated with this invitation");
       }
 
-      // Create the user account in auth.users first
+      let resolvedUserId = placeholderProfileId;
+
+      // Create the user account in auth.users for first-time invitees.
       const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email,
         password,
@@ -255,8 +257,13 @@ Deno.serve(async (req) => {
       });
 
       if (authError) {
-        console.error("Error creating user:", authError);
-        throw new Error(authError.message);
+        const duplicateEmail = authError.message.toLowerCase().includes("already");
+        if (!duplicateEmail) {
+          console.error("Error creating user:", authError);
+          throw new Error(authError.message);
+        }
+      } else if (authUser.user?.id) {
+        resolvedUserId = authUser.user.id;
       }
 
       // The handle_new_user trigger will create/update the profile with the auth user ID
@@ -265,7 +272,7 @@ Deno.serve(async (req) => {
       const { error: updateError } = await supabaseAdmin
         .from("organisation_members")
         .update({
-          profile_id: authUser.user.id,
+          profile_id: resolvedUserId,
           status: "active",
           accepted_at: new Date().toISOString(),
           invite_token: null,
@@ -279,7 +286,7 @@ Deno.serve(async (req) => {
 
       // Delete the placeholder profile if it's different from the new auth user
       // (the trigger should have merged them, but clean up just in case)
-      if (placeholderProfileId !== authUser.user.id) {
+      if (placeholderProfileId !== resolvedUserId) {
         await supabaseAdmin
           .from("profiles")
           .delete()
@@ -347,7 +354,6 @@ Deno.serve(async (req) => {
       const inviteToken = crypto.randomUUID();
 
       let profileId: string;
-      let isExistingUser = false;
 
       if (existingProfile) {
         // User/profile exists - check if already a member
@@ -363,7 +369,6 @@ Deno.serve(async (req) => {
         }
 
         profileId = existingProfile.id;
-        isExistingUser = true;
       } else {
         // Create a placeholder profile for the invited user
         const { data: newProfile, error: profileError } = await supabaseAdmin
@@ -432,6 +437,14 @@ Deno.serve(async (req) => {
         throw new Error("Authentication required");
       }
 
+      const supabaseClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+      if (userError || !user) {
+        throw new Error("Invalid authentication");
+      }
+
       const { memberId, email } = body;
 
       // Generate new token
@@ -442,6 +455,7 @@ Deno.serve(async (req) => {
         .from("organisation_members")
         .select(`
           id,
+          organisation_id,
           role,
           organisation:organisations!organisation_members_organisation_id_fkey (name),
           profile:profiles!organisation_members_profile_id_fkey (full_name, email)
@@ -454,6 +468,22 @@ Deno.serve(async (req) => {
         throw new Error("Invitation not found or already accepted");
       }
 
+      const { data: inviterMember, error: inviterError } = await supabaseAdmin
+        .from("organisation_members")
+        .select("role")
+        .eq("profile_id", user.id)
+        .eq("organisation_id", (member as any).organisation_id)
+        .eq("status", "active")
+        .single();
+
+      if (inviterError || !inviterMember) {
+        throw new Error("You don't have access to this organisation");
+      }
+
+      if (!["owner", "admin"].includes(inviterMember.role)) {
+        throw new Error("Only owners and admins can invite members");
+      }
+
       const { error: updateError } = await supabaseAdmin
         .from("organisation_members")
         .update({ invite_token: newToken })
@@ -464,7 +494,8 @@ Deno.serve(async (req) => {
         throw new Error("Failed to resend invitation");
       }
 
-      const inviteUrl = `${req.headers.get("origin")}/accept-invite?token=${newToken}`;
+      const origin = req.headers.get("origin") || supabaseUrl.replace('.supabase.co', '.lovable.app');
+      const inviteUrl = `${origin}/accept-invite?token=${newToken}`;
       
       // Send the email
       const memberEmail = (member.profile as any)?.email || email;

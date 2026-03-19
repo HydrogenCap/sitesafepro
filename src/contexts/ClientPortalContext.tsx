@@ -72,6 +72,9 @@ export const ClientPortalProvider = ({ children }: { children: ReactNode }) => {
           .select('*')
           .eq('profile_id', user.id)
           .eq('is_active', true)
+          .order('accepted_at', { ascending: false, nullsFirst: false })
+          .order('created_at', { ascending: false })
+          .limit(1)
           .maybeSingle();
 
         if (clientError) {
@@ -87,6 +90,7 @@ export const ClientPortalProvider = ({ children }: { children: ReactNode }) => {
             .select('role')
             .eq('profile_id', user.id)
             .eq('status', 'active')
+            .limit(1)
             .maybeSingle();
 
           // Only treat as client if they don't have an org member role

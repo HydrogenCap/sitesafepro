@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 import { InviteClientDialog } from "@/components/client/InviteClientDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -56,7 +56,7 @@ const roleLabels: Record<string, string> = {
 export default function ClientPortalSettings() {
   const { user } = useAuth();
   const { tier } = useSubscription();
-  
+  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
@@ -121,13 +121,20 @@ export default function ClientPortalSettings() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Client Deactivated", { description: "The client no longer has access to the portal." });
+      toast({
+        title: "Client Deactivated",
+        description: "The client no longer has access to the portal.",
+      });
       queryClient.invalidateQueries({ queryKey: ["client-portal-users"] });
       setDeactivateDialogOpen(false);
       setSelectedClient(null);
     },
     onError: (error: any) => {
-      toast.error("Error", { description: error.message || "Failed to deactivate client" });
+      toast({
+        title: "Error",
+        description: error.message || "Failed to deactivate client",
+        variant: "destructive",
+      });
     },
   });
 
@@ -141,11 +148,47 @@ export default function ClientPortalSettings() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Client Reactivated", { description: "The client now has access to the portal." });
+      toast({
+        title: "Client Reactivated",
+        description: "The client now has access to the portal.",
+      });
       queryClient.invalidateQueries({ queryKey: ["client-portal-users"] });
     },
     onError: (error: any) => {
-      toast.error("Error", { description: error.message || "Failed to reactivate client" });
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reactivate client",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resendInviteMutation = useMutation({
+    mutationFn: async (clientId: string) => {
+      const { data, error } = await supabase.functions.invoke("client-invite", {
+        body: {
+          action: "resend",
+          clientUserId: clientId,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Invitation Resent",
+        description: "A fresh client portal invite has been sent.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["client-portal-users"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to resend invitation",
+        variant: "destructive",
+      });
     },
   });
 
@@ -262,10 +305,14 @@ export default function ClientPortalSettings() {
                             <Activity className="h-4 w-4 mr-2" />
                             View Activity
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Mail className="h-4 w-4 mr-2" />
-                            Resend Invite
-                          </DropdownMenuItem>
+                          {!client.accepted_at && (
+                            <DropdownMenuItem
+                              onClick={() => resendInviteMutation.mutate(client.id)}
+                            >
+                              <Mail className="h-4 w-4 mr-2" />
+                              Resend Invite
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuSeparator />
                           {client.is_active ? (
                             <DropdownMenuItem

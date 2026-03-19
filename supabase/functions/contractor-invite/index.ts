@@ -364,20 +364,27 @@ Deno.serve(async (req) => {
 
       if (!email) throw new Error("No email associated with invitation");
 
-      // Create auth user
+      let resolvedUserId = placeholderProfileId;
+
+      // Create auth user for first-time invitees.
       const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email,
         password,
         email_confirm: true,
         user_metadata: { full_name: fullName },
       });
-      if (authError) throw new Error(authError.message);
+      if (authError) {
+        const duplicateEmail = authError.message.toLowerCase().includes("already");
+        if (!duplicateEmail) throw new Error(authError.message);
+      } else if (authUser.user?.id) {
+        resolvedUserId = authUser.user.id;
+      }
 
       // Update org membership
       await supabaseAdmin
         .from("organisation_members")
         .update({
-          profile_id: authUser.user.id,
+          profile_id: resolvedUserId,
           status: "active",
           accepted_at: new Date().toISOString(),
           invite_token: null,
@@ -390,12 +397,12 @@ Deno.serve(async (req) => {
         .update({
           status: "accepted",
           accepted_at: new Date().toISOString(),
-          accepted_by: authUser.user.id,
+          accepted_by: resolvedUserId,
         })
         .eq("id", invite.id);
 
       // Clean up placeholder profile
-      if (placeholderProfileId !== authUser.user.id) {
+      if (placeholderProfileId !== resolvedUserId) {
         await supabaseAdmin.from("profiles").delete().eq("id", placeholderProfileId);
       }
 

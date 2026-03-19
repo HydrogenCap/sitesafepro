@@ -152,12 +152,14 @@ export default function ClientDashboard() {
                       {project.stats.overdueActions > 0 && `, ${project.stats.overdueActions} overdue`}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span>
-                      {project.stats.lastWorkforceCount} on site
-                    </span>
-                  </div>
+                  {clientUser?.can_view_workforce && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span>
+                        {project.stats.lastWorkforceCount ?? 0} on site
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 text-sm">
                     <BookOpen className={`h-4 w-4 ${
                       project.stats.diaryMissingDays > 0 ? "text-amber-500" : "text-muted-foreground"

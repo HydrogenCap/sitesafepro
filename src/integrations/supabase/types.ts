@@ -5458,6 +5458,10 @@ export type Database = {
         Returns: string
       }
       generate_unique_slug: { Args: { base_name: string }; Returns: string }
+      increment_org_storage_usage: {
+        Args: { p_bytes: number; p_org_id: string }
+        Returns: undefined
+      }
       get_client_org_id: { Args: { _user_id: string }; Returns: string }
       get_org_role: {
         Args: { p_org_id: string }

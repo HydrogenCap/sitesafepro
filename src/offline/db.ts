@@ -103,6 +103,14 @@ export async function getAllQueueItems(
   return results.flat().sort((a, b) => a.captured_at - b.captured_at);
 }
 
+export async function getQueueItem(
+  userId: string,
+  id: string
+): Promise<QueueItem | undefined> {
+  const db = await getDb(userId);
+  return db.get('queue_items', id);
+}
+
 export async function getQueueItemsByDocument(
   userId: string,
   documentId: string,
