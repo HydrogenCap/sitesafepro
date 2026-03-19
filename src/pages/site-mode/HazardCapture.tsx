@@ -89,7 +89,7 @@ export default function HazardCapture() {
                           userId: user.id,
                 });
 
-                toast({ title: 'Hazard saved offline' });
+                toast.success('Hazard saved offline');
                 if (navigator.onLine) triggerSync();
                 navigate('/site-mode');
         } catch (err: any) {
