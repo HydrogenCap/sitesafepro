@@ -584,12 +584,12 @@ export default function AdminPanel() {
       if (orgId) {
         await logAdminAction(user!.id, "CREATE_ORG", "organisation", orgId, orgId, { org_name: newOrg.name, owner_email: newOrg.ownerEmail });
       }
-      toast({ title: "Organisation created", description: `${newOrg.name} is live with a 14-day trial.` });
+      toast.success("Organisation created", { description: `${newOrg.name} is live with a 14-day trial.` });
       setCreateOrgOpen(false);
       setNewOrg({ name: "", ownerEmail: "" });
       fetchData();
     } catch (err: any) {
-      toast({ title: "Failed to create org", description: err.message, variant: "destructive" });
+      toast.error("Failed to create org", { description: err.message });
     } finally {
       setCreatingOrg(false);
     }
