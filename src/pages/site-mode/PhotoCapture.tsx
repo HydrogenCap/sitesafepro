@@ -32,7 +32,7 @@ export default function PhotoCapture() {
       setStream(ms);
       if (videoRef.current) videoRef.current.srcObject = ms;
     } catch {
-      toast({ title: 'Camera unavailable', description: 'Check browser permissions.', variant: 'destructive' });
+      toast.error('Camera unavailable', { description: 'Check browser permissions.' });
     }
   }, [toast]);
 
