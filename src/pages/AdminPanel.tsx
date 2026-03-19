@@ -515,7 +515,7 @@ export default function AdminPanel() {
 
   const handleUpdateRole = async (memberId: string, orgId: string, newRole: MemberRole, profile: OrgMember["profile"]) => {
     const { error } = await supabase.from("organisation_members").update({ role: newRole }).eq("id", memberId);
-    if (error) { toast({ title: "Failed to update role", description: error.message, variant: "destructive" }); return; }
+    if (error) { toast.error("Failed to update role", { description: error.message }); return; }
     await logAdminAction(user!.id, "ROLE_CHANGE", "organisation_member", memberId, orgId, { new_role: newRole, user_email: profile?.email });
     setOrgs((prev) => prev.map((o) => o.id === orgId ? { ...o, members: o.members.map((m) => m.id === memberId ? { ...m, role: newRole } : m) } : o));
     toast({ title: "Role updated", description: `Changed to ${roleLabels[newRole]}` });
