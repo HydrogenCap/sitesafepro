@@ -53,7 +53,7 @@ export default function RamsBuilder() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { toast } = useToast();
+  
   const isEditing = !!id;
 
   const [currentStep, setCurrentStep] = useState(1);
