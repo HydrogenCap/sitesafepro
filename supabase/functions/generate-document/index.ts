@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { enforceRateLimit } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -199,6 +200,23 @@ serve(async (req) => {
 
     const userId = claims.claims.sub;
     console.log(`[GENERATE-DOCUMENT] Authenticated user: ${userId}`);
+
+    const rateLimit = await enforceRateLimit({
+      identifier: String(userId),
+      scope: "generate-document",
+      limit: 20,
+      windowSeconds: 3600,
+    });
+    if (!rateLimit.allowed) {
+      return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
+        status: 429,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+          "Retry-After": String(rateLimit.retryAfterSeconds),
+        },
+      });
+    }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {

@@ -13,6 +13,19 @@ interface RateLimitResult {
   retryAfterSeconds: number;
 }
 
+export function getClientIp(req: Request): string {
+  const forwardedFor = req.headers.get("x-forwarded-for");
+  if (forwardedFor) {
+    const firstIp = forwardedFor.split(",")[0]?.trim();
+    if (firstIp) return firstIp;
+  }
+
+  const cfIp = req.headers.get("cf-connecting-ip")?.trim();
+  if (cfIp) return cfIp;
+
+  return "unknown";
+}
+
 export async function enforceRateLimit(
   options: RateLimitOptions,
 ): Promise<RateLimitResult> {

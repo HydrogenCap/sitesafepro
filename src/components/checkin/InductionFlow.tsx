@@ -46,6 +46,7 @@ interface InductionFlowProps {
   onCancel: () => void;
   apiUrl: string;
   apiKey: string;
+  accessCode: string;
   projectId: string;
   organisationId: string;
 }
@@ -59,6 +60,7 @@ export function InductionFlow({
   onCancel,
   apiUrl,
   apiKey,
+  accessCode,
   projectId,
   organisationId
 }: InductionFlowProps) {
@@ -138,6 +140,7 @@ export function InductionFlow({
             "apikey": apiKey,
           },
           body: JSON.stringify({
+            code: accessCode,
             template_id: template.id,
             project_id: projectId,
             organisation_id: organisationId,

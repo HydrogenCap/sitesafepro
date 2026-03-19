@@ -22,6 +22,28 @@ const M = 48;
 const log = (step: string, d?: Record<string, unknown>) =>
   console.log(`[HANDOVER] ${step}${d ? " - " + JSON.stringify(d) : ""}`);
 
+function isTrustedProjectImageUrl(imageUrl: string): boolean {
+  try {
+    const parsedImageUrl = new URL(imageUrl);
+    if (!["https:", "http:"].includes(parsedImageUrl.protocol)) {
+      return false;
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    if (!supabaseUrl) {
+      return false;
+    }
+
+    const parsedSupabaseUrl = new URL(supabaseUrl);
+    return (
+      parsedImageUrl.hostname === parsedSupabaseUrl.hostname &&
+      parsedImageUrl.pathname.includes("/storage/v1/object/public/project-images/")
+    );
+  } catch {
+    return false;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
@@ -159,7 +181,7 @@ Deno.serve(async (req) => {
       }
 
       // Embed project photo on cover page
-      if (project.image_url) {
+      if (project.image_url && isTrustedProjectImageUrl(project.image_url)) {
         try {
           const imgResp = await fetch(project.image_url);
           if (imgResp.ok) {
@@ -181,6 +203,8 @@ Deno.serve(async (req) => {
         } catch (imgErr) {
           log("Skipping project image", { error: imgErr instanceof Error ? imgErr.message : String(imgErr) });
         }
+      } else if (project.image_url) {
+        log("Skipping untrusted project image URL");
       }
 
       footer(cover);

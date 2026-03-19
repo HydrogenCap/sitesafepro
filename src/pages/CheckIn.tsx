@@ -310,6 +310,7 @@ export default function CheckIn() {
             onCancel={() => setMode("check-in")}
             apiUrl={import.meta.env.VITE_SUPABASE_URL}
             apiKey={import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}
+            accessCode={code!}
             projectId={accessCodeInfo.project.id}
             organisationId={accessCodeInfo.project.organisation_id}
           />

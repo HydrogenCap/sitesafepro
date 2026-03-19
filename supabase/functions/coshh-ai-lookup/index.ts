@@ -9,6 +9,7 @@
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { enforceRateLimit } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -64,6 +65,23 @@ Deno.serve(async (req) => {
   );
   const { data: { user } } = await userClient.auth.getUser();
   if (!user) return json({ error: "Unauthorized" }, 401);
+
+  const rateLimit = await enforceRateLimit({
+    identifier: user.id,
+    scope: "coshh-ai-lookup",
+    limit: 30,
+    windowSeconds: 3600,
+  });
+  if (!rateLimit.allowed) {
+    return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
+      status: 429,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+        "Retry-After": String(rateLimit.retryAfterSeconds),
+      },
+    });
+  }
 
   const body = await req.json();
   const substanceName = (body.substance_name as string)?.trim();

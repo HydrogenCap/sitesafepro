@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { enforceRateLimit } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,7 +39,28 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[CLASSIFY-DOCUMENT] Authenticated user: ${claims.claims.sub}`);
+    const userId = claims.claims.sub as string;
+    console.log(`[CLASSIFY-DOCUMENT] Authenticated user: ${userId}`);
+
+    const rateLimit = await enforceRateLimit({
+      identifier: userId,
+      scope: "classify-document",
+      limit: 30,
+      windowSeconds: 3600,
+    });
+    if (!rateLimit.allowed) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+            "Retry-After": String(rateLimit.retryAfterSeconds),
+          },
+        }
+      );
+    }
 
     const { filename, textContent, mimeType, deepAnalysis } = await req.json();
     

@@ -6,6 +6,7 @@ import {
   ValidationError,
   validationErrorResponse,
 } from "../_shared/validation.ts";
+import { enforceRateLimit, getClientIp } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,6 +23,27 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const clientIp = getClientIp(req);
+
+    const rateLimit = await enforceRateLimit({
+      identifier: clientIp,
+      scope: "site-access",
+      limit: 60,
+      windowSeconds: 3600,
+    });
+    if (!rateLimit.allowed) {
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+            'Retry-After': String(rateLimit.retryAfterSeconds),
+          },
+        }
+      );
+    }
 
     const url = new URL(req.url);
     const action = url.searchParams.get('action');
@@ -89,9 +111,8 @@ Deno.serve(async (req) => {
       const body = await req.json();
 
       // Validate inputs
+      const code = requireString(body.code, "code", { maxLength: 50 });
       const template_id = requireUUID(body.template_id, "template_id");
-      const project_id = requireUUID(body.project_id, "project_id");
-      const organisation_id = requireUUID(body.organisation_id, "organisation_id");
       const visitor_name = requireString(body.visitor_name, "visitor_name", { maxLength: 100 });
       const signature_data = requireString(body.signature_data, "signature_data", { maxLength: 50000 });
       const visitor_email = optionalString(body.visitor_email, "visitor_email", { maxLength: 255 });
@@ -106,18 +127,47 @@ Deno.serve(async (req) => {
         );
       }
 
+      const { data: accessCode, error: accessCodeError } = await supabase
+        .from('site_access_codes')
+        .select('project_id, organisation_id, is_active')
+        .eq('code', code)
+        .single();
+
+      if (accessCodeError || !accessCode || !accessCode.is_active) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid or inactive access code' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const { data: template, error: templateError } = await supabase
+        .from('site_induction_templates')
+        .select('id')
+        .eq('id', template_id)
+        .eq('project_id', accessCode.project_id)
+        .eq('organisation_id', accessCode.organisation_id)
+        .eq('is_active', true)
+        .single();
+
+      if (templateError || !template) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid induction template for this access code' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       const { data: completion, error: completionError } = await supabase
         .from('site_induction_completions')
         .insert({
           template_id,
-          project_id,
-          organisation_id,
+          project_id: accessCode.project_id,
+          organisation_id: accessCode.organisation_id,
           visitor_name,
           visitor_email,
           visitor_company,
           visitor_phone,
           signature_data,
-          ip_address: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip'),
+          ip_address: clientIp,
           user_agent: req.headers.get('user-agent'),
         })
         .select()
