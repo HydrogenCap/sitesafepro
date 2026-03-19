@@ -53,7 +53,14 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
 
-      const mapped: OrgMembership[] = (data ?? []).map((row: any) => ({
+      interface MembershipRow {
+        organisation_id: string;
+        role: string;
+        status: string;
+        organisations: { name: string; slug: string } | null;
+      }
+
+      const mapped: OrgMembership[] = (data as MembershipRow[] ?? []).map((row) => ({
         orgId: row.organisation_id,
         orgName: row.organisations?.name ?? "",
         orgSlug: row.organisations?.slug ?? "",
