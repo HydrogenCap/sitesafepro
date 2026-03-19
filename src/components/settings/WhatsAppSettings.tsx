@@ -170,16 +170,9 @@ export default function WhatsAppSettings() {
 
       if (error) throw error;
 
-      toast({
-        title: "Settings saved",
-        description: "WhatsApp settings have been updated",
-      });
+      toast.success("Settings saved", { description: "WhatsApp settings have been updated" });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save settings",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to save settings" });
     } finally {
       setSaving(false);
     }
@@ -189,10 +182,7 @@ export default function WhatsAppSettings() {
     if (!user?.email) return;
     
     setTesting(true);
-    toast({
-      title: "Test message",
-      description: "To test WhatsApp, you need to configure API credentials first. See the setup guide below.",
-    });
+    toast.info("Test message", { description: "To test WhatsApp, you need to configure API credentials first. See the setup guide below." });
     setTesting(false);
   };
 
