@@ -51,13 +51,25 @@ serve(async (req) => {
     const email = optionalString(body.email, "email", { maxLength: 255 });
     const fullName = optionalString(body.fullName, "fullName", { maxLength: 100 });
 
-    // [P0 FIX] Ensure the authenticated caller matches the requested userId
+    // [P0 FIX] Ensure the authenticated caller matches the requested userId,
+    // unless the caller is a platform admin (owner role in any org)
     if (authData.user.id !== userId) {
-      console.error(`Auth mismatch: caller ${authData.user.id} tried to create org for ${userId}`);
-      return new Response(
-        JSON.stringify({ error: "You can only create an organisation for your own account" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      const { data: adminCheck } = await supabaseAdmin
+        .from('organisation_members')
+        .select('role')
+        .eq('profile_id', authData.user.id)
+        .eq('role', 'owner')
+        .eq('status', 'active')
+        .limit(1);
+
+      if (!adminCheck || adminCheck.length === 0) {
+        console.error(`Auth mismatch: caller ${authData.user.id} tried to create org for ${userId}`);
+        return new Response(
+          JSON.stringify({ error: "You can only create an organisation for your own account" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      console.log(`Admin ${authData.user.id} creating org on behalf of ${userId}`);
     }
 
     console.log(`Creating organisation for user ${userId}, company: ${companyName}`);
