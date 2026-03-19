@@ -16,7 +16,7 @@ export default function HazardCapture() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { membership } = useOrg();
-  const { toast } = useToast();
+  
   const { triggerSync } = useSync();
   const [location, setLocation] = useState('');
   const [description, setDescription] = useState('');
