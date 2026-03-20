@@ -64,7 +64,7 @@ export default function SubscriptionSettings() {
       const { data: orgData, error: orgError } = await supabase
         .from("organisations")
         .select("id, name, subscription_tier, subscription_status, trial_ends_at, max_projects, storage_used_bytes")
-        .eq("id", memberData.organisation_id)
+        .eq("id", orgId)
         .single();
 
       if (orgError) throw orgError;
