@@ -36,6 +36,8 @@ interface OrganisationBilling {
 
 export default function SubscriptionSettings() {
   const { user } = useAuth();
+  const orgCtx = useContext(OrgContext);
+  const activeOrgId = orgCtx?.membership?.orgId ?? null;
   
   const [loading, setLoading] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
@@ -44,10 +46,10 @@ export default function SubscriptionSettings() {
   const [memberCount, setMemberCount] = useState(0);
 
   useEffect(() => {
-    if (user) {
+    if (user && activeOrgId) {
       fetchBillingData();
     }
-  }, [user]);
+  }, [user, activeOrgId]);
 
   const fetchBillingData = async () => {
     try {
