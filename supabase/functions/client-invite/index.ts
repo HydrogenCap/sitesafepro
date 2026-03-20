@@ -401,8 +401,10 @@ Deno.serve(async (req) => {
       const orgName = org?.name || "Your Organisation";
       
       // Build the invite URL
-      const origin = req.headers.get("origin") || "https://sitesafepro.lovable.app";
-      const inviteUrl = `${origin}/client/accept-invite?token=${clientUser.invite_token}`;
+      // [P2 FIX] Use trusted app origin
+      const { getTrustedAppOrigin } = await import("../_shared/app-origin.ts");
+      const appOrigin = getTrustedAppOrigin(req);
+      const inviteUrl = `${appOrigin}/client/accept-invite?token=${clientUser.invite_token}`;
 
       // Build permissions list for email
       const permissionLabels: Record<string, string> = {
