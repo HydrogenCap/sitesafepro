@@ -74,7 +74,7 @@ export default function SubscriptionSettings() {
       const { count: projectCountData } = await supabase
         .from("projects")
         .select("*", { count: "exact", head: true })
-        .eq("organisation_id", memberData.organisation_id);
+        .eq("organisation_id", orgId);
 
       setProjectCount(projectCountData || 0);
 
@@ -82,7 +82,7 @@ export default function SubscriptionSettings() {
       const { count: memberCountData } = await supabase
         .from("organisation_members")
         .select("*", { count: "exact", head: true })
-        .eq("organisation_id", memberData.organisation_id)
+        .eq("organisation_id", orgId)
         .eq("status", "active");
 
       setMemberCount(memberCountData || 0);
