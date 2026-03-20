@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { optionalUUID, ValidationError, validationErrorResponse } from "../_shared/validation.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -56,27 +57,62 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
+    const body = await req.json().catch(() => ({}));
+    const requestedOrgId = optionalUUID((body as Record<string, unknown>).organisationId, "organisationId");
+
+    const { data: memberships, error: membershipsError } = await supabaseClient
+      .from('organisation_members')
+      .select('organisation_id')
+      .eq('profile_id', user.id)
+      .eq('status', 'active');
+
+    if (membershipsError) throw membershipsError;
+
+    const activeOrgIds = (memberships ?? []).map((membership) => membership.organisation_id);
+    const organisationId = requestedOrgId ?? (
+      activeOrgIds.length === 1 ? activeOrgIds[0] : null
+    );
+
+    if (!organisationId) {
+      return new Response(JSON.stringify({
+        subscribed: false,
+        tier: null,
+        subscription_end: null,
+        stripe_customer_id: null,
+        error: "organisationId is required when you belong to multiple organisations",
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
+
+    if (!activeOrgIds.includes(organisationId)) {
+      return new Response(JSON.stringify({ error: "You do not have access to this organisation" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 403,
+      });
+    }
+
+    const { data: orgData, error: orgError } = await supabaseClient
+      .from('organisations')
+      .select('subscription_status, subscription_tier, trial_ends_at, stripe_customer_id, stripe_subscription_id')
+      .eq('id', organisationId)
+      .single();
+
+    if (orgError || !orgData) throw orgError ?? new Error("Organisation not found");
+
     // Owner override: grant free Enterprise access
     if (isOwnerEmail(user.email)) {
-      logStep("Owner email detected, granting Enterprise override", { email: user.email });
+      logStep("Owner email detected, granting Enterprise override", { email: user.email, organisationId });
 
-      const { data: memberData } = await supabaseClient
-        .from('organisation_members')
-        .select('organisation_id')
-        .eq('profile_id', user.id)
-        .eq('status', 'active')
-        .single();
-
-      if (memberData) {
-        await supabaseClient
-          .from('organisations')
-          .update({
-            subscription_tier: 'enterprise',
-            subscription_status: 'active',
-          })
-          .eq('id', memberData.organisation_id);
-        logStep("Organisation updated with owner Enterprise override");
-      }
+      await supabaseClient
+        .from('organisations')
+        .update({
+          subscription_tier: 'enterprise',
+          subscription_status: 'active',
+        })
+        .eq('id', organisationId);
+      logStep("Organisation updated with owner Enterprise override");
 
       return new Response(JSON.stringify({
         subscribed: true,
@@ -91,109 +127,99 @@ serve(async (req) => {
       });
     }
 
-    // [P1 FIX] Check database trial status before querying Stripe
-    const { data: memberData } = await supabaseClient
-      .from('organisation_members')
-      .select('organisation_id')
-      .eq('profile_id', user.id)
-      .eq('status', 'active')
-      .single();
-
-    if (memberData) {
-      const { data: orgData } = await supabaseClient
-        .from('organisations')
-        .select('subscription_status, subscription_tier, trial_ends_at')
-        .eq('id', memberData.organisation_id)
-        .single();
-
-      if (orgData?.subscription_status === 'trialing' && orgData.trial_ends_at) {
-        const trialEnd = new Date(orgData.trial_ends_at);
-        if (trialEnd > new Date()) {
-          logStep("Active trial found in database", {
-            tier: orgData.subscription_tier,
-            trialEndsAt: orgData.trial_ends_at,
-          });
-          return new Response(JSON.stringify({
-            subscribed: true,
-            tier: orgData.subscription_tier || 'enterprise',
-            subscription_end: orgData.trial_ends_at,
-            stripe_customer_id: null,
-            stripe_subscription_id: null,
-            trial: true,
-          }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          });
-        } else {
-          logStep("Trial expired, falling through to Stripe check", {
-            trialEndsAt: orgData.trial_ends_at,
-          });
-        }
+    if (orgData.subscription_status === 'trialing' && orgData.trial_ends_at) {
+      const trialEnd = new Date(orgData.trial_ends_at);
+      if (trialEnd > new Date()) {
+        logStep("Active trial found in database", {
+          organisationId,
+          tier: orgData.subscription_tier,
+          trialEndsAt: orgData.trial_ends_at,
+        });
+        return new Response(JSON.stringify({
+          subscribed: true,
+          tier: orgData.subscription_tier || 'enterprise',
+          subscription_end: orgData.trial_ends_at,
+          stripe_customer_id: orgData.stripe_customer_id,
+          stripe_subscription_id: orgData.stripe_subscription_id,
+          trial: true,
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      } else {
+        logStep("Trial expired, falling through to Stripe check", {
+          organisationId,
+          trialEndsAt: orgData.trial_ends_at,
+        });
       }
     }
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-
-    if (customers.data.length === 0) {
-      logStep("No customer found, user is not subscribed");
+    if (!orgData.stripe_customer_id && !orgData.stripe_subscription_id) {
+      logStep("No Stripe identifiers stored on organisation", { organisationId });
       return new Response(JSON.stringify({ 
         subscribed: false,
         tier: null,
         subscription_end: null,
         stripe_customer_id: null,
+        stripe_subscription_id: null,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
     }
 
-    const customerId = customers.data[0].id;
-    logStep("Found Stripe customer", { customerId });
+    let activeSubscription: Stripe.Subscription | null = null;
+    let customerId = orgData.stripe_customer_id ?? null;
 
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      status: "active",
-      limit: 1,
-    });
+    if (orgData.stripe_subscription_id) {
+      const subscription = await stripe.subscriptions.retrieve(orgData.stripe_subscription_id);
+      if (subscription.customer) {
+        customerId = String(subscription.customer);
+      }
+      if (["active", "trialing"].includes(subscription.status)) {
+        activeSubscription = subscription;
+      }
+    }
 
-    const hasActiveSub = subscriptions.data.length > 0;
+    if (!activeSubscription && orgData.stripe_customer_id) {
+      const subscriptions = await stripe.subscriptions.list({
+        customer: orgData.stripe_customer_id,
+        status: "active",
+        limit: 1,
+      });
+      activeSubscription = subscriptions.data[0] ?? null;
+    }
+
+    const hasActiveSub = !!activeSubscription;
     let tier: string | null = null;
     let subscriptionEnd: string | null = null;
-    let stripeSubscriptionId: string | null = null;
+    let stripeSubscriptionId: string | null = activeSubscription?.id ?? orgData.stripe_subscription_id ?? null;
 
-    if (hasActiveSub) {
-      const subscription = subscriptions.data[0];
-      stripeSubscriptionId = subscription.id;
-      subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
-      logStep("Active subscription found", { subscriptionId: subscription.id, endDate: subscriptionEnd });
+    if (activeSubscription) {
+      subscriptionEnd = new Date(activeSubscription.current_period_end * 1000).toISOString();
+      logStep("Active subscription found", {
+        organisationId,
+        subscriptionId: activeSubscription.id,
+        endDate: subscriptionEnd,
+      });
       
-      const productId = subscription.items.data[0].price.product as string;
+      const productId = activeSubscription.items.data[0].price.product as string;
       tier = PRODUCT_TIER_MAP[productId] || "starter";
       logStep("Determined subscription tier", { productId, tier });
 
-      // Update organisation with subscription info
-      const { data: memberData } = await supabaseClient
-        .from('organisation_members')
-        .select('organisation_id')
-        .eq('profile_id', user.id)
-        .eq('status', 'active')
-        .single();
-
-      if (memberData) {
-        await supabaseClient
-          .from('organisations')
-          .update({
-            stripe_customer_id: customerId,
-            stripe_subscription_id: stripeSubscriptionId,
-            subscription_tier: tier,
-            subscription_status: 'active',
-          })
-          .eq('id', memberData.organisation_id);
-        logStep("Organisation updated with subscription info");
-      }
+      await supabaseClient
+        .from('organisations')
+        .update({
+          stripe_customer_id: customerId,
+          stripe_subscription_id: stripeSubscriptionId,
+          subscription_tier: tier,
+          subscription_status: 'active',
+        })
+        .eq('id', organisationId);
+      logStep("Organisation updated with subscription info", { organisationId });
     } else {
-      logStep("No active subscription found");
+      logStep("No active subscription found", { organisationId });
     }
 
     return new Response(JSON.stringify({
@@ -207,6 +233,9 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return validationErrorResponse(error, corsHeaders);
+    }
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR in check-subscription", { message: errorMessage });
     return new Response(JSON.stringify({ error: errorMessage }), {

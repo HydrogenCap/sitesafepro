@@ -21,6 +21,8 @@ export const OrgContext = createContext<OrgContextValue>({
   can: () => false,
 });
 
+const ACTIVE_ORG_CHANGED_EVENT = "ssp-active-org-changed";
+
 export function OrgProvider({ children }: { children: React.ReactNode }) {
   const [memberships, setMemberships] = useState<OrgMembership[]>([]);
   const [activeMembership, setActiveMembership] = useState<OrgMembership | null>(null);
@@ -53,7 +55,14 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
 
-      const mapped: OrgMembership[] = (data ?? []).map((row: any) => ({
+      interface MembershipRow {
+        organisation_id: string;
+        role: string;
+        status: string;
+        organisations: { name: string; slug: string } | null;
+      }
+
+      const mapped: OrgMembership[] = (data as MembershipRow[] ?? []).map((row) => ({
         orgId: row.organisation_id,
         orgName: row.organisations?.name ?? "",
         orgSlug: row.organisations?.slug ?? "",
@@ -66,6 +75,10 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
       const savedOrgId = localStorage.getItem("ssp_active_org_id");
       const found = mapped.find((m) => m.orgId === savedOrgId) ?? mapped[0] ?? null;
       setActiveMembership(found);
+      if (found && savedOrgId !== found.orgId) {
+        localStorage.setItem("ssp_active_org_id", found.orgId);
+        window.dispatchEvent(new CustomEvent(ACTIVE_ORG_CHANGED_EVENT, { detail: { orgId: found.orgId } }));
+      }
     } catch (err) {
       console.error("[OrgProvider] Failed to fetch memberships:", err);
       setMemberships([]);
@@ -95,6 +108,7 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
       if (found) {
         setActiveMembership(found);
         localStorage.setItem("ssp_active_org_id", orgId);
+        window.dispatchEvent(new CustomEvent(ACTIVE_ORG_CHANGED_EVENT, { detail: { orgId } }));
       }
     },
     [memberships]

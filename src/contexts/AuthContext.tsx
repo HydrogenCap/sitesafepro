@@ -2,6 +2,13 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback 
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
+const ACTIVE_ORG_CHANGED_EVENT = 'ssp-active-org-changed';
+
+const getSelectedOrganisationId = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  return window.localStorage.getItem('ssp_active_org_id');
+};
+
 interface SubscriptionInfo {
   subscribed: boolean;
   tier: 'starter' | 'professional' | 'enterprise' | null;
@@ -57,7 +64,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     setSubscriptionLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('check-subscription');
+      const organisationId = getSelectedOrganisationId();
+      const { data, error } = await supabase.functions.invoke('check-subscription', {
+        body: organisationId ? { organisationId } : {},
+      });
       
       if (error) {
         console.error('Subscription check error:', error);
@@ -84,7 +94,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      const { data, error } = await supabase.functions.invoke('customer-portal');
+      const organisationId = getSelectedOrganisationId();
+      if (!organisationId) {
+        throw new Error('No active organisation selected');
+      }
+
+      const { data, error } = await supabase.functions.invoke('customer-portal', {
+        body: { organisationId },
+      });
       
       if (error) throw error;
       if (data?.url) {
@@ -120,6 +137,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (session) {
       checkSubscription();
     }
+  }, [session, checkSubscription]);
+
+  useEffect(() => {
+    if (!session) return;
+
+    const refreshSubscription = () => {
+      void checkSubscription();
+    };
+
+    window.addEventListener(ACTIVE_ORG_CHANGED_EVENT, refreshSubscription);
+    window.addEventListener('storage', refreshSubscription);
+
+    return () => {
+      window.removeEventListener(ACTIVE_ORG_CHANGED_EVENT, refreshSubscription);
+      window.removeEventListener('storage', refreshSubscription);
+    };
   }, [session, checkSubscription]);
 
   // Periodic subscription check every 5 minutes when logged in (fallback for webhooks)
@@ -194,6 +227,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem('ssp_active_org_id');
+    }
     setUser(null);
     setSession(null);
     setSubscription({

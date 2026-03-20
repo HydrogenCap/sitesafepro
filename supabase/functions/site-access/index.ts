@@ -2,7 +2,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   requireString,
   requireUUID,
+  requireStringArray,
   optionalString,
+  optionalUUID,
   ValidationError,
   validationErrorResponse,
 } from "../_shared/validation.ts";
@@ -12,6 +14,16 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+function normalizeOptionalString(value: string | undefined): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function sameOptionalValue(a: string | null, b: string | null): boolean {
+  return normalizeOptionalString(a ?? undefined) === normalizeOptionalString(b ?? undefined);
+}
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
@@ -118,6 +130,11 @@ Deno.serve(async (req) => {
       const visitor_email = optionalString(body.visitor_email, "visitor_email", { maxLength: 255 });
       const visitor_company = optionalString(body.visitor_company, "visitor_company", { maxLength: 200 });
       const visitor_phone = optionalString(body.visitor_phone, "visitor_phone", { maxLength: 30 });
+      const checked_items = Array.from(new Set(
+        requireStringArray(body.checked_items ?? [], "checked_items").map((value, index) =>
+          requireUUID(value, `checked_items[${index}]`)
+        )
+      ));
 
       // Validate email format if provided
       if (visitor_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(visitor_email)) {
@@ -142,7 +159,10 @@ Deno.serve(async (req) => {
 
       const { data: template, error: templateError } = await supabase
         .from('site_induction_templates')
-        .select('id')
+        .select(`
+          id,
+          items:site_induction_items(id, is_required)
+        `)
         .eq('id', template_id)
         .eq('project_id', accessCode.project_id)
         .eq('organisation_id', accessCode.organisation_id)
@@ -152,6 +172,18 @@ Deno.serve(async (req) => {
       if (templateError || !template) {
         return new Response(
           JSON.stringify({ error: 'Invalid induction template for this access code' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const requiredItemIds = ((template.items as Array<{ id: string; is_required: boolean }> | null) ?? [])
+        .filter((item) => item.is_required)
+        .map((item) => item.id);
+
+      const missingRequiredItems = requiredItemIds.filter((itemId) => !checked_items.includes(itemId));
+      if (missingRequiredItems.length > 0) {
+        return new Response(
+          JSON.stringify({ error: 'All required induction items must be acknowledged' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -167,6 +199,7 @@ Deno.serve(async (req) => {
           visitor_company,
           visitor_phone,
           signature_data,
+          checked_item_ids: checked_items,
           ip_address: clientIp,
           user_agent: req.headers.get('user-agent'),
         })
@@ -202,6 +235,7 @@ Deno.serve(async (req) => {
       const emergency_contact_name = optionalString(body.emergency_contact_name, "emergency_contact_name", { maxLength: 100 });
       const emergency_contact_phone = optionalString(body.emergency_contact_phone, "emergency_contact_phone", { maxLength: 30 });
       const has_signed_induction = body.has_signed_induction === true;
+      const induction_completion_id = optionalUUID(body.induction_completion_id, "induction_completion_id");
 
       // Validate email format if provided
       if (visitor_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(visitor_email)) {
@@ -225,6 +259,85 @@ Deno.serve(async (req) => {
         );
       }
 
+      const { data: activeInduction } = await supabase
+        .from('site_induction_templates')
+        .select('id')
+        .eq('project_id', accessCode.project_id)
+        .eq('organisation_id', accessCode.organisation_id)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      let verifiedHasSignedInduction = false;
+
+      if (activeInduction) {
+        if (!induction_completion_id) {
+          return new Response(
+            JSON.stringify({ error: 'A completed site induction is required before check-in' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const { data: completion, error: completionError } = await supabase
+          .from('site_induction_completions')
+          .select(`
+            id,
+            template_id,
+            project_id,
+            organisation_id,
+            visitor_name,
+            visitor_email,
+            visitor_company,
+            visitor_phone,
+            site_visit_id
+          `)
+          .eq('id', induction_completion_id)
+          .single();
+
+        if (completionError || !completion) {
+          return new Response(
+            JSON.stringify({ error: 'Invalid induction completion' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        if (
+          completion.project_id !== accessCode.project_id ||
+          completion.organisation_id !== accessCode.organisation_id ||
+          completion.template_id !== activeInduction.id
+        ) {
+          return new Response(
+            JSON.stringify({ error: 'Induction completion does not match this access code' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        if (completion.site_visit_id) {
+          return new Response(
+            JSON.stringify({ error: 'This induction completion has already been used for check-in' }),
+            { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const sameIdentity =
+          normalizeOptionalString(completion.visitor_name) === normalizeOptionalString(visitor_name) &&
+          sameOptionalValue(completion.visitor_email, visitor_email ?? null) &&
+          sameOptionalValue(completion.visitor_company, visitor_company ?? null) &&
+          sameOptionalValue(completion.visitor_phone, visitor_phone ?? null);
+
+        if (!sameIdentity) {
+          return new Response(
+            JSON.stringify({ error: 'Check-in details must match the completed induction record' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        verifiedHasSignedInduction = true;
+      } else {
+        verifiedHasSignedInduction = has_signed_induction;
+      }
+
+      const checkoutToken = crypto.randomUUID();
+
       // Create the visit record
       const { data: visit, error: visitError } = await supabase
         .from('site_visits')
@@ -239,7 +352,8 @@ Deno.serve(async (req) => {
           purpose,
           emergency_contact_name,
           emergency_contact_phone,
-          has_signed_induction,
+          has_signed_induction: verifiedHasSignedInduction,
+          checkout_token: checkoutToken,
         })
         .select()
         .single();
@@ -252,9 +366,26 @@ Deno.serve(async (req) => {
         );
       }
 
+      if (induction_completion_id) {
+        const { error: linkError } = await supabase
+          .from('site_induction_completions')
+          .update({ site_visit_id: visit.id })
+          .eq('id', induction_completion_id)
+          .is('site_visit_id', null);
+
+        if (linkError) {
+          await supabase.from('site_visits').delete().eq('id', visit.id);
+          console.error('Error linking induction completion to visit:', linkError);
+          return new Response(
+            JSON.stringify({ error: 'Failed to finalise induction check-in' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+
       console.log('Visitor checked in:', visitor_name);
       return new Response(
-        JSON.stringify({ success: true, visit }),
+        JSON.stringify({ success: true, visit, checkout_token: checkoutToken }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -262,44 +393,20 @@ Deno.serve(async (req) => {
     // Public action: Check out a visitor
     if (action === 'check-out' && req.method === 'POST') {
       const body = await req.json();
-      const { visit_id, code, visitor_email } = body;
+      const visit_id = requireUUID(body.visit_id, "visit_id");
+      const checkout_token = requireString(body.checkout_token, "checkout_token", { maxLength: 255 });
 
-      // Find the active visit
-      let query = supabase
+      const { data: visit, error: findError } = await supabase
         .from('site_visits')
         .select('id')
-        .is('checked_out_at', null);
+        .eq('id', visit_id)
+        .eq('checkout_token', checkout_token)
+        .is('checked_out_at', null)
+        .maybeSingle();
 
-      if (visit_id) {
-        // Validate UUID format
-        const validId = requireUUID(visit_id, "visit_id");
-        query = query.eq('id', validId);
-      } else if (code && visitor_email) {
-        const validCode = requireString(code, "code", { maxLength: 50 });
-        // Find by access code and email
-        const { data: accessCode } = await supabase
-          .from('site_access_codes')
-          .select('id')
-          .eq('code', validCode)
-          .single();
-
-        if (accessCode) {
-          query = query
-            .eq('site_access_code_id', accessCode.id)
-            .eq('visitor_email', visitor_email);
-        }
-      } else {
+      if (findError || !visit) {
         return new Response(
-          JSON.stringify({ error: 'visit_id or code+visitor_email required' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      const { data: visits, error: findError } = await query;
-
-      if (findError || !visits || visits.length === 0) {
-        return new Response(
-          JSON.stringify({ error: 'No active visit found' }),
+          JSON.stringify({ error: 'No active visit found for this checkout token' }),
           { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -308,7 +415,7 @@ Deno.serve(async (req) => {
       const { data: updatedVisit, error: updateError } = await supabase
         .from('site_visits')
         .update({ checked_out_at: new Date().toISOString() })
-        .eq('id', visits[0].id)
+        .eq('id', visit.id)
         .select()
         .single();
 

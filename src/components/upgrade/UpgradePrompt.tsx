@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { STRIPE_PRODUCTS } from "@/config/stripe";
+import { useOrg } from "@/hooks/useOrg";
 import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
 
@@ -107,6 +109,7 @@ export const UpgradePrompt = ({
   onOpenChange,
 }: UpgradePromptProps) => {
   const { tier } = useSubscription();
+  const { membership } = useOrg();
   const [loading, setLoading] = useState(false);
   const copy = FEATURE_COPY[feature] || {
     headline: "Upgrade to unlock this feature",
@@ -115,10 +118,16 @@ export const UpgradePrompt = ({
   };
 
   const handleUpgrade = async () => {
+    if (!membership?.orgId) {
+      toast.error("Select an organisation before starting checkout.");
+      return;
+    }
+
     setLoading(true);
     try {
+      const priceId = STRIPE_PRODUCTS[copy.recommendedPlan].priceId;
       const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { tier: copy.recommendedPlan },
+        body: { priceId, organisationId: membership.orgId },
       });
       if (error) throw error;
       if (data?.url) {

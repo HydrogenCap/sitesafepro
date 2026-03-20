@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOrg } from '@/hooks/useOrg';
 
 type SubscriptionTier = 'starter' | 'professional' | 'enterprise';
 type SubscriptionStatus = 'active' | 'past_due' | 'cancelled' | 'trialing';
@@ -59,37 +60,32 @@ const PROJECT_LIMITS: Record<SubscriptionTier, number> = {
 
 export const useSubscription = (): UseSubscriptionReturn => {
   const { user } = useAuth();
+  const { membership, loading: orgLoading } = useOrg();
   const [organisation, setOrganisation] = useState<Organisation | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchOrganisation = async () => {
-      if (!user) {
+      if (!user || orgLoading) {
+        if (!user) {
+          setOrganisation(null);
+        }
+        setLoading(orgLoading);
+        return;
+      }
+
+      if (!membership?.orgId) {
         setOrganisation(null);
         setLoading(false);
         return;
       }
 
       try {
-        // Get user's active organisation
-        const { data: memberData, error: memberError } = await supabase
-          .from('organisation_members')
-          .select('organisation_id')
-          .eq('profile_id', user.id)
-          .eq('status', 'active')
-          .maybeSingle();
-
-        if (memberError || !memberData) {
-          setOrganisation(null);
-          setLoading(false);
-          return;
-        }
-
         // Get organisation details
         const { data: orgData, error: orgError } = await supabase
           .from('organisations')
           .select('*')
-          .eq('id', memberData.organisation_id)
+          .eq('id', membership.orgId)
           .single();
 
         if (orgError || !orgData) {
@@ -108,7 +104,7 @@ export const useSubscription = (): UseSubscriptionReturn => {
     };
 
     fetchOrganisation();
-  }, [user]);
+  }, [user, membership?.orgId, orgLoading]);
 
   const isTrialing = organisation?.subscription_status === 'trialing';
   const isActive = organisation?.subscription_status === 'active' || isTrialing;

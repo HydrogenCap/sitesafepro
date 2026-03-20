@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { requireUUID, ValidationError, validationErrorResponse } from "../_shared/validation.ts";
+import { getTrustedAppOrigin } from "../_shared/app-origin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,18 +40,42 @@ serve(async (req) => {
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError) throw new Error(`Authentication error: ${userError.message}`);
     const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
-    logStep("User authenticated", { userId: user.id, email: user.email });
+    if (!user?.id) throw new Error("User not authenticated");
+
+    const body = await req.json();
+    const organisationId = requireUUID(body.organisationId, "organisationId");
+    logStep("User authenticated", { userId: user.id, organisationId });
+
+    const { data: membership, error: membershipError } = await supabaseClient
+      .from("organisation_members")
+      .select("organisation_id")
+      .eq("profile_id", user.id)
+      .eq("organisation_id", organisationId)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (membershipError || !membership) {
+      return new Response(JSON.stringify({ error: "You do not have access to this organisation" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 403,
+      });
+    }
+
+    const { data: organisation, error: organisationError } = await supabaseClient
+      .from("organisations")
+      .select("stripe_customer_id")
+      .eq("id", organisationId)
+      .single();
+
+    if (organisationError || !organisation?.stripe_customer_id) {
+      throw new Error("No Stripe customer found for this organisation. Please subscribe first.");
+    }
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    if (customers.data.length === 0) {
-      throw new Error("No Stripe customer found for this user. Please subscribe first.");
-    }
-    const customerId = customers.data[0].id;
+    const customerId = organisation.stripe_customer_id;
     logStep("Found Stripe customer", { customerId });
 
-    const origin = req.headers.get("origin") || "http://localhost:5173";
+    const origin = getTrustedAppOrigin(req);
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: `${origin}/dashboard`,
@@ -61,6 +87,9 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
+    if (error instanceof ValidationError) {
+      return validationErrorResponse(error, corsHeaders);
+    }
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR in customer-portal", { message: errorMessage });
     return new Response(JSON.stringify({ error: errorMessage }), {
