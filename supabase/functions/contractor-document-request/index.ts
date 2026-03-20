@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "https://esm.sh/resend@4.0.0";
+import { getTrustedAppOrigin } from "../_shared/app-origin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -70,26 +71,7 @@ serve(async (req) => {
     // Use service role client for admin operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Generate upload token
-    const uploadToken = crypto.randomUUID();
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 14); // Token valid for 14 days
-
-    // Update contractor with upload token
-    const { error: updateError } = await supabase
-      .from("contractor_companies")
-      .update({
-        upload_token: uploadToken,
-        upload_token_expires_at: expiresAt.toISOString(),
-      })
-      .eq("id", contractor_id);
-
-    if (updateError) {
-      console.error("Error updating contractor:", updateError);
-      throw new Error("Failed to generate upload token");
-    }
-
-    // Get user's organisation
+    // [P1 FIX] Get user's organisation FIRST
     const { data: membership } = await supabase
       .from("organisation_members")
       .select("organisation_id")
@@ -99,6 +81,40 @@ serve(async (req) => {
 
     if (!membership) {
       throw new Error("User organisation not found");
+    }
+
+    // [P1 FIX] Verify the contractor belongs to the caller's organisation
+    const { data: contractor, error: contractorError } = await supabase
+      .from("contractor_companies")
+      .select("id")
+      .eq("id", contractor_id)
+      .eq("organisation_id", membership.organisation_id)
+      .single();
+
+    if (contractorError || !contractor) {
+      return new Response(
+        JSON.stringify({ error: "Contractor not found in your organisation" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // [P1 FIX] Only rotate upload token AFTER tenant ownership is confirmed
+    const uploadToken = crypto.randomUUID();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 14); // Token valid for 14 days
+
+    const { error: updateError } = await supabase
+      .from("contractor_companies")
+      .update({
+        upload_token: uploadToken,
+        upload_token_expires_at: expiresAt.toISOString(),
+      })
+      .eq("id", contractor_id)
+      .eq("organisation_id", membership.organisation_id);
+
+    if (updateError) {
+      console.error("Error updating contractor:", updateError);
+      throw new Error("Failed to generate upload token");
     }
 
     // Create document request record
@@ -136,8 +152,9 @@ serve(async (req) => {
 
     const requestedDocs = doc_types.map((dt) => docTypeLabels[dt] || dt).join(", ");
 
-    // Build upload portal URL
-    const portalUrl = `${req.headers.get("origin") || "https://sitesafepro.lovable.app"}/contractor-upload/${uploadToken}`;
+    // [P2 FIX] Use trusted app origin instead of raw request Origin header
+    const appOrigin = getTrustedAppOrigin(req);
+    const portalUrl = `${appOrigin}/contractor-upload/${uploadToken}`;
 
     // Send email via Resend
     const resend = new Resend(resendApiKey);

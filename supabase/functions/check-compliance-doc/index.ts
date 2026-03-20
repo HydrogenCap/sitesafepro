@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { requireUUID, ValidationError, validationErrorResponse } from "../_shared/validation.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,15 +10,12 @@ const corsHeaders = {
 
 // Document-type-specific extraction prompts
 const DOC_TYPE_PROMPTS: Record<string, string> = {
-  // Insurance types
   public_liability: `Extract: insurer_name, policy_number, insured_party_name, coverage_amount, start_date, end_date. Verify coverage is current and >= £1,000,000.`,
   employers_liability: `Extract: insurer_name, policy_number, insured_party_name, coverage_amount, start_date, end_date. Verify coverage is current and >= £5,000,000 (UK legal minimum).`,
   professional_indemnity: `Extract: insurer_name, policy_number, insured_party_name, coverage_amount, start_date, end_date. Check coverage is current.`,
   car_insurance: `Extract: insurer_name, policy_number, insured_party_name, coverage_amount, start_date, end_date.`,
   plant_insurance: `Extract: insurer_name, policy_number, insured_party_name, coverage_amount, start_date, end_date.`,
-  // CSCS / competency
   cscs_card: `Extract: card_holder_name, card_number, card_type_level (e.g. Green Labourer, Blue Skilled, Gold Supervisor), expiry_date. Check card is not expired.`,
-  // Training / certifications
   gas_safe: `Extract: holder_name, registration_number, expiry_date, categories_covered.`,
   niceic: `Extract: holder_name, registration_number, expiry_date.`,
   sssts: `Extract: holder_name, certificate_number, date_achieved, expiry_date.`,
@@ -33,7 +31,6 @@ const DOC_TYPE_PROMPTS: Record<string, string> = {
   manual_handling: `Extract: holder_name, certificate_number, date_achieved, expiry_date.`,
   abrasive_wheels: `Extract: holder_name, certificate_number, date_achieved, expiry_date.`,
   face_fit: `Extract: holder_name, certificate_number, date_achieved, expiry_date.`,
-  // Accreditations
   chas: `Extract: company_name, membership_number, expiry_date, accreditation_level.`,
   safe_contractor: `Extract: company_name, membership_number, expiry_date.`,
   constructionline: `Extract: company_name, membership_number, expiry_date, level.`,
@@ -41,7 +38,6 @@ const DOC_TYPE_PROMPTS: Record<string, string> = {
   iso_45001: `Extract: company_name, certificate_number, expiry_date, certifying_body.`,
   iso_9001: `Extract: company_name, certificate_number, expiry_date, certifying_body.`,
   iso_14001: `Extract: company_name, certificate_number, expiry_date, certifying_body.`,
-  // Other
   dbs_check: `Extract: holder_name, certificate_number, date_of_issue, disclosure_level.`,
   right_to_work: `Extract: holder_name, document_type, expiry_date (if applicable).`,
 };
@@ -52,26 +48,59 @@ serve(async (req) => {
   }
 
   try {
-    const { compliance_doc_id, organisation_id } = await req.json();
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
 
-    if (!compliance_doc_id || !organisation_id) {
+    const body = await req.json();
+    const compliance_doc_id = requireUUID(body.compliance_doc_id, "compliance_doc_id");
+    const organisation_id = requireUUID(body.organisation_id, "organisation_id");
+
+    // [P1 FIX] Authenticate the caller
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(
-        JSON.stringify({ error: "Missing compliance_doc_id or organisation_id" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Authentication required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: authError } = await userClient.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Invalid authentication" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // 1. Get the compliance doc
+    // [P1 FIX] Verify caller belongs to the organisation
+    const { data: membership, error: memberError } = await supabase
+      .from("organisation_members")
+      .select("organisation_id")
+      .eq("profile_id", user.id)
+      .eq("organisation_id", organisation_id)
+      .eq("status", "active")
+      .single();
+
+    if (memberError || !membership) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // 1. Get the compliance doc and verify it belongs to the org
     const { data: doc, error: docError } = await supabase
       .from("contractor_compliance_docs")
       .select("*, contractor_companies(company_name)")
       .eq("id", compliance_doc_id)
+      .eq("organisation_id", organisation_id)
       .single();
 
     if (docError || !doc) {
@@ -121,7 +150,6 @@ serve(async (req) => {
       isImage = ["jpg", "jpeg", "png", "webp"].includes(ext || "");
 
       if (isImage) {
-        // For images, get a signed URL and pass it to the AI
         const { data: signedData } = await supabase.storage
           .from("compliance-docs")
           .createSignedUrl(doc.file_path, 3600);
@@ -129,7 +157,6 @@ serve(async (req) => {
           fileContent = signedData.signedUrl;
         }
       } else {
-        // For PDFs/docs, download and convert to base64
         const { data: fileData } = await supabase.storage
           .from("compliance-docs")
           .download(doc.file_path);
@@ -146,7 +173,7 @@ serve(async (req) => {
     }
 
     // 5. Build prompt
-    const companyName = (doc.contractor_companies as any)?.company_name || "Unknown";
+    const companyName = (doc.contractor_companies as Record<string, unknown>)?.company_name || "Unknown";
     const docTypeLabel = doc.doc_type;
     const specificPrompt = DOC_TYPE_PROMPTS[doc.doc_type] || "Extract all relevant fields from this document.";
 
@@ -172,10 +199,10 @@ ${specificPrompt}
 Be strict but fair. If you cannot read the document or it's blank, result should be "fail".`;
 
     // 6. Call Lovable AI
-    let aiResult: any = null;
+    let aiResult: Record<string, unknown> | null = null;
 
     if (lovableApiKey && fileContent) {
-      const messages: any[] = [
+      const messages: Array<Record<string, unknown>> = [
         { role: "system", content: systemPrompt },
       ];
 
@@ -312,8 +339,7 @@ Be strict but fair. If you cannot read the document or it's blank, result should
       .eq("id", aiCheck.id);
 
     // 9. Update compliance doc with AI result
-    const newStatus = aiResult.result === "fail" ? "needs_review" : "needs_review";
-    // Always go to needs_review — manual confirmation required
+    const newStatus = "needs_review";
     await supabase
       .from("contractor_compliance_docs")
       .update({
@@ -330,7 +356,7 @@ Be strict but fair. If you cannot read the document or it's blank, result should
       actor_type: "ai",
       previous_status: "ai_checking",
       new_status: newStatus,
-      notes: aiResult.summary,
+      notes: aiResult.summary as string,
       metadata: {
         ai_result: aiResult.result,
         confidence: aiResult.confidence_score,
@@ -348,6 +374,9 @@ Be strict but fair. If you cannot read the document or it's blank, result should
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
+    if (err instanceof ValidationError) {
+      return validationErrorResponse(err, corsHeaders);
+    }
     console.error("check-compliance-doc error:", err);
     return new Response(
       JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }),
@@ -355,4 +384,3 @@ Be strict but fair. If you cannot read the document or it's blank, result should
     );
   }
 });
-

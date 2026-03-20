@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireString, requireUUID, requireEnum, optionalUUID, ValidationError, validationErrorResponse } from "../_shared/validation.ts";
+import { getTrustedAppOrigin } from "../_shared/app-origin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,9 +21,18 @@ interface NotificationRequest {
   recipientProfileId: string;
   type: NotificationType;
   data: Record<string, string>;
-  link: string;
   triggerReferenceId?: string;
 }
+
+// [P1 FIX] Allowlist of valid notification paths — links are generated server-side
+const NOTIFICATION_LINK_BUILDERS: Record<NotificationType, (appOrigin: string, data: Record<string, string>) => string> = {
+  document_acknowledgement: (origin, data) => `${origin}/documents/${data.documentId || ""}`,
+  action_assigned: (origin, data) => `${origin}/actions/${data.actionId || ""}`,
+  action_overdue: (origin, data) => `${origin}/actions/${data.actionId || ""}`,
+  rams_acknowledgement: (origin, data) => `${origin}/rams/${data.ramsId || ""}`,
+  permit_expiring: (origin, data) => `${origin}/permits?id=${data.permitId || ""}`,
+  site_induction_reminder: (origin, data) => `${origin}/check-in?project=${data.projectId || ""}`,
+};
 
 // Map notification types to template names and preference columns
 const NOTIFICATION_CONFIG: Record<NotificationType, {
@@ -92,9 +102,8 @@ serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claims, error: authError } = await authSupabase.auth.getClaims(token);
-    if (authError || !claims?.claims) {
+    const { data: { user }, error: authError } = await authSupabase.auth.getUser();
+    if (authError || !user) {
       console.error("[SEND-NOTIFICATION] Invalid token:", authError);
       return new Response(
         JSON.stringify({ error: "Invalid authentication" }),
@@ -102,7 +111,7 @@ serve(async (req) => {
       );
     }
 
-    const callerId = claims.claims.sub;
+    const callerId = user.id;
 
     const body = await req.json();
     const organisationId = requireUUID(body.organisationId, "organisationId");
@@ -112,8 +121,11 @@ serve(async (req) => {
       "rams_acknowledgement", "permit_expiring", "site_induction_reminder",
     ] as const) as NotificationType;
     const data = body.data ?? {};
-    const link = requireString(body.link, "link", { maxLength: 500 });
     const triggerReferenceId = body.triggerReferenceId;
+
+    // [P1 FIX] Generate links server-side instead of accepting from client
+    const appOrigin = getTrustedAppOrigin(req);
+    const link = NOTIFICATION_LINK_BUILDERS[type](appOrigin, data);
 
     console.log(`[SEND-NOTIFICATION] Type: ${type}, Recipient: ${recipientProfileId}, Caller: ${callerId}`);
 
@@ -123,7 +135,7 @@ serve(async (req) => {
     // Verify caller belongs to the organisation
     const { data: membership, error: memberError } = await supabase
       .from("organisation_members")
-      .select("organisation_id")
+      .select("organisation_id, role")
       .eq("profile_id", callerId)
       .eq("organisation_id", organisationId)
       .eq("status", "active")
@@ -134,6 +146,32 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Unauthorized access to organisation" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // [P1 FIX] Only owners, admins, and site_managers can send notifications
+    const ALLOWED_SENDER_ROLES = new Set(["owner", "admin", "site_manager"]);
+    if (!ALLOWED_SENDER_ROLES.has(membership.role)) {
+      return new Response(
+        JSON.stringify({ error: "Insufficient permissions to send notifications" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // [P1 FIX] Verify the recipient is also a member of the same organisation
+    const { data: recipientMembership, error: recipientMemberError } = await supabase
+      .from("organisation_members")
+      .select("profile_id")
+      .eq("profile_id", recipientProfileId)
+      .eq("organisation_id", organisationId)
+      .eq("status", "active")
+      .single();
+
+    if (recipientMemberError || !recipientMembership) {
+      console.error("[SEND-NOTIFICATION] Recipient is not a member of this organisation");
+      return new Response(
+        JSON.stringify({ error: "Recipient is not a member of this organisation" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -188,7 +226,6 @@ serve(async (req) => {
     if (whatsappEnabled && org?.whatsapp_enabled && profile.whatsapp_opted_in && profile.whatsapp_number) {
       console.log("[SEND-NOTIFICATION] Sending WhatsApp notification");
       
-      // Build template parameters based on notification type
       const templateParams = buildTemplateParams(type, data, profile.full_name, org?.name || "", link);
       
       try {
@@ -196,7 +233,7 @@ serve(async (req) => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            "Authorization": authHeader,
           },
           body: JSON.stringify({
             recipientNumber: profile.whatsapp_number,
@@ -214,9 +251,9 @@ serve(async (req) => {
         if (!waResult.success) {
           results.whatsapp.error = waResult.error;
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("[SEND-NOTIFICATION] WhatsApp error:", error);
-        results.whatsapp.error = error.message;
+        results.whatsapp.error = error instanceof Error ? error.message : "Unknown error";
       }
     } else {
       console.log("[SEND-NOTIFICATION] WhatsApp skipped:", {
@@ -257,8 +294,8 @@ serve(async (req) => {
             results.email.error = `Resend API error: ${emailResponse.status}`;
             console.error("[SEND-NOTIFICATION] Resend error:", errorText);
           }
-        } catch (emailErr) {
-          results.email.error = emailErr.message;
+        } catch (emailErr: unknown) {
+          results.email.error = emailErr instanceof Error ? emailErr.message : "Unknown error";
           console.error("[SEND-NOTIFICATION] Email send error:", emailErr);
         }
       } else {
@@ -289,7 +326,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof ValidationError) {
       return validationErrorResponse(error, corsHeaders);
     }
@@ -308,12 +345,8 @@ function buildTemplateParams(
   orgName: string,
   link: string
 ): Array<{ type: string; parameters: Array<{ type: string; text: string }> }> {
-  // Meta WhatsApp templates use positional parameters: {{1}}, {{2}}, etc.
-  // The components structure depends on how templates are registered in Meta Business Manager
-  
   switch (type) {
     case "document_acknowledgement":
-      // Template: Hi {{1}}, a new document requires your signature for {{2}}. Document: {{3}} Deadline: {{4}} Tap to sign: {{5}}
       return [{
         type: "body",
         parameters: [
@@ -326,7 +359,6 @@ function buildTemplateParams(
       }];
 
     case "action_assigned":
-      // Template: Hi {{1}}, a corrective action has been assigned to you at {{2}}. {{3}} — Priority: {{4}} Due: {{5}} View: {{6}}
       return [{
         type: "body",
         parameters: [
@@ -340,7 +372,6 @@ function buildTemplateParams(
       }];
 
     case "action_overdue":
-      // Template: Hi {{1}}, your corrective action is overdue. {{2}} at {{3}} Was due: {{4}} ({{5}} days overdue) Please resolve urgently: {{6}}
       return [{
         type: "body",
         parameters: [
@@ -354,7 +385,6 @@ function buildTemplateParams(
       }];
 
     case "rams_acknowledgement":
-      // Template: Hi {{1}}, new RAMS have been issued for {{2}} and require your signature. {{3}} Sign here: {{4}}
       return [{
         type: "body",
         parameters: [
@@ -366,7 +396,6 @@ function buildTemplateParams(
       }];
 
     case "permit_expiring":
-      // Template: Reminder: Permit to Work "{{1}}" at {{2}} expires in {{3}}. Action required: {{4}}
       return [{
         type: "body",
         parameters: [
@@ -378,7 +407,6 @@ function buildTemplateParams(
       }];
 
     case "site_induction_reminder":
-      // Template: Hi {{1}}, you need to complete your site induction for {{2}} before starting work. Contact the site manager: {{3}}
       return [{
         type: "body",
         parameters: [

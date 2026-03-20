@@ -505,8 +505,10 @@ Deno.serve(async (req) => {
         throw new Error("Failed to update invitation");
       }
 
-      const origin = req.headers.get("origin") || "https://sitesafepro.lovable.app";
-      const inviteUrl = `${origin}/client/accept-invite?token=${newToken}`;
+      // [P2 FIX] Use trusted app origin
+      const { getTrustedAppOrigin } = await import("../_shared/app-origin.ts");
+      const resendAppOrigin = getTrustedAppOrigin(req);
+      const inviteUrl = `${resendAppOrigin}/client/accept-invite?token=${newToken}`;
       const orgName = (clientUser.organisations as any)?.name || "Your Organisation";
 
       // Build permissions list
