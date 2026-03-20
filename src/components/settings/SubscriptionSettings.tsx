@@ -98,7 +98,7 @@ export default function SubscriptionSettings() {
     setPortalLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("customer-portal", {
-        body: {},
+        body: { organisation_id: activeOrgId },
       });
 
       if (error) throw error;
