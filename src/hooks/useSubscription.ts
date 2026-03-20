@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { OrgContext } from '@/contexts/OrgContext';
 
 type SubscriptionTier = 'starter' | 'professional' | 'enterprise';
 type SubscriptionStatus = 'active' | 'past_due' | 'cancelled' | 'trialing';
@@ -46,50 +47,40 @@ const FEATURE_ACCESS: Record<string, SubscriptionTier[]> = {
 };
 
 const STORAGE_LIMITS: Record<SubscriptionTier, number> = {
-  starter: 5 * 1024 * 1024 * 1024, // 5 GB
-  professional: 25 * 1024 * 1024 * 1024, // 25 GB
-  enterprise: 100 * 1024 * 1024 * 1024, // 100 GB
+  starter: 5 * 1024 * 1024 * 1024,
+  professional: 25 * 1024 * 1024 * 1024,
+  enterprise: 100 * 1024 * 1024 * 1024,
 };
 
 const PROJECT_LIMITS: Record<SubscriptionTier, number> = {
   starter: 1,
   professional: 5,
-  enterprise: 999, // Unlimited
+  enterprise: 999,
 };
 
 export const useSubscription = (): UseSubscriptionReturn => {
   const { user } = useAuth();
+  // [P2 FIX] Use the active org from OrgContext instead of picking an arbitrary membership
+  const orgCtx = useContext(OrgContext);
+  const activeOrgId = orgCtx?.membership?.orgId ?? null;
+
   const [organisation, setOrganisation] = useState<Organisation | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchOrganisation = async () => {
-      if (!user) {
+      if (!user || !activeOrgId) {
         setOrganisation(null);
         setLoading(false);
         return;
       }
 
       try {
-        // Get user's active organisation
-        const { data: memberData, error: memberError } = await supabase
-          .from('organisation_members')
-          .select('organisation_id')
-          .eq('profile_id', user.id)
-          .eq('status', 'active')
-          .maybeSingle();
-
-        if (memberError || !memberData) {
-          setOrganisation(null);
-          setLoading(false);
-          return;
-        }
-
-        // Get organisation details
+        // [P2 FIX] Fetch the specific active organisation instead of .maybeSingle()
         const { data: orgData, error: orgError } = await supabase
           .from('organisations')
           .select('*')
-          .eq('id', memberData.organisation_id)
+          .eq('id', activeOrgId)
           .single();
 
         if (orgError || !orgData) {
@@ -108,13 +99,13 @@ export const useSubscription = (): UseSubscriptionReturn => {
     };
 
     fetchOrganisation();
-  }, [user]);
+  }, [user, activeOrgId]);
 
   const isTrialing = organisation?.subscription_status === 'trialing';
   const isActive = organisation?.subscription_status === 'active' || isTrialing;
-  
-  const tier: SubscriptionTier | 'trial' = isTrialing 
-    ? 'trial' 
+
+  const tier: SubscriptionTier | 'trial' = isTrialing
+    ? 'trial'
     : (organisation?.subscription_tier || 'starter');
 
   const trialDaysRemaining = organisation?.trial_ends_at
@@ -122,11 +113,11 @@ export const useSubscription = (): UseSubscriptionReturn => {
     : 0;
 
   const effectiveTier: SubscriptionTier = isTrialing ? 'enterprise' : (organisation?.subscription_tier || 'starter');
-  
+
   const canAccess = (feature: string): boolean => {
     if (!isActive) return false;
     const allowedTiers = FEATURE_ACCESS[feature];
-    if (!allowedTiers) return true; // Unknown features are allowed
+    if (!allowedTiers) return true;
     return allowedTiers.includes(effectiveTier);
   };
 
