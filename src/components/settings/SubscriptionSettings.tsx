@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { OrgContext } from "@/contexts/OrgContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,6 +36,8 @@ interface OrganisationBilling {
 
 export default function SubscriptionSettings() {
   const { user } = useAuth();
+  const orgCtx = useContext(OrgContext);
+  const activeOrgId = orgCtx?.membership?.orgId ?? null;
   
   const [loading, setLoading] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
@@ -43,31 +46,25 @@ export default function SubscriptionSettings() {
   const [memberCount, setMemberCount] = useState(0);
 
   useEffect(() => {
-    if (user) {
+    if (user && activeOrgId) {
       fetchBillingData();
     }
-  }, [user]);
+  }, [user, activeOrgId]);
 
   const fetchBillingData = async () => {
     try {
-      // Get user's organisation
-      const { data: memberData, error: memberError } = await supabase
-        .from("organisation_members")
-        .select("organisation_id")
-        .eq("profile_id", user?.id)
-        .eq("status", "active")
-        .maybeSingle();
-
-      if (memberError || !memberData) {
+      // [P2 FIX] Use the active org from OrgContext
+      if (!activeOrgId) {
         setLoading(false);
         return;
       }
+      const orgId = activeOrgId;
 
       // Get organisation billing details
       const { data: orgData, error: orgError } = await supabase
         .from("organisations")
         .select("id, name, subscription_tier, subscription_status, trial_ends_at, max_projects, storage_used_bytes")
-        .eq("id", memberData.organisation_id)
+        .eq("id", orgId)
         .single();
 
       if (orgError) throw orgError;
@@ -77,7 +74,7 @@ export default function SubscriptionSettings() {
       const { count: projectCountData } = await supabase
         .from("projects")
         .select("*", { count: "exact", head: true })
-        .eq("organisation_id", memberData.organisation_id);
+        .eq("organisation_id", orgId);
 
       setProjectCount(projectCountData || 0);
 
@@ -85,7 +82,7 @@ export default function SubscriptionSettings() {
       const { count: memberCountData } = await supabase
         .from("organisation_members")
         .select("*", { count: "exact", head: true })
-        .eq("organisation_id", memberData.organisation_id)
+        .eq("organisation_id", orgId)
         .eq("status", "active");
 
       setMemberCount(memberCountData || 0);
@@ -101,7 +98,7 @@ export default function SubscriptionSettings() {
     setPortalLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("customer-portal", {
-        body: {},
+        body: { organisation_id: activeOrgId },
       });
 
       if (error) throw error;
