@@ -183,14 +183,16 @@ Deno.serve(async (req) => {
       }
 
       // Trigger AI document check (fire-and-forget)
+      // Trigger AI document check (fire-and-forget) using service role key
+      // since this is a token-based upload flow without a user JWT
       if (newDoc?.id) {
         const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-        const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
         fetch(`${supabaseUrl}/functions/v1/check-compliance-doc`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${anonKey}`,
+            Authorization: `Bearer ${serviceKey}`,
           },
           body: JSON.stringify({
             compliance_doc_id: newDoc.id,

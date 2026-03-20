@@ -5453,6 +5453,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      claim_founding_fifty_slot: { Args: never; Returns: number }
       create_next_document_version: {
         Args: { p_change_summary?: string; p_document_id: string }
         Returns: string

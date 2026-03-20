@@ -21,7 +21,7 @@ const TIER_MAX_PROJECTS: Record<string, number> = {
   enterprise: 999, // Unlimited
 };
 
-const logStep = (step: string, details?: any) => {
+const logStep = (step: string, details?: Record<string, unknown>) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : "";
   console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
 };
@@ -42,6 +42,15 @@ serve(async (req) => {
     });
   }
 
+  // [P2 FIX] Fail closed — refuse to process unsigned events
+  if (!webhookSecret) {
+    logStep("ERROR: STRIPE_WEBHOOK_SECRET not set — refusing to process unsigned events");
+    return new Response(JSON.stringify({ error: "Webhook secret not configured" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
   
   const supabase = createClient(
@@ -54,30 +63,25 @@ serve(async (req) => {
     const body = await req.text();
     let event: Stripe.Event;
 
-    // Verify webhook signature if secret is configured
-    if (webhookSecret) {
-      const signature = req.headers.get("stripe-signature");
-      if (!signature) {
-        logStep("ERROR: Missing stripe-signature header");
-        return new Response(JSON.stringify({ error: "Missing signature" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      
-      try {
-        event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-      } catch (err) {
-        logStep("ERROR: Invalid signature", { error: err.message });
-        return new Response(JSON.stringify({ error: "Invalid signature" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-    } else {
-      // For development/testing without webhook secret
-      event = JSON.parse(body);
-      logStep("WARNING: No webhook secret configured, skipping signature verification");
+    // Verify webhook signature (always required now)
+    const signature = req.headers.get("stripe-signature");
+    if (!signature) {
+      logStep("ERROR: Missing stripe-signature header");
+      return new Response(JSON.stringify({ error: "Missing signature" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    
+    try {
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      logStep("ERROR: Invalid signature", { error: errMsg });
+      return new Response(JSON.stringify({ error: "Invalid signature" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     logStep("Processing event", { type: event.type, id: event.id });
@@ -91,14 +95,12 @@ serve(async (req) => {
           customerEmail: session.customer_email 
         });
 
-        // Get customer email to find the organisation
         const customerEmail = session.customer_email || session.customer_details?.email;
         if (!customerEmail) {
           logStep("ERROR: No customer email in session");
           break;
         }
 
-        // Find the profile by email
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("id")
@@ -110,7 +112,6 @@ serve(async (req) => {
           break;
         }
 
-        // Find organisation by owner
         const { data: membership, error: memberError } = await supabase
           .from("organisation_members")
           .select("organisation_id")
@@ -124,14 +125,12 @@ serve(async (req) => {
           break;
         }
 
-        // Get subscription details
         if (session.subscription) {
           const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
           const productId = subscription.items.data[0]?.price.product as string;
           const tier = PRODUCT_ID_TO_TIER[productId] || "starter";
           const maxProjects = TIER_MAX_PROJECTS[tier];
 
-          // Update organisation
           const { error: updateError } = await supabase
             .from("organisations")
             .update({
@@ -168,7 +167,6 @@ serve(async (req) => {
         const tier = PRODUCT_ID_TO_TIER[productId] || "starter";
         const maxProjects = TIER_MAX_PROJECTS[tier];
 
-        // Map Stripe status to our status
         let subscriptionStatus: "active" | "past_due" | "cancelled" | "trialing" = "active";
         if (subscription.status === "past_due") subscriptionStatus = "past_due";
         else if (subscription.status === "canceled" || subscription.status === "unpaid") subscriptionStatus = "cancelled";
@@ -195,7 +193,6 @@ serve(async (req) => {
         const subscription = event.data.object as Stripe.Subscription;
         logStep("Subscription cancelled", { subscriptionId: subscription.id });
 
-        // Downgrade to starter/cancelled status
         const { error: updateError } = await supabase
           .from("organisations")
           .update({

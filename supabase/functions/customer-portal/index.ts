@@ -49,10 +49,12 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
-    const origin = req.headers.get("origin") || "http://localhost:5173";
+    // [P2 FIX] Use trusted app origin instead of raw request Origin header
+    const { getTrustedAppOrigin } = await import("../_shared/app-origin.ts");
+    const appOrigin = getTrustedAppOrigin(req);
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: `${origin}/dashboard`,
+      return_url: `${appOrigin}/dashboard`,
     });
     logStep("Customer portal session created", { sessionId: portalSession.id, url: portalSession.url });
 

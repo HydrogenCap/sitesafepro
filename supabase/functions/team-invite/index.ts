@@ -413,7 +413,9 @@ Deno.serve(async (req) => {
         .single();
 
       const orgName = org?.name || "Your Organisation";
-      const inviteUrl = `${req.headers.get("origin") || supabaseUrl.replace('.supabase.co', '.lovable.app')}/accept-invite?token=${inviteToken}`;
+      // [P2 FIX] Use trusted app origin
+      const { getTrustedAppOrigin } = await import("../_shared/app-origin.ts");
+      const inviteUrl = `${getTrustedAppOrigin(req)}/accept-invite?token=${inviteToken}`;
       
       // Send invitation email
       const emailSent = await sendInviteEmail(email, fullName, orgName, role, inviteUrl);
@@ -494,8 +496,9 @@ Deno.serve(async (req) => {
         throw new Error("Failed to resend invitation");
       }
 
-      const origin = req.headers.get("origin") || supabaseUrl.replace('.supabase.co', '.lovable.app');
-      const inviteUrl = `${origin}/accept-invite?token=${newToken}`;
+      // [P2 FIX] Use trusted app origin
+      const { getTrustedAppOrigin: getTrustedOriginResend } = await import("../_shared/app-origin.ts");
+      const inviteUrl = `${getTrustedOriginResend(req)}/accept-invite?token=${newToken}`;
       
       // Send the email
       const memberEmail = (member.profile as any)?.email || email;

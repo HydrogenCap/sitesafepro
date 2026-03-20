@@ -35,6 +35,7 @@ serve(async (req) => {
     const PHONE_NUMBER_ID = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
     // Check if WhatsApp is configured
     if (!WHATSAPP_TOKEN || !PHONE_NUMBER_ID) {
@@ -46,6 +47,26 @@ serve(async (req) => {
           code: "NOT_CONFIGURED" 
         }),
         { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // [P1 FIX] Require caller authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Authentication required", code: "UNAUTHORIZED" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: authError } = await userClient.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid authentication", code: "UNAUTHORIZED" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -77,9 +98,25 @@ serve(async (req) => {
       }
     }
 
-    console.log(`[SEND-WHATSAPP] Sending ${templateName} to ${recipientNumber}`);
-
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // [P1 FIX] Verify caller belongs to the organisation
+    const { data: membership, error: memberError } = await supabase
+      .from("organisation_members")
+      .select("organisation_id")
+      .eq("profile_id", user.id)
+      .eq("organisation_id", organisationId)
+      .eq("status", "active")
+      .single();
+
+    if (memberError || !membership) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Forbidden", code: "FORBIDDEN" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`[SEND-WHATSAPP] Sending ${templateName} to ${recipientNumber} (caller: ${user.id})`);
 
     // Check if organisation has WhatsApp enabled
     const { data: org } = await supabase
