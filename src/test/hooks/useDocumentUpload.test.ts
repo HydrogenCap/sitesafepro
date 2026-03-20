@@ -39,16 +39,16 @@ vi.mock("@/hooks/useNotifications", () => ({
 
 import { useDocumentUpload } from "@/hooks/useDocumentUpload";
 
-// Build a chainable Supabase query mock that resolves with `result`
 const makeChain = (result: unknown) => {
   const chain: Record<string, unknown> = {};
-  ["select", "eq", "neq", "update"].forEach((m) => { chain[m] = vi.fn(() => chain); });
+  ["select", "eq", "neq", "update"].forEach((method) => {
+    chain[method] = vi.fn(() => chain);
+  });
   chain["single"] = vi.fn(() => Promise.resolve(result));
-  chain["then"] = (resolve: (v: unknown) => unknown) => Promise.resolve(resolve(result));
+  chain["then"] = (resolve: (value: unknown) => unknown) => Promise.resolve(resolve(result));
   return chain;
 };
 
-// Build an insert chain that returns result from .select().single()
 const makeInsertChain = (singleResult: unknown) => ({
   insert: vi.fn(() => ({
     select: vi.fn(() => ({
@@ -157,21 +157,16 @@ describe("useDocumentUpload", () => {
       expect.objectContaining({
         activityType: "document_uploaded",
         entityName: "Test Document",
-      })
+      }),
     );
   });
 
   it("sends acknowledgement notifications to other org members when requiresAcknowledgement=true", async () => {
     mockStorageFrom.mockReturnValue({ upload: vi.fn().mockResolvedValue({ error: null }) });
-
-    // 4 from() calls: insert doc → select org storage → update org storage → select members
-    const updateChain = { update: vi.fn(() => ({ eq: vi.fn(() => Promise.resolve({ error: null })) })) };
     const membersChain = makeChain({ data: [{ profile_id: "user-2" }, { profile_id: "user-3" }], error: null });
 
     mockFrom
       .mockReturnValueOnce(makeInsertChain({ data: { id: "doc-1" }, error: null }))
-      .mockReturnValueOnce(makeChain({ data: { storage_used_bytes: 0 }, error: null }))
-      .mockReturnValueOnce(updateChain)
       .mockReturnValueOnce(membersChain);
 
     const { result } = renderHook(() => useDocumentUpload());
@@ -185,7 +180,7 @@ describe("useDocumentUpload", () => {
       "doc-1",
       "Test Document",
       "Test Project",
-      undefined
+      undefined,
     );
   });
 
