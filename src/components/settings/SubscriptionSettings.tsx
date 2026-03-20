@@ -53,18 +53,12 @@ export default function SubscriptionSettings() {
 
   const fetchBillingData = async () => {
     try {
-      // Get user's organisation
-      const { data: memberData, error: memberError } = await supabase
-        .from("organisation_members")
-        .select("organisation_id")
-        .eq("profile_id", user?.id)
-        .eq("status", "active")
-        .maybeSingle();
-
-      if (memberError || !memberData) {
+      // [P2 FIX] Use the active org from OrgContext
+      if (!activeOrgId) {
         setLoading(false);
         return;
       }
+      const orgId = activeOrgId;
 
       // Get organisation billing details
       const { data: orgData, error: orgError } = await supabase
