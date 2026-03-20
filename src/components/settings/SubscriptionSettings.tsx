@@ -1,7 +1,7 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { OrgContext } from "@/contexts/OrgContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOrg } from "@/hooks/useOrg";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -36,8 +36,7 @@ interface OrganisationBilling {
 
 export default function SubscriptionSettings() {
   const { user } = useAuth();
-  const orgCtx = useContext(OrgContext);
-  const activeOrgId = orgCtx?.membership?.orgId ?? null;
+  const { membership, loading: orgLoading } = useOrg();
   
   const [loading, setLoading] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
@@ -46,25 +45,35 @@ export default function SubscriptionSettings() {
   const [memberCount, setMemberCount] = useState(0);
 
   useEffect(() => {
-    if (user && activeOrgId) {
-      fetchBillingData();
+    if (!user || orgLoading) {
+      setLoading(orgLoading);
+      if (!user) {
+        setOrganisation(null);
+        setProjectCount(0);
+        setMemberCount(0);
+      }
+      return;
     }
-  }, [user, activeOrgId]);
+
+    void fetchBillingData();
+  }, [user, membership?.orgId, orgLoading]);
 
   const fetchBillingData = async () => {
-    try {
-      // [P2 FIX] Use the active org from OrgContext
-      if (!activeOrgId) {
-        setLoading(false);
-        return;
-      }
-      const orgId = activeOrgId;
+    if (!membership?.orgId) {
+      setOrganisation(null);
+      setProjectCount(0);
+      setMemberCount(0);
+      setLoading(false);
+      return;
+    }
 
+    setLoading(true);
+    try {
       // Get organisation billing details
       const { data: orgData, error: orgError } = await supabase
         .from("organisations")
         .select("id, name, subscription_tier, subscription_status, trial_ends_at, max_projects, storage_used_bytes")
-        .eq("id", orgId)
+        .eq("id", membership.orgId)
         .single();
 
       if (orgError) throw orgError;
@@ -74,7 +83,7 @@ export default function SubscriptionSettings() {
       const { count: projectCountData } = await supabase
         .from("projects")
         .select("*", { count: "exact", head: true })
-        .eq("organisation_id", orgId);
+        .eq("organisation_id", membership.orgId);
 
       setProjectCount(projectCountData || 0);
 
@@ -82,7 +91,7 @@ export default function SubscriptionSettings() {
       const { count: memberCountData } = await supabase
         .from("organisation_members")
         .select("*", { count: "exact", head: true })
-        .eq("organisation_id", orgId)
+        .eq("organisation_id", membership.orgId)
         .eq("status", "active");
 
       setMemberCount(memberCountData || 0);
@@ -95,10 +104,15 @@ export default function SubscriptionSettings() {
   };
 
   const handleManageBilling = async () => {
+    if (!membership?.orgId) {
+      toast.error("Error", { description: "Select an organisation before opening billing" });
+      return;
+    }
+
     setPortalLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("customer-portal", {
-        body: { organisation_id: activeOrgId },
+        body: { organisationId: membership.orgId },
       });
 
       if (error) throw error;
@@ -115,9 +129,14 @@ export default function SubscriptionSettings() {
   };
 
   const handleUpgrade = async (priceId: string) => {
+    if (!membership?.orgId) {
+      toast.error("Error", { description: "Select an organisation before starting checkout" });
+      return;
+    }
+
     try {
       const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { priceId },
+        body: { priceId, organisationId: membership.orgId },
       });
 
       if (error) throw error;

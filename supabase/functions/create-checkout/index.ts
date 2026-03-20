@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { requireString, ValidationError, validationErrorResponse } from "../_shared/validation.ts";
+import { requireString, requireUUID, ValidationError, validationErrorResponse } from "../_shared/validation.ts";
 import { getTrustedAppOrigin } from "../_shared/app-origin.ts";
 
 const corsHeaders = {
@@ -51,6 +51,7 @@ serve(async (req) => {
 
     const body = await req.json();
     const priceId = requireString(body.priceId, "priceId", { maxLength: 255 });
+    const organisationId = requireUUID(body.organisationId, "organisationId");
 
     if (!ALLOWED_PRICE_IDS.has(priceId)) {
       logStep("Invalid price ID rejected", { priceId });
@@ -61,12 +62,36 @@ serve(async (req) => {
     }
     logStep("Price ID validated", { priceId });
 
+    const { data: membership, error: membershipError } = await supabaseClient
+      .from("organisation_members")
+      .select("organisation_id")
+      .eq("profile_id", user.id)
+      .eq("organisation_id", organisationId)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (membershipError || !membership) {
+      return new Response(JSON.stringify({ error: "You do not have access to this organisation" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 403,
+      });
+    }
+
+    const { data: organisation, error: organisationError } = await supabaseClient
+      .from("organisations")
+      .select("stripe_customer_id")
+      .eq("id", organisationId)
+      .single();
+
+    if (organisationError || !organisation) {
+      throw organisationError ?? new Error("Organisation not found");
+    }
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     
     let customerId: string | undefined;
-    if (customers.data.length > 0) {
-      customerId = customers.data[0].id;
+    if (organisation.stripe_customer_id) {
+      customerId = organisation.stripe_customer_id;
       logStep("Existing customer found", { customerId });
     } else {
       logStep("No existing customer, will create on checkout");
@@ -87,7 +112,9 @@ serve(async (req) => {
       cancel_url: `${appOrigin}/settings?tab=subscription&checkout=cancelled`,
       metadata: {
         user_id: user.id,
+        org_id: organisationId,
       },
+      client_reference_id: organisationId,
     });
 
     logStep("Checkout session created", { sessionId: session.id, url: session.url });

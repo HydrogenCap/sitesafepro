@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Check, Sparkles, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOrg } from "@/hooks/useOrg";
 import { supabase } from "@/integrations/supabase/client";
 import { STRIPE_PRODUCTS, SubscriptionTier } from "@/config/stripe";
 import { toast } from "sonner";
@@ -94,6 +95,7 @@ export const PricingSection = () => {
   const [isYearly, setIsYearly] = useState(false);
   const [loadingTier, setLoadingTier] = useState<SubscriptionTier | null>(null);
   const { user } = useAuth();
+  const { membership } = useOrg();
   const navigate = useNavigate();
 
   const handleSubscribe = async (tierKey: SubscriptionTier) => {
@@ -103,12 +105,17 @@ export const PricingSection = () => {
       return;
     }
 
+    if (!membership?.orgId) {
+      toast.error("Select an organisation before starting checkout.");
+      return;
+    }
+
     setLoadingTier(tierKey);
     try {
       const priceId = STRIPE_PRODUCTS[tierKey].priceId;
       
       const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { priceId },
+        body: { priceId, organisationId: membership.orgId },
       });
 
       if (error) throw error;

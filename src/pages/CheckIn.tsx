@@ -42,6 +42,8 @@ interface InductionTemplate {
   items: InductionItem[];
 }
 
+const getSiteVisitStorageKey = (code: string) => `ssp-site-visit:${code}`;
+
 export default function CheckIn() {
   const { code } = useParams<{ code: string }>();
   const [loading, setLoading] = useState(true);
@@ -168,6 +170,17 @@ export default function CheckIn() {
         throw new Error(result.error || "Failed to check in");
       }
 
+      if (result.visit?.id && result.checkout_token) {
+        localStorage.setItem(
+          getSiteVisitStorageKey(code),
+          JSON.stringify({
+            visitId: result.visit.id,
+            checkoutToken: result.checkout_token,
+            checkedInAt: new Date().toISOString(),
+          })
+        );
+      }
+
       setMode("success");
       toast.success("Successfully checked in!");
     } catch (err: any) {
@@ -179,12 +192,31 @@ export default function CheckIn() {
   };
 
   const handleCheckOut = async () => {
-    if (!visitorEmail.trim()) {
-      toast.error("Please enter the email you used to check in");
+    if (!code) return;
+
+    const storedVisit = localStorage.getItem(getSiteVisitStorageKey(code));
+    if (!storedVisit) {
+      toast.error("No active check-in was found on this device for this QR code");
       return;
     }
 
-    if (!code) return;
+    let visitCredentials: { visitId: string; checkoutToken: string } | null = null;
+    try {
+      const parsed = JSON.parse(storedVisit) as { visitId?: string; checkoutToken?: string };
+      if (parsed.visitId && parsed.checkoutToken) {
+        visitCredentials = {
+          visitId: parsed.visitId,
+          checkoutToken: parsed.checkoutToken,
+        };
+      }
+    } catch (error) {
+      console.error("Invalid stored site visit credentials:", error);
+    }
+
+    if (!visitCredentials) {
+      toast.error("Stored checkout details are invalid. Please contact site staff.");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -197,8 +229,8 @@ export default function CheckIn() {
             "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
           body: JSON.stringify({
-            code,
-            visitor_email: visitorEmail.trim(),
+            visit_id: visitCredentials.visitId,
+            checkout_token: visitCredentials.checkoutToken,
           }),
         }
       );
@@ -213,6 +245,7 @@ export default function CheckIn() {
         throw new Error(result.error || "Failed to check out");
       }
 
+      localStorage.removeItem(getSiteVisitStorageKey(code));
       toast.success("Successfully checked out!");
       setMode("success");
     } catch (err: any) {
@@ -526,21 +559,14 @@ export default function CheckIn() {
             <CardHeader>
               <CardTitle>Site Check-Out</CardTitle>
               <CardDescription>
-                Enter the email you used when checking in
+                Check out using the secure token saved on this device when you checked in
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="checkout-email">Email Address</Label>
-                  <Input
-                    id="checkout-email"
-                    type="email"
-                    value={visitorEmail}
-                    onChange={(e) => setVisitorEmail(e.target.value)}
-                    placeholder="Enter the email you used to check in"
-                  />
-                </div>
+                <p className="text-sm text-muted-foreground">
+                  For security, self check-out now only works from the same browser/device that completed check-in.
+                </p>
 
                 <Button
                   onClick={handleCheckOut}

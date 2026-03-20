@@ -21,7 +21,7 @@ const TIER_MAX_PROJECTS: Record<string, number> = {
   enterprise: 999, // Unlimited
 };
 
-const logStep = (step: string, details?: Record<string, unknown>) => {
+const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : "";
   console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
 };
@@ -42,10 +42,9 @@ serve(async (req) => {
     });
   }
 
-  // [P2 FIX] Fail closed — refuse to process unsigned events
   if (!webhookSecret) {
-    logStep("ERROR: STRIPE_WEBHOOK_SECRET not set — refusing to process unsigned events");
-    return new Response(JSON.stringify({ error: "Webhook secret not configured" }), {
+    logStep("ERROR: STRIPE_WEBHOOK_SECRET not set");
+    return new Response(JSON.stringify({ error: "Stripe webhook secret not configured" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -63,7 +62,6 @@ serve(async (req) => {
     const body = await req.text();
     let event: Stripe.Event;
 
-    // Verify webhook signature (always required now)
     const signature = req.headers.get("stripe-signature");
     if (!signature) {
       logStep("ERROR: Missing stripe-signature header");
@@ -72,12 +70,11 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    
+
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-    } catch (err: unknown) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      logStep("ERROR: Invalid signature", { error: errMsg });
+    } catch (err) {
+      logStep("ERROR: Invalid signature", { error: err.message });
       return new Response(JSON.stringify({ error: "Invalid signature" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -95,42 +92,52 @@ serve(async (req) => {
           customerEmail: session.customer_email 
         });
 
-        const customerEmail = session.customer_email || session.customer_details?.email;
-        if (!customerEmail) {
-          logStep("ERROR: No customer email in session");
-          break;
+        const metadataOrgId = session.metadata?.org_id;
+
+        let organisationId: string | null = metadataOrgId ?? null;
+        if (!organisationId) {
+          // Backward-compatible fallback for old sessions without org_id metadata
+          const customerEmail = session.customer_email || session.customer_details?.email;
+          if (!customerEmail) {
+            logStep("ERROR: No customer email in session");
+            break;
+          }
+
+          const { data: profile, error: profileError } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("email", customerEmail)
+            .single();
+
+          if (profileError || !profile) {
+            logStep("ERROR: Could not find profile", { email: customerEmail, error: profileError });
+            break;
+          }
+
+          const { data: membership, error: memberError } = await supabase
+            .from("organisation_members")
+            .select("organisation_id")
+            .eq("profile_id", profile.id)
+            .eq("role", "owner")
+            .eq("status", "active")
+            .single();
+
+          if (memberError || !membership) {
+            logStep("ERROR: Could not find organisation", { profileId: profile.id, error: memberError });
+            break;
+          }
+
+          organisationId = membership.organisation_id;
         }
 
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("email", customerEmail)
-          .single();
-
-        if (profileError || !profile) {
-          logStep("ERROR: Could not find profile", { email: customerEmail, error: profileError });
-          break;
-        }
-
-        const { data: membership, error: memberError } = await supabase
-          .from("organisation_members")
-          .select("organisation_id")
-          .eq("profile_id", profile.id)
-          .eq("role", "owner")
-          .eq("status", "active")
-          .single();
-
-        if (memberError || !membership) {
-          logStep("ERROR: Could not find organisation", { profileId: profile.id, error: memberError });
-          break;
-        }
-
-        if (session.subscription) {
+        // Get subscription details
+        if (session.subscription && organisationId) {
           const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
           const productId = subscription.items.data[0]?.price.product as string;
           const tier = PRODUCT_ID_TO_TIER[productId] || "starter";
           const maxProjects = TIER_MAX_PROJECTS[tier];
 
+          // Update organisation
           const { error: updateError } = await supabase
             .from("organisations")
             .update({
@@ -141,13 +148,13 @@ serve(async (req) => {
               max_projects: maxProjects,
               trial_ends_at: null,
             })
-            .eq("id", membership.organisation_id);
+            .eq("id", organisationId);
 
           if (updateError) {
             logStep("ERROR: Failed to update organisation", { error: updateError });
           } else {
             logStep("Organisation updated successfully", { 
-              orgId: membership.organisation_id, 
+              orgId: organisationId, 
               tier, 
               maxProjects 
             });
@@ -167,6 +174,7 @@ serve(async (req) => {
         const tier = PRODUCT_ID_TO_TIER[productId] || "starter";
         const maxProjects = TIER_MAX_PROJECTS[tier];
 
+        // Map Stripe status to our status
         let subscriptionStatus: "active" | "past_due" | "cancelled" | "trialing" = "active";
         if (subscription.status === "past_due") subscriptionStatus = "past_due";
         else if (subscription.status === "canceled" || subscription.status === "unpaid") subscriptionStatus = "cancelled";
@@ -193,6 +201,7 @@ serve(async (req) => {
         const subscription = event.data.object as Stripe.Subscription;
         logStep("Subscription cancelled", { subscriptionId: subscription.id });
 
+        // Downgrade to starter/cancelled status
         const { error: updateError } = await supabase
           .from("organisations")
           .update({
