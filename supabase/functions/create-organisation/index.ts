@@ -92,38 +92,11 @@ serve(async (req) => {
 
     const slug = slugData || companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
-    // [P3 FIX] Atomically increment founding 50 counter using a DB function
-    // Fallback: read-then-write with best-effort (actual atomic fix needs a migration)
-    const { data: settingRow } = await supabaseAdmin
-      .from('app_settings')
-      .select('value')
-      .eq('key', 'founding_fifty_count')
-      .single();
-
-    const currentCount = typeof settingRow?.value === 'number' ? settingRow.value : 0;
+    // [P3 FIX] Atomically claim a founding 50 slot using the DB function
+    const { data: slotNumber, error: slotError } = await supabaseAdmin.rpc('claim_founding_fifty_slot');
+    const currentCount = slotError ? 999 : (slotNumber ?? 999);
     const isFounding50 = currentCount < 50;
     const trialDays = isFounding50 ? 180 : 14;
-
-    // Increment counter — use .eq to provide optimistic locking
-    const { error: counterError } = await supabaseAdmin
-      .from('app_settings')
-      .update({ value: (currentCount + 1) as unknown as Record<string, unknown>, updated_at: new Date().toISOString() })
-      .eq('key', 'founding_fifty_count')
-      .eq('value', currentCount as unknown as Record<string, unknown>);
-
-    if (counterError) {
-      // If optimistic lock fails, re-read and try once more
-      const { data: retryRow } = await supabaseAdmin
-        .from('app_settings')
-        .select('value')
-        .eq('key', 'founding_fifty_count')
-        .single();
-      const retryCount = typeof retryRow?.value === 'number' ? retryRow.value : 0;
-      await supabaseAdmin
-        .from('app_settings')
-        .update({ value: (retryCount + 1) as unknown as Record<string, unknown>, updated_at: new Date().toISOString() })
-        .eq('key', 'founding_fifty_count');
-    }
 
     console.log(`Signup #${currentCount + 1} — ${isFounding50 ? 'Founding 50 (180 days)' : 'Standard (14 days)'}`);
 
