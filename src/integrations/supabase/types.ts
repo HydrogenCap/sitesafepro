@@ -4702,6 +4702,7 @@ export type Database = {
       }
       site_induction_completions: {
         Row: {
+          checked_item_ids: string[] | null
           completed_at: string
           id: string
           ip_address: string | null
@@ -4717,6 +4718,7 @@ export type Database = {
           visitor_phone: string | null
         }
         Insert: {
+          checked_item_ids?: string[] | null
           completed_at?: string
           id?: string
           ip_address?: string | null
@@ -4732,6 +4734,7 @@ export type Database = {
           visitor_phone?: string | null
         }
         Update: {
+          checked_item_ids?: string[] | null
           completed_at?: string
           id?: string
           ip_address?: string | null
@@ -4890,6 +4893,7 @@ export type Database = {
         Row: {
           checked_in_at: string
           checked_out_at: string | null
+          checkout_token: string | null
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
           has_signed_induction: boolean | null
@@ -4908,6 +4912,7 @@ export type Database = {
         Insert: {
           checked_in_at?: string
           checked_out_at?: string | null
+          checkout_token?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           has_signed_induction?: boolean | null
@@ -4926,6 +4931,7 @@ export type Database = {
         Update: {
           checked_in_at?: string
           checked_out_at?: string | null
+          checkout_token?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           has_signed_induction?: boolean | null
